@@ -1,6 +1,7 @@
 import socket
 import time
 
+import cv2
 import PIL
 from PIL import Image, ImageOps
 
@@ -44,14 +45,18 @@ send_command("streamon")
 time.sleep(1)
 # Check if the stream opened successfully
 height, width = (int(960 / 2), int(720 / 2))
+try:
 
-while True:
-    data, addr = sock_vid.recvfrom(8192)
-    print(len(data))
+    while True:
+        data, addr = sock_vid.recvfrom(8192)
+        print(len(data))
 
-    # img = Image.frombuffer("RGB", (12, 12), data)
-    # img.show()
-    # break
+        # img = Image.frombuffer("RGB", (12, 12), data)
+        # img.show()
+        # break
+except:
+    with open("melooktello.txt", "w") as thisfile:
+        thisfile.write(str(data))
 
 # Stop video stream
 send_command("streamoff")
