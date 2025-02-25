@@ -56,6 +56,7 @@ class DroneCommunication:
                 self.frames.append(img)
             else:
                 print("Empty frame received")
+            print(f"Frames in queue: {len(self.frames)}")
 
     def frame_updater(self):
         while True:
@@ -64,16 +65,6 @@ class DroneCommunication:
             else:
                 self.current_frame = np.zeros((720, 960, 3), dtype=np.uint8)
             time.sleep(0.01)
-
-    def video_show(self):
-        """Displays current frame"""
-        self.current_frame = np.zeros((720, 960, 3), dtype=np.uint8)
-        DroneCommunication.run_in_thread(self.frame_updater)
-
-        while True:
-            cv2.imshow("Drone Video Stream", self.current_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
 
     @staticmethod
     def run_in_thread(func, *args):
@@ -93,10 +84,9 @@ class DroneCommunication:
 
 
         # Start manual command interface
-        #DroneCommunication.run_in_thread(self.manual_command_interface)
+        DroneCommunication.run_in_thread(self.manual_command_interface)
         #time.sleep(2)
 
-        self.video_show()
 
         while True:
             pass
