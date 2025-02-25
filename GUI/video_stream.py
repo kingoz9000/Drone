@@ -49,7 +49,6 @@ class TelloTkinterStream:
         """Runs the video stream in a separate thread while updating Tkinter UI correctly."""
         while self.running:
             frame = self.frame_reader.frame  # Get the latest frame
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)  # Convert to RGB
             
             # Resize frame to match window size
             frame = cv2.resize(frame, (self.root.winfo_width(), self.root.winfo_height()))
