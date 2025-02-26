@@ -1,8 +1,6 @@
-import threading
 from tkinter import Tk, Label
 from PIL import Image, ImageTk
-import time
-from video_stream_reciever import DroneCommunication
+from drone_communication import DroneCommunication
 
 class TelloTkinterStream:
     def __init__(self):
@@ -22,15 +20,20 @@ class TelloTkinterStream:
         # Start video update loop
         self.update_video_frame()
 
+        # Bind cleanup to window close
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-        self.root.mainloop()  # Start the Tkinter event loop
+
+        # Start Tkinter event loop
+        self.root.mainloop()
 
     def update_video_frame(self):
-        """Efficiently update the video frame at 100 FPS (every 10ms)."""
+        """Update the video frame at 100 FPS (every 10ms)."""
+        # Get the latest frame from the queue
         frame = self.video_stream.get_frame()
 
         if frame is not None:
             try:
+                # Convert the frame to an ImageTk object
                 img = Image.fromarray(frame)
                 imgtk = ImageTk.PhotoImage(image=img)
                 self.video_label.imgtk = imgtk
@@ -38,15 +41,16 @@ class TelloTkinterStream:
             except Exception as e:
                 print(f"Error updating video frame: {e}")
 
-        self.root.after(10, self.update_video_frame)  # Faster updates (10ms instead of 30ms)
+        # Call this function again in 10ms *Can be adjusted*
+        self.root.after(10, self.update_video_frame) 
 
     def cleanup(self):
         """Safely clean up resources and close the Tkinter window."""
         print("Shutting down...")
 
-        self.video_stream.stop()  # Stop video stream
-        self.root.quit()  # Quit Tkinter event loop
-        self.root.destroy()  # Destroy the window
+        self.video_stream.stop()
+        self.root.quit()
+        self.root.destroy()
 
 if __name__ == "__main__":
     TelloTkinterStream()
