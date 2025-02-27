@@ -2,6 +2,7 @@ from tkinter import Tk, Label
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 
+
 class TelloTkinterStream:
     def __init__(self):
         """Initialize Tkinter window and Tello video stream."""
@@ -42,7 +43,7 @@ class TelloTkinterStream:
                 print(f"Error updating video frame: {e}")
 
         # Call this function again in 10ms *Can be adjusted*
-        self.root.after(10, self.update_video_frame) 
+        self.root.after(10, self.update_video_frame)
 
     def cleanup(self):
         """Safely clean up resources and close the Tkinter window."""
@@ -52,6 +53,6 @@ class TelloTkinterStream:
         self.root.quit()
         self.root.destroy()
 
+
 if __name__ == "__main__":
     TelloTkinterStream()
-

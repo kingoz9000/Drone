@@ -5,13 +5,14 @@ import av
 from collections import deque
 import time
 
+
 class DroneCommunication:
     def __init__(self):
         """Initialize the DroneCommunication object and set running to True"""
 
         # Sending commands / Recieving response
         self.COMMAND_PORT = 8889
-        self.COMMAND_ADDRESS = '192.168.10.1'
+        self.COMMAND_ADDRESS = "192.168.10.1"
         self.COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # Video stream recieving
@@ -21,12 +22,16 @@ class DroneCommunication:
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout = 10
-        self.frames = deque([], maxlen=60)  
+        self.frames = deque([], maxlen=60)
         self.running = True
 
     def send_command(self, command: str) -> None:
         """Sends a command to the drone by encoding first"""
-        self.COMMAND_SOCKET.sendto(command.encode('utf-8'), (self.COMMAND_ADDRESS, self.COMMAND_PORT))
+        self.COMMAND_SOCKET.sendto(
+            command.encode("utf-8"), (self.COMMAND_ADDRESS, self.COMMAND_PORT)
+        )
+        respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
+        print(f"Command '{command}' Recived the response: '{respone.decode()}'")
 
     def connect(self):
         """Connects to the drone by starting SDK mode("command"") and turning on the video stream("streamon")"""
@@ -36,7 +41,12 @@ class DroneCommunication:
     def frame_grab(self):
         """Grabs frames from the video stream and appends them to the frames queue"""
         try:
-            self.container = av.open(self.VIDEO_ADDRESS, timeout=(self.frame_grab_timeout, None), format='h264', options={'fflags': 'nobuffer'})
+            self.container = av.open(
+                self.VIDEO_ADDRESS,
+                timeout=(self.frame_grab_timeout, None),
+                format="h264",
+                options={"fflags": "nobuffer"},
+            )
         except av.error.ExitError as av_error:
             print(f"Error opening video stream: {av_error}")
             return
@@ -51,7 +61,7 @@ class DroneCommunication:
     def get_frame(self):
         """Returns the last frame in the frames queue"""
         if len(self.frames) > 0:
-            return self.frames[-1]  
+            return self.frames[-1]
         return None
 
     def stop(self):
@@ -66,16 +76,12 @@ class DroneCommunication:
         thread.start()
         return thread
 
-
     def main(self):
         self.connect()
         time.sleep(2)
 
         self.run_in_thread(self.frame_grab)
         time.sleep(2)
-
-
-
 
 
 if __name__ == "__main__":
