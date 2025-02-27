@@ -15,6 +15,10 @@ class DroneCommunication:
         self.COMMAND_ADDRESS = "192.168.10.1"
         self.COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        self.STATE_IP = ("0.0.0.0", 8890)
+        self.STATE_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.STATE_SOCKET.bind(self.STATE_IP)
+
         # Video stream recieving
         self.VIDEO_PORT = 11111  # Video receiving port
         self.VIDEO_IP = "0.0.0.0"  # Listen on all interfaces
@@ -32,6 +36,11 @@ class DroneCommunication:
         )
         respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
         print(f"Command '{command}' Recived the response: '{respone.decode()}'")
+
+    def listen_for_state(self):
+        while True:
+            response, _ = self.STATE_SOCKET.recvfrom(1024)
+            print(response.decode())
 
     def connect(self):
         """Connects to the drone by starting SDK mode("command"") and turning on the video stream("streamon")"""
@@ -82,6 +91,9 @@ class DroneCommunication:
 
         self.run_in_thread(self.frame_grab)
         time.sleep(2)
+
+        # self.run_in_thread(self.listen_for_state)
+        # time.sleep(2)
 
 
 if __name__ == "__main__":

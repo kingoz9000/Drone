@@ -24,6 +24,9 @@ class TelloTkinterStream:
         # Bind cleanup to window close
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
 
+        # Bind keys
+        self.root.bind("q", lambda e: self.cleanup())
+
         # Start Tkinter event loop
         self.root.mainloop()
 
