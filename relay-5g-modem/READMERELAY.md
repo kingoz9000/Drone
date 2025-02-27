@@ -14,6 +14,6 @@ output -> "lots of info about the modem"
 small snippet of info = "sim   primary sim path: /org/freedesktop/ModemManager1/SIM/1"
 
 GG
-
+BIG GG
 
 
