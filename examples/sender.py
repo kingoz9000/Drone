@@ -7,8 +7,8 @@ def main():
     print("Socket created")
 
     # Define the port and server IP
-    port = 51843
-    ip = "130.225.196.7"
+    port = 9365
+    ip = "37.96.2.60"
 
     try:
         s.connect((ip, port))
