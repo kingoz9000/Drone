@@ -1,6 +1,8 @@
 from tkinter import Tk, Label
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
+from joystick import JoystickHandler
+import threading 
 
 
 class TelloTkinterStream:
@@ -17,6 +19,12 @@ class TelloTkinterStream:
         # Start video stream
         self.video_stream: DroneCommunication = DroneCommunication()
         self.video_stream.main()
+
+        # Initialize joystick
+        self.joystick = JoystickHandler()
+
+        #thread = threading.Thread(target=self.joystick, args=args, daemon=True)
+        #thread.start()
 
         # Start video update loop
         self.update_video_frame()
@@ -56,6 +64,10 @@ class TelloTkinterStream:
         self.root.quit()
         self.root.destroy()
 
+    def read_joystick(self):
+        x, y, z, buttons = self.joystick.get_values()
+
+        self.video_stream.send_command
 
 if __name__ == "__main__":
     TelloTkinterStream()

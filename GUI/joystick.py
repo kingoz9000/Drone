@@ -11,7 +11,6 @@ class JoystickHandler:
 
         # Run Pyglet event loop
         pyglet.app.run()
-
         
     def connect_joystick(self) -> None:
         """Find and connect to the first available joystick."""
@@ -33,13 +32,13 @@ class JoystickHandler:
 
     def on_joybutton_press(self, joystick, button) -> None:
         """Handle button press."""
-        self.buttons[f"button{button}"] = True
+        self.buttons[f"button{button+1}"] = True
 
     def on_joybutton_release(self, joystick, button) -> None:
         """Handle button release."""
-        self.buttons[f"button{button}"] = False
+        self.buttons[f"button{button+1}"] = False
 
-    def get_values(self, dt) -> tuple:
+    def get_values(self, dt = 0) -> tuple:      
         """Update loop (called every 100ms)."""
         print(self.joystick.x, self.joystick.y, self.joystick.z, self.buttons)
         return (self.joystick.x, self.joystick.y, self.joystick.z, self.buttons)
