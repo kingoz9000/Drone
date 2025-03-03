@@ -6,7 +6,7 @@ class ModemHandler:
     def __init__(self): 
         # sending AT commands to the modem
         self.AT_MODEM_PORT: int = 5000 # port for AT commands
-        self.AT_MODEM_ADDRESS: str =  self.sendATCommand("AT+CGPADDR=1") # address for AT commands
+        self.AT_MODEM_ADDRESS: str =  "" # address for AT commands
         self.AT_COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.AT_SOCKET.settimeout(30) # set timeout for socket to 30 seconds
         
