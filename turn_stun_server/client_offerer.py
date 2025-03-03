@@ -3,9 +3,9 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceServer, RTCCo
 
 ICE_SERVERS = [
     RTCIceServer(
-        urls=["stun:203.0.113.1:3478", "turn:203.0.113.1:3478"],
-        username="my-user",
-        credential="my-password"
+        urls=["stun:130.255.196.7:51843", "turn:130.255.196.7:51843"],
+        username="comtek",
+        credential="comtek123"
     )
 ]
 
