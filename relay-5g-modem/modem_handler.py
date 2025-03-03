@@ -37,8 +37,14 @@ class ModemHandler:
     
     def checkStatus(self) -> bool: 
         "check if modem is responsive, by sending AT command"
-        response = self.sendATCommand("AT") 
-        return "OK" in response
+        try:
+            response = self.sendATCommand("AT") 
+            return "OK" in response
+        except socket.timeout:
+            print("Socket timed out")
+        except Exception as e:
+            print(f"An error occured while checking modem status: {e}")
+            return False
     
 if __name__ == "__main__":
     modem = ModemHandler()
