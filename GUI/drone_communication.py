@@ -1,8 +1,8 @@
 import socket
 import threading
 import numpy as np
-import av
 from collections import deque
+import av
 import time
 
 
@@ -26,7 +26,7 @@ class DroneCommunication:
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout = 10
-        self.frames = deque([], maxlen=60)
+        self.frames = deque([], maxlen=30)
         self.running = True
 
     def send_command(self, command: str) -> None:
@@ -34,8 +34,8 @@ class DroneCommunication:
         self.COMMAND_SOCKET.sendto(
             command.encode("utf-8"), (self.COMMAND_ADDRESS, self.COMMAND_PORT)
         )
-        respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
-        print(f"Command '{command}' Recived the response: '{respone.decode()}'")
+        #respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
+        #print(f"Command '{command}' Recived the response: '{respone.decode()}'")
 
     def listen_for_state(self):
         while True:
@@ -70,7 +70,7 @@ class DroneCommunication:
     def get_frame(self):
         """Returns the last frame in the frames queue"""
         if len(self.frames) > 0:
-            return self.frames[-1]
+            return self.frames.popleft(0)
         return None
 
     def stop(self):
