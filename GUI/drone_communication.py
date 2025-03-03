@@ -70,7 +70,7 @@ class DroneCommunication:
     def get_frame(self):
         """Returns the last frame in the frames queue"""
         if len(self.frames) > 0:
-            return self.frames.popleft(0)
+            return self.frames.popleft()
         return None
 
     def stop(self):
