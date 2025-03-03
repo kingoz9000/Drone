@@ -74,7 +74,7 @@ class DroneCommunication:
         if self.frame_available:
             self.frame_available = False
             return self.frame
-        return None
+       return None
 
     def stop(self):
         """Stops the drone by turning off the video stream("streamoff") and setting running to False"""
