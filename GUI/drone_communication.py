@@ -11,24 +11,25 @@ class DroneCommunication:
         """Initialize the DroneCommunication object and set running to True"""
 
         # Sending commands / Recieving response
-        self.COMMAND_PORT = 8889
-        self.COMMAND_ADDRESS = "192.168.10.1"
-        self.COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.COMMAND_PORT: int = 8889
+        self.COMMAND_ADDRESS: str = "192.168.10.1"
+        self.COMMAND_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        self.STATE_IP = ("0.0.0.0", 8890)
-        self.STATE_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Recieving state
+        self.STATE_IP: tuple = ("0.0.0.0", 8890)
+        self.STATE_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.STATE_SOCKET.bind(self.STATE_IP)
 
         # Video stream recieving
-        self.VIDEO_PORT = 11111  # Video receiving port
-        self.VIDEO_IP = "0.0.0.0"  # Listen on all interfaces
-        self.VIDEO_ADDRESS = f"udp://@{self.VIDEO_IP}:{self.VIDEO_PORT}"
+        self.VIDEO_PORT: int = 11111  # Video receiving port
+        self.VIDEO_IP: int = "0.0.0.0"  # Listen on all interfaces
+        self.VIDEO_ADDRESS: str = f"udp://@{self.VIDEO_IP}:{self.VIDEO_PORT}"
 
         # Settings for frame grab & frame_queue
-        self.frame_grab_timeout = 10
+        self.frame_grab_timeout: int = 10
         self.frame = None
-        self.frame_available = False
-        self.running = True
+        self.frame_available: bool = False
+        self.running: bool = True
 
     def send_command(self, command: str) -> None:
         """Sends a command to the drone by encoding first"""
@@ -38,24 +39,24 @@ class DroneCommunication:
         # respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
         # print(f"Command '{command}' Recived the response: '{respone.decode()}'")
 
-    def listen_for_state(self):
+    def listen_for_state(self) -> None:
         while True:
             response, _ = self.STATE_SOCKET.recvfrom(1024)
             print(response.decode())
 
-    def connect(self):
+    def connect(self) -> None:
         """Connects to the drone by starting SDK mode("command"") and turning on the video stream("streamon")"""
         self.send_command("command")
         self.send_command("streamon")
 
-    def frame_grab(self):
+    def frame_grab(self) -> None:
         """Grabs frames from the video stream and appends them to the frames queue"""
         try:
             self.container = av.open(
                 self.VIDEO_ADDRESS,
                 timeout=(self.frame_grab_timeout, None),
                 format="h264",
-                options={"fflags": "nobuffer"},
+                options={"fflags": "nobuffer", "rtsp_transport": "udp", "reorder_queue_size": "0"}
             )
         except av.error.ExitError as av_error:
             print(f"Error opening video stream: {av_error}")
@@ -69,26 +70,26 @@ class DroneCommunication:
                 self.frame = img
                 self.frame_available = True
 
-    def get_frame(self):
+    def get_frame(self) -> np.ndarray | None:
         """Returns the last frame in the frames queue"""
         if self.frame_available:
             self.frame_available = False
             return self.frame
         return None
 
-    def stop(self):
+    def stop(self) -> None:
         """Stops the drone by turning off the video stream("streamoff") and setting running to False"""
         self.running = False
         self.send_command("streamoff")
 
     @staticmethod
-    def run_in_thread(func, *args):
+    def run_in_thread(func, *args) -> threading.Thread:
         """General worker function to run a function in a thread"""
         thread = threading.Thread(target=func, args=args, daemon=True)
         thread.start()
         return thread
 
-    def main(self):
+    def main(self) -> None:
         self.connect()
         time.sleep(2)
 
@@ -100,6 +101,6 @@ class DroneCommunication:
 
 
 if __name__ == "__main__":
-    drone = DroneCommunication()
+    drone: DroneCommunication = DroneCommunication()
 
     drone.main()
