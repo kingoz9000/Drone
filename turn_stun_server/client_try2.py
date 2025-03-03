@@ -18,7 +18,7 @@ def listen(sock):
             print(f"🔗 Connecting to peer at {peer_ip}:{peer_port}")
 
             # Send a "hole punching" packet to open NAT
-            for _ in range(5):  # Send multiple in case some are dropped
+            for _ in range(10):  # Send multiple in case some are dropped
                 sock.sendto(b"HOLE_PUNCH", (peer_ip, peer_port))
                 time.sleep(1)
 
