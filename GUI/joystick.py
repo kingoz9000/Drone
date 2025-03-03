@@ -3,19 +3,17 @@ import pyglet
 class JoystickHandler:
     def __init__(self):
         """Initialize Pyglet and detect the joystick."""
-        self.joystick: pyglet.input | None = None
+        self.joystick = None
         self.connect_joystick()
 
-        # Create a Pyglet window (required for event loop)
-        self.window = pyglet.window.Window(visible=False)  # Invisible window
-
-        # Schedule update loop
-        pyglet.clock.schedule_interval(self.update, 0.1)  # Update every 100ms
+        if __name__ == "__main__":
+            pyglet.clock.schedule_interval(self.get_values, 0.05)  # Update every 50ms
 
         # Run Pyglet event loop
         pyglet.app.run()
 
-    def connect_joystick(self):
+        
+    def connect_joystick(self) -> None:
         """Find and connect to the first available joystick."""
         devices = pyglet.input.get_joysticks()
         if not devices:
@@ -27,29 +25,24 @@ class JoystickHandler:
         print(f"Connected to: {self.joystick.device.name}")
 
         # Attach event handlers for joystick input
-        self.joystick.on_joyaxis_motion = self.on_joyaxis_motion
         self.joystick.on_joybutton_press = self.on_joybutton_press
         self.joystick.on_joybutton_release = self.on_joybutton_release
+        
+        # Define button dictionary
+        self.buttons: dict = {}
 
-    def on_joyaxis_motion(self, joystick, axis, value):
-        """Handle joystick axis movement (X, Y, and Throttle)."""
-        print(f"Axis {axis}: {value:.2f}")
-
-    def on_joybutton_press(self, joystick, button):
+    def on_joybutton_press(self, joystick, button) -> None:
         """Handle button press."""
-        print(f"Button {button} pressed")
+        self.buttons[f"button{button}"] = True
 
-    def on_joybutton_release(self, joystick, button):
+    def on_joybutton_release(self, joystick, button) -> None:
         """Handle button release."""
-        print(f"Button {button} released")
+        self.buttons[f"button{button}"] = False
 
-    def update(self, dt):
+    def get_values(self, dt) -> tuple:
         """Update loop (called every 100ms)."""
-        if self.joystick:
-            x_axis = self.joystick.x  # Left/Right
-            y_axis = self.joystick.y  # Forward/Backward
-
-            print(f"X: {x_axis:.2f}, Y: {y_axis:.2f}")
+        print(self.joystick.x, self.joystick.y, self.joystick.z, self.buttons)
+        return (self.joystick.x, self.joystick.y, self.joystick.z, self.buttons)
 
 if __name__ == "__main__":
     JoystickHandler()
