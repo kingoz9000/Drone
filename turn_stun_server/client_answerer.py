@@ -1,72 +1,37 @@
-# client_b.py
 import asyncio
-import json
-import websockets
-from aiortc import RTCPeerConnection, RTCIceServer, RTCConfiguration, RTCSessionDescription, RTCIceCandidate
+from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceServer, RTCConfiguration
 
 ICE_SERVERS = [
     RTCIceServer(
-        urls=["stun:your-coturn-server.com:3478", "turn:your-coturn-server.com:3478"],
-        username="your-username",
-        credential="your-password"
+        urls=["stun:203.0.113.1:3478", "turn:203.0.113.1:3478"],
+        username="my-user",
+        credential="my-password"
     )
 ]
 
-async def signaling(websocket, pc):
-    async def send_sdp(description):
-        await websocket.send(json.dumps({
-            "type": description.type,
-            "sdp": description.sdp
-        }))
-
-    @pc.on("icecandidate")
-    async def on_icecandidate(candidate):
-        if candidate:
-            await websocket.send(json.dumps({
-                "type": "candidate",
-                "candidate": candidate.to_sdp(),
-                "sdpMid": candidate.sdpMid,
-                "sdpMLineIndex": candidate.sdpMLineIndex
-            }))
-
-    # Receive initial offer from Client A
-    message = json.loads(await websocket.recv())
-
-    if message["type"] == "offer":
-        offer = RTCSessionDescription(sdp=message["sdp"], type=message["type"])
-        await pc.setRemoteDescription(offer)
-
-        answer = await pc.createAnswer()
-        await pc.setLocalDescription(answer)
-
-        await send_sdp(pc.localDescription)
-
-    while True:
-        message = json.loads(await websocket.recv())
-
-        if message["type"] == "candidate":
-            candidate = RTCIceCandidate(
-                sdp=message["candidate"],
-                sdpMid=message["sdpMid"],
-                sdpMLineIndex=message["sdpMLineIndex"]
-            )
-            await pc.addIceCandidate(candidate)
-
-async def run():
+async def main():
     pc = RTCPeerConnection(RTCConfiguration(iceServers=ICE_SERVERS))
 
     @pc.on("datachannel")
     def on_datachannel(channel):
         @channel.on("message")
         def on_message(message):
-            print(f"Received message: {message}")
+            print(f"Received: {message}")
             channel.send("Hej back from B")
 
-    async with websockets.connect("ws://localhost:8765") as websocket:
-        await websocket.send("B")
-        await signaling(websocket, pc)
-        await asyncio.sleep(30)
+    offer_sdp = input("Paste offer SDP here: ")
+    offer = RTCSessionDescription(sdp=offer_sdp, type="offer")
+    await pc.setRemoteDescription(offer)
+
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    print("\n=== ANSWER (copy this) ===")
+    print(answer.sdp)
+    print("=== END ANSWER ===")
+
+    await asyncio.sleep(30)
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    asyncio.run(main())
 
