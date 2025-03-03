@@ -10,7 +10,7 @@ class ModemHandler:
         self.AT_COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         
         
-    def sendATCommand(self, command: str) -> None # send AT command to modem
+    def sendATCommand(self, command: str) -> None: # send AT command to modem
         self.AT_COMMAND_SOCKET.sendto(command.encode('utf-8'), (self.AT_COMMAND_ADDRESS, self.AT_COMMAND_PORT)) # send AT command to modem
         response = self.AT_COMMAND_SOCKET.recv(1024) # recieve response from modem
         return response # return response from modem
