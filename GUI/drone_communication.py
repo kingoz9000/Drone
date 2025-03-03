@@ -26,7 +26,7 @@ class DroneCommunication:
         self.VIDEO_ADDRESS: str = f"udp://@{self.VIDEO_IP}:{self.VIDEO_PORT}"
 
         # Settings for frame grab & frame_queue
-        self.frame_grab_timeout: int = 10
+        self.frame_grab_timeout: int = 5
         self.frame = None
         self.frame_available: bool = False
         self.running: bool = True
@@ -56,7 +56,12 @@ class DroneCommunication:
                 self.VIDEO_ADDRESS,
                 timeout=(self.frame_grab_timeout, None),
                 format="h264",
-                options={"fflags": "nobuffer", "rtsp_transport": "udp", "reorder_queue_size": "0"}
+                options={
+                    "fflags": "nobuffer",
+                    "rtsp_transport": "udp",
+                    "reorder_queue_size": "0",
+                    "flush_packets": "1"
+                }
             )
         except av.error.ExitError as av_error:
             print(f"Error opening video stream: {av_error}")
