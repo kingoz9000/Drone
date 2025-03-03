@@ -7,6 +7,8 @@ SERVER_PORT = 12345
 
 def listen(sock):
     while True:
+        global peer_port
+        global peer_ip
         data, addr = sock.recvfrom(1024)
         message = data.decode()
 
@@ -45,7 +47,7 @@ def main():
     # Chat loop
     while True:
         msg = input("You: ")
-        sock.sendto(msg.encode(), (SERVER_IP, SERVER_PORT))
+        sock.sendto(msg.encode(), (peer_ip, peer_port))
 
 if __name__ == "__main__":
     main()
