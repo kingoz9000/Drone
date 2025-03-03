@@ -39,9 +39,9 @@ class DroneCommunication:
         # respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
         # print(f"Command '{command}' Recived the response: '{respone.decode()}'")
 
-    def listen_for_state(self) -> None:
+    def listen_for_state(self) -> None: 
         while True:
-            response, _ = self.STATE_SOCKET.recvfrom(1024)
+            response, _ = self.STATE_SOCKET.recvfrom(1024) 
             print(response.decode())
 
     def connect(self) -> None:

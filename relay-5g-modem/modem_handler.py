@@ -3,11 +3,12 @@ import socket
 
 class ModemHandler:
     """Handles the modem connection and sends AT commands"""
-    def __init__(self): # sending AT commands to the modem
+    def __init__(self): 
+        # sending AT commands to the modem
         self.AT_MODEM_PORT: int = 1 # port for AT commands
         self.AT_MODEM_ADRESS: str =  self.sendATCommand("AT+CGPADDR=1") # address for AT commands
-    
         self.AT_COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        
         
     def sendATCommand(self, command: str) -> None # send AT command to modem
         self.AT_COMMAND_SOCKET.sendto(command.encode('utf-8'), (self.AT_COMMAND_ADDRESS, self.AT_COMMAND_PORT)) # send AT command to modem
@@ -36,5 +37,6 @@ class ModemHandler:
 if __name__ == "__main__":
     modem = ModemHandler()
     modem.setupConnection()
+    modem.checkStatus()
     while True:
         pass
