@@ -1,4 +1,5 @@
 import pyglet
+import time
 
 
 class JoystickHandler:
@@ -7,22 +8,22 @@ class JoystickHandler:
         self.joystick = None
         self.connect_joystick()
 
-        self.running = False
-
         if __name__ == "__main__":
             pyglet.clock.schedule_interval(self.get_values, 0.05)  # Update every 50ms
             self.start_reading()
 
     def start_reading(self):
         # Run Pyglet event loop
-        self.running = True
         pyglet.app.run()
 
     def connect_joystick(self) -> None:
         """Find and connect to the first available joystick."""
         devices = pyglet.input.get_joysticks()
+
         if not devices:
-            print("No joystick detected!")
+            print("No joystick detected! Retrying in 2 seconds...")
+            time.sleep(2)
+            self.connect_joystick()
             return
 
         self.joystick = devices[0]

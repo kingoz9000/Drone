@@ -24,8 +24,6 @@ class TelloTkinterStream:
         self.joystick = JoystickHandler()
         self.run_in_thread(self.joystick.start_reading)
 
-        # thread = threading.Thread(target=self.joystick, args=args, daemon=True)
-        # thread.start()
         self.control_drone()
 
         # Start video update loop
@@ -77,6 +75,7 @@ class TelloTkinterStream:
         x, y, z, buttons = self.joystick.get_values()
         up_down = 0
         yaw = 0
+        weight = 0.5
 
         for button_key, button_value in buttons.items():
             if not button_value:
@@ -85,19 +84,24 @@ class TelloTkinterStream:
                 case 1:
                     print("Bang!")
                 case 2:
-                    up_down -= 100
+                    up_down -= 100 * weight
                 case 3:
-                    up_down += 100
+                    up_down += 100 * weight
                 case 4:
-                    yaw -= 100
+                    yaw -= 100 * weight
                 case 5:
-                    yaw += 100
+                    yaw += 100 * weight
+                case 8:
+                    self.video_stream.send_command("takeoff")
+                case 9:
+                    self.video_stream.send_command("land")
                 case _:
-                    print("Crazy")
+                    self.video_stream.send_command("emergency")
+                    
 
-        command = f"rc {x:.2f} {y:.2f} {up_down} {yaw}"
+        command = f"rc {x*100*weight:.2f} {-(y*100*weight):.2f} {up_down} {yaw}"
         print(command)
-        # self.video_stream.send_command(command)
+        self.video_stream.send_command(command)
 
         self.root.after(10, self.control_drone)
 
