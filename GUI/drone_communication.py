@@ -31,21 +31,26 @@ class DroneCommunication:
         self.frame_available: bool = False
         self.running: bool = True
 
-    def send_command(self, command: str) -> None:
+    def send_command(
+        self, command: str, print_command: bool = True, take_response: bool = False
+    ) -> None:
         """Sends a command to the drone by encoding first"""
         self.COMMAND_SOCKET.sendto(
             command.encode("utf-8"), (self.COMMAND_ADDRESS, self.COMMAND_PORT)
         )
-        # respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
-        # print(f"Command '{command}' Recived the response: '{respone.decode()}'")
+        if take_response:
+            respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
+            print(f"Command '{command}' Recived the response: '{respone.decode()}'")
+        elif print_command:
+            print(f"Command sent '{command}'")
 
-    def listen_for_state(self) -> None: 
+    def listen_for_state(self) -> None:
         while True:
-            response, _ = self.STATE_SOCKET.recvfrom(1024) 
+            response, _ = self.STATE_SOCKET.recvfrom(1024)
             print(response.decode())
 
     def connect(self) -> None:
-        """Connects to the drone by starting SDK mode("command"") and turning on the video stream("streamon")"""
+        """Connects to the drone by starting SDK mode('command') and turning on the video stream('streamon')"""
         self.send_command("command")
         self.send_command("streamon")
 
@@ -60,8 +65,8 @@ class DroneCommunication:
                     "fflags": "nobuffer",
                     "rtsp_transport": "udp",
                     "reorder_queue_size": "0",
-                    "flush_packets": "1"
-                }
+                    "flush_packets": "1",
+                },
             )
         except av.error.ExitError as av_error:
             print(f"Error opening video stream: {av_error}")

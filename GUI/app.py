@@ -72,11 +72,23 @@ class TelloTkinterStream:
         return thread
 
     def control_drone(self):
+        # Weights and other values
+        weight = 0.5
+        deadzone = 3
+
+        # Values from joystick
         x, y, z, buttons = self.joystick.get_values()
+
+        for_backward = x * 100 * weight
+        for_backward = 0 if -deadzone < for_backward < deadzone else for_backward
+
+        left_right = y * -100 * weight
+        left_right = 0 if -deadzone < left_right < deadzone else left_right
+
         up_down = 0
         yaw = 0
-        weight = 0.5
 
+        # Button actions
         for button_key, button_value in buttons.items():
             if not button_value:
                 continue
@@ -97,11 +109,9 @@ class TelloTkinterStream:
                     self.video_stream.send_command("land")
                 case _:
                     self.video_stream.send_command("emergency")
-                    
 
-        command = f"rc {x*100*weight:.2f} {-(y*100*weight):.2f} {up_down} {yaw}"
-        print(command)
-        self.video_stream.send_command(command)
+        command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
+        self.video_stream.send_command(command, False)
 
         self.root.after(10, self.control_drone)
 
