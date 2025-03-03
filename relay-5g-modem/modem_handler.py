@@ -38,10 +38,7 @@ class ModemHandler:
     def checkStatus(self) -> bool: 
         "check if modem is responsive, by sending AT command"
         response = self.sendATCommand("AT") 
-        if response == "OK":
-            return True
-        else:   
-            return False
+        return "OK" in response
     
 if __name__ == "__main__":
     modem = ModemHandler()
