@@ -2,7 +2,7 @@ from tkinter import Tk, Label
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
-import threading 
+import threading
 
 
 class TelloTkinterStream:
@@ -22,9 +22,11 @@ class TelloTkinterStream:
 
         # Initialize joystick
         self.joystick = JoystickHandler()
+        self.run_in_thread(self.joystick.start_reading)
 
-        #thread = threading.Thread(target=self.joystick, args=args, daemon=True)
-        #thread.start()
+        # thread = threading.Thread(target=self.joystick, args=args, daemon=True)
+        # thread.start()
+        self.control_drone()
 
         # Start video update loop
         self.update_video_frame()
@@ -64,10 +66,41 @@ class TelloTkinterStream:
         self.root.quit()
         self.root.destroy()
 
-    def read_joystick(self):
-        x, y, z, buttons = self.joystick.get_values()
+    @staticmethod
+    def run_in_thread(func, *args) -> threading.Thread:
+        """General worker function to run a function in a thread"""
+        thread = threading.Thread(target=func, args=args, daemon=True)
+        thread.start()
+        return thread
 
-        self.video_stream.send_command
+    def control_drone(self):
+        x, y, z, buttons = self.joystick.get_values()
+        up_down = 0
+        yaw = 0
+
+        for button_key, button_value in buttons.items():
+            if not button_value:
+                continue
+            match button_key:
+                case 1:
+                    print("Bang!")
+                case 2:
+                    up_down -= 100
+                case 3:
+                    up_down += 100
+                case 4:
+                    yaw -= 100
+                case 5:
+                    yaw += 100
+                case _:
+                    print("Crazy")
+
+        command = f"rc {x:.2f} {y:.2f} {up_down} {yaw}"
+        print(command)
+        # self.video_stream.send_command(command)
+
+        self.root.after(10, self.control_drone)
+
 
 if __name__ == "__main__":
     TelloTkinterStream()
