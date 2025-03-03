@@ -30,8 +30,8 @@ class RelayServer:
     
     @staticmethod
     def startClientThread(self, *args) -> None:
-        """General worker function to run a function in a thread"""
-        client_thread = threading.Thread(target=self.handle_client, args=args, daemon=True)
+        """General worker function to run a function in a thread""" 
+        client_thread = threading.Thread(target=self.handle_client(args), args=args, daemon=True)
         client_thread.start()
     
     def handle_client(self, client_data, client_adress) -> None:
