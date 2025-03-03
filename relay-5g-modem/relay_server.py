@@ -1,13 +1,16 @@
 import socket
 import threading
 
+from modem_handler import ModemHandler
+
 class RelayServer:
     def __init__(self):
         """Initialize the RelayServer object"""
-        self.RELAY_PORT: int = 8888
+        self.RELAY_PORT: int = 1
         self.RELAY_ADDRESS: str = ""
-        self.MODEM_IP: str = "" 
-        self.MODEM_PORT: int = 1
+        
+        self.MODEM_IP: str = ModemHandler.AT_MODEM_ADDRESS
+        self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT
         
          # create udp socket for relay server
         self.RELAY_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
