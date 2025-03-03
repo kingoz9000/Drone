@@ -76,6 +76,10 @@ class TelloTkinterStream:
         up_down = 0
         yaw = 0
         weight = 0.5
+        deadzone = 0.05
+
+        x = 0 if -deadzone*weight*100 < x < deadzone*weight*100 else x
+        y = 0 if -deadzone*weight*100 < y < deadzone*weight*100 else y
 
         for button_key, button_value in buttons.items():
             if not button_value:
