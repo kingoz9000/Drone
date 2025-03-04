@@ -41,9 +41,7 @@ class DroneCommunication:
         )
         if take_response:
             response, _ = self.COMMAND_SOCKET.recvfrom(1024)
-            print(
-                f"Command '{command}': Recived the response: '{response.decode()}'"
-            )
+            print(f"Command '{command}': Recived the response: '{response.decode()}'")
             return response
         elif print_command:
             print(f"Command sent '{command}'")
