@@ -34,17 +34,17 @@ class DroneCommunication:
 
     def send_command(
         self, command: str, print_command: bool = True, take_response: bool = False
-    ) -> None:
+    ) -> str | None:
         """Sends a command to the drone by encoding first"""
-        timestamp = datetime.datetime.now()
         self.COMMAND_SOCKET.sendto(
             command.encode("utf-8"), (self.COMMAND_ADDRESS, self.COMMAND_PORT)
         )
         if take_response:
-            respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
+            response, _ = self.COMMAND_SOCKET.recvfrom(1024)
             print(
-                f"Command '{command}' Round trip time [{str(datetime.datetime.now() - timestamp)}] Recived the response: '{respone.decode()}'"
+                f"Command '{command}': Recived the response: '{response.decode()}'"
             )
+            return response
         elif print_command:
             print(f"Command sent '{command}'")
 

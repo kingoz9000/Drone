@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
 import threading
+import time
 
 
 class TelloTkinterStream:
@@ -24,7 +25,12 @@ class TelloTkinterStream:
         self.joystick = JoystickHandler()
         self.run_in_thread(self.joystick.start_reading)
 
+        # Initialize drone class
+        self.drone = Drone()
+
+        # Start joystick control and ping loops
         self.control_drone()
+        self.get_ping()
 
         # Start video update loop
         self.update_video_frame()
@@ -119,6 +125,20 @@ class TelloTkinterStream:
         self.video_stream.send_command(command, False)
 
         self.root.after(10, self.control_drone)
+
+    def get_ping(self):
+        start_time = time.perf_counter_ns()
+        self.drone.battery = self.video_stream.send_command("battery?", take_response=True)
+        end_time = time.perf_counter_ns()
+        
+        print(f"Ping for communication: {(end_time - start_time) // 1000} ms")
+
+        self.root.after(1000, self.get_ping)
+
+
+class Drone():
+    def __init__(self):
+        self.battery = None
 
 
 if __name__ == "__main__":
