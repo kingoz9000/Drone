@@ -68,6 +68,8 @@ class StunClient:
         self.register()
         self.start_connection_listener()
         self.request_peer()
+        while True:
+            pass
 
 if __name__ == "__main__":
     client = StunClient()
