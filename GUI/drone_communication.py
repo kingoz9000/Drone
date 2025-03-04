@@ -4,6 +4,7 @@ import numpy as np
 from collections import deque
 import av
 import time
+import datetime
 
 
 class DroneCommunication:
@@ -35,12 +36,15 @@ class DroneCommunication:
         self, command: str, print_command: bool = True, take_response: bool = False
     ) -> None:
         """Sends a command to the drone by encoding first"""
+        timestamp = datetime.datetime.now()
         self.COMMAND_SOCKET.sendto(
             command.encode("utf-8"), (self.COMMAND_ADDRESS, self.COMMAND_PORT)
         )
         if take_response:
             respone, _ = self.COMMAND_SOCKET.recvfrom(1024)
-            print(f"Command '{command}' Recived the response: '{respone.decode()}'")
+            print(
+                f"Command '{command}' Round trip time [{str(datetime.datetime.now() - timestamp)}] Recived the response: '{respone.decode()}'"
+            )
         elif print_command:
             print(f"Command sent '{command}'")
 
