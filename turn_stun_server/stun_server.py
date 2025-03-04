@@ -39,8 +39,8 @@ class StunServer:
 
                     if self.clients[target_id][1] == current_client_id:
                         # Send both clients each other's public IP and port
-                        self.server_socket.sendto(f"PEER {target_addr[0]} {target_addr[1]}".encode(), addr)
-                        self.server_socket.sendto(f"PEER {addr[0]} {addr[1]}".encode(), target_addr)
+                        self.server_socket.sendto(f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(), addr)
+                        self.server_socket.sendto(f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr)
                         print(f"Exchanged details between Client {current_client_id} and Client {target_id}")
                     else:
                         print(f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally.")

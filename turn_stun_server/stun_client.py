@@ -13,6 +13,7 @@ class StunClient:
         self.SERVER_IP = "130.225.37.157"
         self.SERVER_PORT = 12345
         self.HOLE_PUNCH_TRIES = 3
+        self.hole_punched = False
 
     def register(self):
         self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
@@ -39,6 +40,11 @@ class StunClient:
                     self.peer_port = int(peer_port)
                     self.hole_punch()
             
+            if message.startswith("HOLE") and not self.hole_punched:
+                self.hole_punched = True
+                print("Hole punched!")
+                threading.Thread(target=self.chat_loop, daemon=True).start()
+
 
             if message.startswith("PEER"):
                 print(f"Peer: {message.split()[1]}")
@@ -62,7 +68,6 @@ class StunClient:
         self.register()
         self.start_connection_listener()
         self.request_peer()
-        self.chat_loop()
 
 if __name__ == "__main__":
     client = StunClient()
