@@ -3,8 +3,6 @@ import threading
 import time
 
 class StunClient:
-    SERVER_IP = "130.225.37.157"
-    SERVER_PORT = 12345
 
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -12,6 +10,9 @@ class StunClient:
         self.client_id = None
         self.peer_ip = None
         self.peer_port = None
+        self.SERVER_IP = "130.225.37.157"
+        self.SERVER_PORT = 12345
+        self.HOLE_PUNCH_TRIES = 3
 
     def register(self):
         self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
@@ -36,14 +37,15 @@ class StunClient:
                 self.peer_port = int(peer_port)
                 print(f"🔗 Connecting to peer at {self.peer_ip}:{self.peer_port}")
                 self.hole_punch()
-                print("✅ Hole punching complete. Start chatting!")
+            elif message.startswith("HOLE"):
+                print("Hole punching complete")
 
             else:
                 print(f"📩 Received: {message}")
 
     def hole_punch(self):
-        for _ in range(10):
-            self.sock.sendto(b"HOLE_PUNCH", (self.peer_ip, self.peer_port))
+        for _ in range(self.HOLE_PUNCH_TRIES):
+            self.sock.sendto(b"HOLE", (self.peer_ip, self.peer_port))
             time.sleep(1)
 
     def listen_for_server_messages(self):
