@@ -12,7 +12,7 @@ class StunClient:
         self.peer_port = None
         self.SERVER_IP = "130.225.37.157"
         self.SERVER_PORT = 12345
-        self.HOLE_PUNCH_TRIES = 3
+        self.HOLE_PUNCH_TRIES = 2
         self.hole_punched = False
 
     def register(self):
@@ -55,7 +55,7 @@ class StunClient:
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
             self.sock.sendto(b"HOLE", (self.peer_ip, self.peer_port))
-            time.sleep(1)
+            time.sleep(0.1)
 
 
     def chat_loop(self):
