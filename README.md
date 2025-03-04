@@ -3,9 +3,9 @@
 This project is about making a relay box for controlling a drone through UDP packages.
 More information will follow
 
-# djitellopy repository
+# Tello SDK 2.0 User Guide
 
-https://github.com/damiafuentes/DJITelloPy
+https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf
 
 # Overview
 
