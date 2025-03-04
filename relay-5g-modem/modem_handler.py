@@ -7,13 +7,13 @@ class ModemHandler:
         # sending AT commands to the modem
         self.AT_MODEM_PORT: int = 5000 # port for AT commands
         self.BAUDRATE: int = 115200 # baudrate for AT commands
-        self.AT_CARRIER_ADDRESS: str =  "" # carrier IP address
+        self.AT_MODEM_ADDRESS: str =  "" # Modem IP address
         self.AT_COMMAND_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.AT_SOCKET.settimeout(30) # set timeout for socket to 30 seconds
         
     def sendATCommand(self, command: str) -> None: # send AT command to modem
         try:
-            self.AT_COMMAND_SOCKET.sendto(command.encode('utf-8'), (self.AT_CARRIER_ADDRESS, self.AT_MODEM_PORT)) # send AT command to modem
+            self.AT_COMMAND_SOCKET.sendto(command.encode('utf-8'), (self.AT_MODEM_ADDRESS, self.AT_MODEM_PORT)) # send AT command to modem
             response = self.AT_COMMAND_SOCKET.recv(1024) # recieve response from modem
             return response.decode() # return response from modem
         except socket.timeout:

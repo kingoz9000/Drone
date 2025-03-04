@@ -10,8 +10,8 @@ class RelayClient:
         """Initialize the RelayClient object"""
         self.client_data = client_data
         self.client_address = client_address
-        self.CARRIER_IP: str = ModemHandler.AT_CARRIER_ADDRESS
-        self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT 
+        self.RELAY_ADDRESS: str = "0.0.0.0"
+        self.RELAY_PORT: int = 5000
         
     @staticmethod # static method to start a new thread for client requests
     def startClientThread(func, *args) -> None: # start a new thread for client requests
@@ -21,21 +21,21 @@ class RelayClient:
     
     def handle_client(self, client_data, client_address) -> None:
         """handle incoming client requests and send them to the modem"""
-        try: 
+        try:
             # separate socket for each client
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
             client_socket.settimeout(30) # set timeout for socket to 30 seconds
             
             # send client data to modem carrier
-            client_socket.sendto(client_data, (self.CARRIER_IP, self.MODEM_PORT))
+            client_socket.sendto(client_data, (self.RELAY_ADDRESS, self.RELAY_PORT))
             
-            #recieve response from modem
-            response, _ = client_socket.recvfrom(1024)
-
-            #send response to client
+            # recieve response from modem
+            response, _ = client_socket.recvfrom(1024) 
+            
+            # send response to client
             client_socket.sendto(response, client_address)
             
-            client_socket.close()
+            # client_socket.close()
             
         except socket.timeout:
             print("Socket timed out")
