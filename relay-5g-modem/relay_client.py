@@ -41,3 +41,8 @@ class RelayClient:
             print("Socket timed out")
         except Exception as e:
             print(f"An error occured while handling client: {e}")
+            
+if __name__ == "__main__":
+    relay_client = RelayClient(RelayClient.client_data, RelayClient.client_address)
+    while True:
+        pass
