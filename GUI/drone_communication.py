@@ -44,7 +44,7 @@ class DroneCommunication:
             print(
                 f"Command '{command}': Recived the response: '{response.decode()}'"
             )
-            return response
+            return response.decode()
         elif print_command:
             print(f"Command sent '{command}'")
 
@@ -91,6 +91,7 @@ class DroneCommunication:
         """Stops the drone by turning off the video stream("streamoff") and setting running to False"""
         self.running = False
         self.send_command("streamoff")
+        self.send_command("reboot")
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
