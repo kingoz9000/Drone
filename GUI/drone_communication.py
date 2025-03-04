@@ -48,10 +48,6 @@ class DroneCommunication:
         elif print_command:
             print(f"Command sent '{command}'")
 
-    def listen_for_state(self) -> None:
-        while True:
-            response, _ = self.STATE_SOCKET.recvfrom(1024)
-            print(response.decode())
 
     def connect(self) -> None:
         """Connects to the drone by starting SDK mode('command') and turning on the video stream('streamon')"""

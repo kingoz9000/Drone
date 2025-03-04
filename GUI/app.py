@@ -1,4 +1,4 @@
-from tkinter import Tk, Label
+from tkinter import Tk, Label, Entry
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
@@ -16,6 +16,9 @@ class TelloTkinterStream:
         # Create a label to display the video
         self.video_label: Label = Label(self.root)
         self.video_label.pack(fill="both", expand=True)
+
+        self.drone_stats = Entry(self.root)
+        self.drone_stats.pack()
 
         # Start video stream
         self.video_stream: DroneCommunication = DroneCommunication()
@@ -132,6 +135,8 @@ class TelloTkinterStream:
         end_time = time.perf_counter_ns()
         
         print(f"Ping for communication: {(end_time - start_time) // 1000} ms")
+
+        self.drone_stats.insert(0, self.drone.battery)
 
         self.root.after(1000, self.get_ping)
 
