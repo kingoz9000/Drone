@@ -22,7 +22,7 @@ class RelayServer:
         while True:
             try:
                 # retrieve client data and address
-                client_data, client_address = self.RELAY_SOCKET.recvfrom(1024) 
+                client_data, client_address = self.RELAY_SOCKET.recvfrom(1024)
                 # handle client requests in a new thread
                 self.startClientThread(self.handle_client, client_data, client_address)
             except KeyboardInterrupt:
