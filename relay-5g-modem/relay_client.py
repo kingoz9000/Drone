@@ -1,13 +1,17 @@
  
 import socket
 import threading
+
+from modem_handler import ModemHandler
  
 class RelayClient:
     """RelayClient class to handle client requests"""
-    def __init__(self):
+    def __init__(self, client_data, client_address):
         """Initialize the RelayClient object"""
-        self.CLIENT_PORT: int = 5000
-        self.CLIENT_ADDRESS: str = ""
+        self.client_data = client_data
+        self.client_address = client_address
+        self.MODEM_IP: str = ModemHandler.AT_MODEM_ADDRESS
+        self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT
         
     @staticmethod
     def startClientThread(func, *args) -> None:
@@ -18,7 +22,7 @@ class RelayClient:
     def handle_client(self, client_data, client_address) -> None:
         """handle incoming client requests and send them to the modem"""
         try: 
-            # seperate socket for each client
+            # separate socket for each client
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
             client_socket.settimeout(30) # set timeout for socket to 30 seconds
             
@@ -29,7 +33,7 @@ class RelayClient:
             response, _ = client_socket.recvfrom(1024)
 
             #send response to client
-            self.client_socket.sendto(response, client_address)
+            client_socket.sendto(response, client_address)
             
             client_socket.close()
             

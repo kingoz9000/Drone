@@ -10,9 +10,6 @@ class RelayServer:
         self.RELAY_PORT: int = 5000
         self.RELAY_ADDRESS: str = "0.0.0.0"
         
-        self.MODEM_IP: str = ModemHandler.AT_MODEM_ADDRESS
-        self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT
-        
          # create udp socket for relay server
         self.RELAY_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.RELAY_SOCKET.bind((self.RELAY_ADDRESS, self.RELAY_PORT)) 
@@ -23,9 +20,9 @@ class RelayServer:
         while True:
             try:
                 # retrieve client data and address
-                client_data, client_address = self.RELAY_SOCKET.recvfrom(1024)
+                RelayClient.client_data, RelayClient.client_address = self.RELAY_SOCKET.recvfrom(1024)
                 # handle client requests in a new thread
-                RelayClient.startClientThread(RelayClient.handle_client, client_data, client_address)
+                RelayClient.startClientThread(RelayClient.handle_client, RelayClient.client_data, RelayClient.client_address)
             except KeyboardInterrupt:
                 print("Shutting down relay server")
                 break
