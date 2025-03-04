@@ -12,70 +12,64 @@ class StunClient:
         self.peer_port = None
         self.SERVER_IP = "130.225.37.157"
         self.SERVER_PORT = 12345
-        self.HOLE_PUNCH_TRIES = 3
+        self.HOLE_PUNCH_TRIES = 2
+        self.hole_punched = False
 
     def register(self):
         self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
         response, _ = self.sock.recvfrom(1024)
         self.client_id = response.decode().split()[1]
-        print(f"✅ Registered as Client {self.client_id}")
+        print(response.decode())
 
     def request_peer(self):
         peer_id = input("Enter peer ID: ")
         self.sock.sendto(f"REQUEST {peer_id}".encode(), (self.SERVER_IP, self.SERVER_PORT))
 
     def start_connection_listener(self):
-        threading.Thread(target=self.listen_for_peer, daemon=True).start()
+        threading.Thread(target=self.listen, daemon=True).start()
 
-    def listen_for_peer(self):
+    def listen(self):
         while True:
             data, addr = self.sock.recvfrom(1024)
             message = data.decode()
+            if message.startswith("SERVER"):
+                if message.split()[1] == "CONNECT":
+                    _, _, peer_ip, peer_port = message.split()
+                    print(f"Received peer details: {peer_ip}:{peer_port}")
+                    self.peer_ip = peer_ip
+                    self.peer_port = int(peer_port)
+                    self.hole_punch()
+            
+            if message.startswith("HOLE") and not self.hole_punched:
+                self.hole_punched = True
+                print("Hole punched!")
+                threading.Thread(target=self.chat_loop, daemon=True).start()
+
 
             if message.startswith("PEER"):
-                _, self.peer_ip, peer_port = message.split()
-                self.peer_port = int(peer_port)
-                print(f"🔗 Connecting to peer at {self.peer_ip}:{self.peer_port}")
-                self.hole_punch()
-            elif message.startswith("HOLE"):
-                print("Hole punching complete")
+                print(f"Peer: {message.split()[1]}")
+                
 
-            else:
-                print(f"📩 Received: {message}")
+
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
             self.sock.sendto(b"HOLE", (self.peer_ip, self.peer_port))
-            time.sleep(1)
+            time.sleep(0.1)
 
-    def listen_for_server_messages(self):
-        while True:
-            data, addr = self.sock.recvfrom(1024)
-            message = data.decode()
-
-            if message == "CHECK":
-                print("Sending ALIVE message...")
-                self.sock.sendto(b"ALIVE", addr)
-
-            elif message == "ALIVE":
-                print("IM ALIVE")
-
-            print(f"📩 Received: {message}")
 
     def chat_loop(self):
         while True:
             msg = input("You: ")
-            if msg == "CHECK":
-                print("🕒 Checking round trip time...")
-                self.sock.sendto(b"CHECK", (self.SERVER_IP, self.SERVER_PORT))
+            msg = f"PEER {msg}"
             self.sock.sendto(msg.encode(), (self.peer_ip, self.peer_port))
 
     def main(self):
         self.register()
         self.start_connection_listener()
         self.request_peer()
-        threading.Thread(target=self.listen_for_server_messages, daemon=True).start()
-        self.chat_loop()
+        while True:
+            pass
 
 if __name__ == "__main__":
     client = StunClient()

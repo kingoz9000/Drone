@@ -46,11 +46,6 @@ class DroneCommunication:
         elif print_command:
             print(f"Command sent '{command}'")
 
-    def listen_for_state(self) -> None:
-        while True:
-            response, _ = self.STATE_SOCKET.recvfrom(1024)
-            print(response.decode())
-
     def connect(self) -> None:
         """Connects to the drone by starting SDK mode('command') and turning on the video stream('streamon')"""
         self.send_command("command")
@@ -93,6 +88,7 @@ class DroneCommunication:
         """Stops the drone by turning off the video stream("streamoff") and setting running to False"""
         self.running = False
         self.send_command("streamoff")
+        self.send_command("reboot")
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
