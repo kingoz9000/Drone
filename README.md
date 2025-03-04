@@ -7,6 +7,10 @@ More information will follow
 
 https://dl-cdn.ryzerobotics.com/downloads/Tello/Tello%20SDK%202.0%20User%20Guide.pdf
 
+# Tello SDK 3.0 User Guide
+
+https://dl.djicdn.com/downloads/RoboMaster+TT/Tello_SDK_3.0_User_Guide_en.pdf
+
 # Overview
 
 | **Control Station (GUI, Joystick)** | **Relay Box (Firetruck)** | **Tello Drone (UDP Control)** |
