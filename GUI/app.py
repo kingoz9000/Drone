@@ -104,6 +104,8 @@ class TelloTkinterStream:
                     yaw -= 100 * weight
                 case 5:
                     yaw += 100 * weight
+                case 6:
+                    self.video_stream.send_command("reboot")
                 case 8:
                     self.video_stream.send_command("takeoff")
                 case 9:
