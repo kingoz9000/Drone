@@ -1,6 +1,12 @@
 function connectModem
 echo 'hello'
 
+#uncomment these 4 lines below if first time using this script.
+#sudo systemctl enable NetworkManager
+#sudo systemctl start NetworkManager
+#sudo systemctl enable ModemManager
+#sudo systemctl start ModemManager
+
 set input (mmcli -L)
 echo $input
 
@@ -11,13 +17,7 @@ echo $number
 sudo mmcli -m $number --enable --timeout=180
 sudo mmcli -m $number --simple-connect="apn=internet"
 
-sudo systemctl enable NetworkManager
-sudo systemctl start NetworkManager
-sudo systemctl enable ModemManager
-sudo systemctl start ModemManager
-
-sudo nmcli connection add type gsm ifname '*' #con-name andino-lte apn "internet"
+sudo nmcli connection add type gsm ifname '*' #con-name aau-modem apn "internet"
 sudo mmcli -m $number
 nmcli device
 end
-

@@ -6,8 +6,8 @@ from modem_handler import ModemHandler
 class RelayServer:
     def __init__(self):
         """Initialize the RelayServer object"""
-        self.RELAY_PORT: int = 1
-        self.RELAY_ADDRESS: str = ""
+        self.RELAY_PORT: int = 5000
+        self.RELAY_ADDRESS: str = "0.0.0.0"
         
         self.MODEM_IP: str = ModemHandler.AT_MODEM_ADDRESS
         self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT
@@ -22,7 +22,7 @@ class RelayServer:
         while True:
             try:
                 # retrieve client data and address
-                client_data, client_address = self.RELAY_SOCKET.recvfrom(1024) 
+                client_data, client_address = self.RELAY_SOCKET.recvfrom(1024)
                 # handle client requests in a new thread
                 self.startClientThread(self.handle_client, client_data, client_address)
             except KeyboardInterrupt:
@@ -40,11 +40,15 @@ class RelayServer:
     def handle_client(self, client_data, client_address) -> None:
         """handle incoming client requests and send them to the modem"""
         try: 
+            # seperate socket for each client
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
+            client_socket.settimeout(30) # set timeout for socket to 30 seconds
+            
             # send client data to modem
-            self.RELAY_SOCKET.sendto(client_data, (self.MODEM_IP, self.MODEM_PORT))
+            self.client_socket.sendto(client_data, (self.MODEM_IP, self.MODEM_PORT))
             
             #recieve response from modem
-            response, _ = self.RELAY_SOCKET.recvfrom(1024)
+            response, _ = self.client_socket.recvfrom(1024)
 
             #send response to client
             self.RELAY_SOCKET.sendto(response, client_address)
