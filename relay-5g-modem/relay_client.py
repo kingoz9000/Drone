@@ -6,15 +6,15 @@ from modem_handler import ModemHandler
  
 class RelayClient:
     """RelayClient class to handle client requests"""
-    def __init__(self, client_data, client_address):
+    def __init__(self, client_data, client_address): 
         """Initialize the RelayClient object"""
         self.client_data = client_data
         self.client_address = client_address
-        self.MODEM_IP: str = ModemHandler.AT_MODEM_ADDRESS
-        self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT
+        self.CARRIER_IP: str = ModemHandler.AT_CARRIER_ADDRESS
+        self.MODEM_PORT: int = ModemHandler.AT_MODEM_PORT 
         
-    @staticmethod
-    def startClientThread(func, *args) -> None:
+    @staticmethod # static method to start a new thread for client requests
+    def startClientThread(func, *args) -> None: # start a new thread for client requests
         """General worker function to run a function in a thread""" 
         client_thread = threading.Thread(target=func, args=args, daemon=True)
         client_thread.start()
@@ -26,8 +26,8 @@ class RelayClient:
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) 
             client_socket.settimeout(30) # set timeout for socket to 30 seconds
             
-            # send client data to modem
-            client_socket.sendto(client_data, (self.MODEM_IP, self.MODEM_PORT))
+            # send client data to modem carrier
+            client_socket.sendto(client_data, (self.CARRIER_IP, self.MODEM_PORT))
             
             #recieve response from modem
             response, _ = client_socket.recvfrom(1024)

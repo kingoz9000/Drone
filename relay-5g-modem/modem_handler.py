@@ -52,6 +52,9 @@ class ModemHandler:
             print(f"An error occured while checking modem status: {e}")
             return False
     
+    """code to send data to the drone"""
+    
+    
 if __name__ == "__main__":
     modem = ModemHandler()
     modem.setupConnection()
