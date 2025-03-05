@@ -73,7 +73,7 @@ class TelloTkinterStream:
 
     def control_drone(self):
         # Weights and other values
-        deadzone = 3
+        deadzone = 5
 
         # Values from joystick
         x, y, z, buttons = self.joystick.get_values()
@@ -97,13 +97,13 @@ class TelloTkinterStream:
                 case 1:
                     print("Bang!")
                 case 2:
-                    up_down -= 100 * weight
+                    up_down -= weight
                 case 3:
-                    up_down += 100 * weight
+                    up_down += weight
                 case 4:
-                    yaw -= 100 * weight
+                    yaw -= weight
                 case 5:
-                    yaw += 100 * weight
+                    yaw += weight
                 case 6:
                     self.drone_communication.send_command("reboot")
                 case 8:
