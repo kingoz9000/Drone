@@ -20,10 +20,13 @@ class StunClient:
         self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
         response, _ = self.sock.recvfrom(1024)
         self.client_id = response.decode().split()[1]
-        print(response.decode())
+        print(f"Registered with ID: {self.client_id}")
 
     def request_peer(self):
         peer_id = input("Enter peer ID: ")
+        if peer_id == "CHECK":
+            self.sock.sendto(b"CHECK", (self.SERVER_IP, self.SERVER_PORT))
+            self.request_peer()
         self.sock.sendto(f"REQUEST {peer_id}".encode(), (self.SERVER_IP, self.SERVER_PORT))
 
     def start_connection_listener(self):
@@ -47,6 +50,8 @@ class StunClient:
                 if message.split()[1] == "DISCONNECT":  
                     print("Server disconnected due to other client disconnection")
                     self.running = False
+                if message.split()[1] == "CLIENTS":
+                    print(f"Clients connected: {message}")
                     
                     
             

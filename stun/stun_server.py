@@ -53,13 +53,25 @@ class StunServer:
 
                 client_id = len(self.clients) 
                 self.clients[client_id] = [addr, None, 0]
-                self.server_socket.sendto(f"REGISTERED {self.clients}".encode(), addr)
+                self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
                 print(f"Client {client_id} registered from {addr}")
 
             elif message.startswith("ALIVE"):
                 client_id = self.get_client_id(addr)
                 if client_id is not None:
                     self.clients[client_id][2] = 0
+
+            elif message.startswith("CHECK"):
+                # send list of clients except the one who requested
+                client_id = self.get_client_id(addr)
+                clients_to_send = []
+                for k, v in self.clients.items():
+                    if k != client_id:
+                        clients_to_send.append((k, v[0][0], v[0][1]))  # Append client ID, IP, and port
+                if clients_to_send:
+                    self.server_socket.sendto(f"SERVER CLIENTS {clients_to_send}".encode(), addr)
+                else:
+                    self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
 
             elif message.startswith("REQUEST"):
                 _, target_id = message.split()
