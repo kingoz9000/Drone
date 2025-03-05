@@ -3,28 +3,29 @@ import time
 
 
 class JoystickHandler:
-    def __init__(self):
+    def __init__(self, debug: bool = False):
         """Initialize Pyglet and detect the joystick."""
         self.joystick = None
         self.connect_joystick()
 
-        if __name__ == "__main__":
+        if debug:
             pyglet.clock.schedule_interval(self.get_values, 0.05)  # Update every 50ms
             self.start_reading()
 
     def start_reading(self):
+        if not self.joystick:
+            print("No valid joystick found")
+            return
         # Run Pyglet event loop
         pyglet.app.run()
 
-    def connect_joystick(self) -> None:
+    def connect_joystick(self) -> bool:
         """Find and connect to the first available joystick."""
         devices = pyglet.input.get_joysticks()
 
         if not devices:
-            print("No joystick detected! Retrying in 2 seconds...")
-            time.sleep(2)
-            self.connect_joystick()
-            return
+            print("No joystick detected")
+            return False
 
         self.joystick = devices[0]
         self.joystick.open()
@@ -36,6 +37,7 @@ class JoystickHandler:
 
         # Define button dictionary
         self.buttons: dict = {}
+        return True
 
     def on_joybutton_press(self, joystick, button) -> None:
         """Handle button press."""
@@ -54,5 +56,4 @@ class JoystickHandler:
 
 
 if __name__ == "__main__":
-    JoystickHandler()
-
+    JoystickHandler(debug=True)

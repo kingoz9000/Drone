@@ -5,11 +5,14 @@ from joystick import JoystickHandler
 from drone_video_feed import DroneVideoFeed
 import threading
 import time
+import argparse
 
 
 class TelloTkinterStream:
-    def __init__(self):
-        """Initialize Tkinter window and Tello video stream."""
+    def __init__(self, args):
+        self.ARGS = args
+
+        # Initialize Tkinter window and Tello video stream.
         self.root: Tk = Tk()
         self.root.title("Tello Video Stream")
         self.root.geometry("1280x920")
@@ -24,18 +27,25 @@ class TelloTkinterStream:
 
         self.running = True
 
+        # TODO: introduce stun peer
+
+        drone_video_addr = ("0.0.0.0", 11111) if not args.stun else ("123", 123)
+        drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else ("123", 123)
         # Start video stream and communication with the drone
-        self.video_stream: DroneVideoFeed = DroneVideoFeed()
-        self.drone_communication: DroneCommunication = DroneCommunication()
+        self.video_stream: DroneVideoFeed = DroneVideoFeed(drone_video_addr)
+        self.drone_communication: DroneCommunication = DroneCommunication(
+            drone_comm_addr
+        )
 
         # Initialize joystick
         self.joystick = JoystickHandler()
-        self.run_in_thread(self.joystick.start_reading)
+        if self.joystick.joystick:
+            self.run_in_thread(self.joystick.start_reading)
 
         # Initialize drone battery variable
         self.drone_battery = None
 
-        # Main thread 
+        # Main thread
         self.run_in_thread(self.main)
 
         # Start video update loop
@@ -61,17 +71,19 @@ class TelloTkinterStream:
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
-        
+
         self.root.after(10, self.update_video_frame)
 
-    
     def update_label(self, imgtk):
         """Safely update Tkinter Label from a different thread"""
         self.video_label.imgtk = imgtk
         self.video_label.config(image=imgtk)
 
-
     def control_drone(self):
+        if not self.joystick.joystick:
+            print("asd")
+            return
+
         # Weights and other values
         deadzone = 5
 
@@ -111,7 +123,9 @@ class TelloTkinterStream:
                 case 9:
                     self.drone_communication.send_command("land")
                 case 10:
-                    self.drone_communication.send_command("battery?", take_response=True)
+                    self.drone_communication.send_command(
+                        "battery?", take_response=True
+                    )
                 case _:
                     self.drone_communication.send_command("emergency")
 
@@ -119,19 +133,26 @@ class TelloTkinterStream:
         self.drone_communication.send_command(command, False)
 
     def get_ping(self):
+        if self.ARGS.noping:
+            return
+
         start_time = time.perf_counter_ns()
-        self.drone_battery = self.drone_communication.send_command("battery?", take_response=True)
+        self.drone_battery = self.drone_communication.send_command(
+            "battery?", take_response=True
+        )
         end_time = time.perf_counter_ns()
 
         ping = (end_time - start_time) // 1000000
-        
+
         print(f"Ping for communication: {ping} ms")
-        
+
         self.drone_stats.delete("1.0", "end")
-        self.drone_stats.insert("1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping} ms")
+        self.drone_stats.insert(
+            "1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping} ms"
+        )
 
     def main(self):
-        while(self.running):
+        while self.running:
             self.control_drone()
 
             self.get_ping()
@@ -158,4 +179,11 @@ class TelloTkinterStream:
 
 
 if __name__ == "__main__":
-    TelloTkinterStream()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s", "--stun", help="Use stun to remote control", action="store_true"
+    )
+    parser.add_argument("-np", "--noping", help="Disable ping", action="store_true")
+    args = parser.parse_args()
+
+    TelloTkinterStream(args)

@@ -3,12 +3,11 @@ import threading
 import numpy as np
 import av
 
+
 class DroneVideoFeed:
-    def __init__(self):
+    def __init__(self, video_addr):
         # Video stream recieving
-        self.VIDEO_PORT: int = 11111  # Video receiving port
-        self.VIDEO_IP: int = "0.0.0.0"  # Listen on all interfaces
-        self.VIDEO_ADDRESS: str = f"udp://@{self.VIDEO_IP}:{self.VIDEO_PORT}"
+        self.VIDEO_ADDRESS: str = f"udp://@{video_addr[0]}:{str(video_addr[1])}"
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout: int = 5
@@ -17,7 +16,6 @@ class DroneVideoFeed:
 
         self.run_in_thread(self.frame_grab)
 
-    
     def frame_grab(self) -> None:
         """Grabs frames from the video stream and appends them to the frames queue"""
         try:
@@ -30,8 +28,8 @@ class DroneVideoFeed:
                     "rtsp_transport": "udp",
                     "reorder_queue_size": "0",
                     "flush_packets": "1",
-                    "max_delay": "0"
-                }
+                    "max_delay": "0",
+                },
             )
         except av.error.ExitError as av_error:
             print(f"Error opening video stream: {av_error}")
@@ -49,8 +47,8 @@ class DroneVideoFeed:
                         self.frames_queue.get_nowait()  # Drop old frame
                         self.frames_queue.put_nowait(img)
                 except queue.Full:
-                    pass 
-        
+                    pass
+
     def get_frame(self) -> np.ndarray | None:
         """Returns the last frame in the frames queue"""
         if not self.frames_queue.empty():
@@ -61,10 +59,10 @@ class DroneVideoFeed:
         """Stops the video feed by setting running to False"""
         self.running = False
 
-
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
         """General worker function to run a function in a thread"""
         thread = threading.Thread(target=func, args=args, daemon=True)
         thread.start()
         return thread
+
