@@ -39,10 +39,11 @@ class StunClient:
                     self.peer_ip = peer_ip
                     self.peer_port = int(peer_port)
                     self.hole_punch()
+
                 if message.split()[1] == "HEARTBEAT":
-                    print("heartbeat recieved")
                     self.sock.sendto(b"ALIVE", (self.SERVER_IP, self.SERVER_PORT))
-                if message.split()[1] == "DISCONNECT":
+
+                if message.split()[1] == "DISCONNECT":  
                     print("Server disconnected due to other client disconnection")
                     break
                     

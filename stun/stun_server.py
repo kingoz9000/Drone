@@ -22,9 +22,10 @@ class StunServer:
         while True:
             curtime = time.time()
             # run every 10 seconds
-            if curtime - lasttime > 10:
+            if curtime - lasttime > 5:
+                clients_to_remove = []
                 for k, v in self.clients.items():
-                    if v[2] >= 10:
+                    if v[2] >= 3:
                         print(f"Client {k} has disconnected")
                         # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
@@ -32,11 +33,14 @@ class StunServer:
                                 self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v2[0])
                                 self.clients[k2][1] = None
 
-                        del self.clients[k]
+                        clients_to_remove.append(k)
                     else:
-                        print("Sending heartbeat to client", k)
                         self.server_socket.sendto(f"SERVER HEARTBEAT".encode(), v[0])
                         v[2] += 1
+
+                for k in clients_to_remove:
+                    del self.clients[k]
+
                 lasttime = curtime
 
 
@@ -55,7 +59,6 @@ class StunServer:
             elif message.startswith("ALIVE"):
                 client_id = self.get_client_id(addr)
                 if client_id is not None:
-                    print(f"Client {client_id} is alive")
                     self.clients[client_id][2] = 0
 
             elif message.startswith("REQUEST"):
