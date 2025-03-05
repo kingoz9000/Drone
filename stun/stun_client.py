@@ -58,11 +58,11 @@ class StunClient:
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
-                threading.Thread(target=self.chat_loop, daemon=True).start()
+                threading.Thread(target=self.chat_loop).start()
 
 
             if message.startswith("PEER"):
-                print(f"Peer: {message.split()[1]}")
+                print(f"\nPeer: {message.split()[1]}")
                 
 
 
@@ -76,8 +76,11 @@ class StunClient:
     def chat_loop(self):
         while self.running:
             msg = input("You: ")
-            msg = f"PEER {msg}"
-            self.sock.sendto(msg.encode(), (self.peer_ip, self.peer_port))
+            if msg == "info":
+                print(f"Connected to: {self.peer_ip}:{self.peer_port}")
+            else:
+                msg = f"PEER {msg}"
+                self.sock.sendto(msg.encode(), (self.peer_ip, self.peer_port))
 
     def main(self):
         self.register()
