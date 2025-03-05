@@ -103,13 +103,10 @@ class DroneCommunication:
 
     def main(self) -> None:
         self.connect()
-        time.sleep(2)
+        time.sleep(1)
 
         self.run_in_thread(self.frame_grab)
-        time.sleep(2)
-
-        # self.run_in_thread(self.listen_for_state)
-        # time.sleep(2)
+        time.sleep(1)
 
 
 if __name__ == "__main__":
