@@ -32,8 +32,8 @@ class TelloTkinterStream:
         self.joystick = JoystickHandler()
         self.run_in_thread(self.joystick.start_reading)
 
-        # Initialize drone class
-        self.drone = Drone()
+        # Initialize drone battery variable
+        self.drone_battery = None
 
         # Main thread 
         self.run_in_thread(self.main)
@@ -41,10 +41,8 @@ class TelloTkinterStream:
         # Start video update loop
         self.update_video_frame()
 
-        # Bind cleanup to window close
+        # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-
-        # Bind keys
         self.root.bind("q", lambda e: self.cleanup())
 
         # Start Tkinter event loop
@@ -72,23 +70,6 @@ class TelloTkinterStream:
         self.video_label.imgtk = imgtk
         self.video_label.config(image=imgtk)
 
-    def cleanup(self) -> None:
-        """Safely clean up resources and close the Tkinter window."""
-        print("Shutting down...")
-
-        self.running = False
-        self.video_stream.stop()
-        self.drone_communication.stop()
-
-        self.root.quit()
-        self.root.destroy()
-
-    @staticmethod
-    def run_in_thread(func, *args) -> threading.Thread:
-        """General worker function to run a function in a thread"""
-        thread = threading.Thread(target=func, args=args, daemon=True)
-        thread.start()
-        return thread
 
     def control_drone(self):
         # Weights and other values
@@ -139,7 +120,7 @@ class TelloTkinterStream:
 
     def get_ping(self):
         start_time = time.perf_counter_ns()
-        self.drone.battery = self.drone_communication.send_command("battery?", take_response=True)
+        self.drone_battery = self.drone_communication.send_command("battery?", take_response=True)
         end_time = time.perf_counter_ns()
 
         ping = (end_time - start_time) // 1000000
@@ -147,9 +128,7 @@ class TelloTkinterStream:
         print(f"Ping for communication: {ping} ms")
         
         self.drone_stats.delete("1.0", "end")
-        self.drone_stats.insert("1.0", f"Battery: {self.drone.battery.strip()}% \nPing: {ping} ms")
-
-        time.sleep(0.3)
+        self.drone_stats.insert("1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping} ms")
 
     def main(self):
         while(self.running):
@@ -157,9 +136,25 @@ class TelloTkinterStream:
 
             self.get_ping()
 
-class Drone():
-    def __init__(self):
-        self.battery = None
+            time.sleep(0.05)
+
+    def cleanup(self) -> None:
+        """Safely clean up resources and close the Tkinter window."""
+        print("Shutting down...")
+
+        self.running = False
+        self.video_stream.stop()
+        self.drone_communication.stop()
+
+        self.root.quit()
+        self.root.destroy()
+
+    @staticmethod
+    def run_in_thread(func, *args) -> threading.Thread:
+        """General worker function to run a function in a thread"""
+        thread = threading.Thread(target=func, args=args, daemon=True)
+        thread.start()
+        return thread
 
 
 if __name__ == "__main__":
