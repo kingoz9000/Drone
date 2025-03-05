@@ -1,7 +1,8 @@
-from tkinter import Tk, Label, Entry
+from tkinter import Tk, Label, Text
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
+from drone_video_feed import DroneVideoFeed
 import threading
 import time
 
@@ -11,74 +12,64 @@ class TelloTkinterStream:
         """Initialize Tkinter window and Tello video stream."""
         self.root: Tk = Tk()
         self.root.title("Tello Video Stream")
-        self.root.geometry("1280x720")
+        self.root.geometry("1280x920")
 
         # Create a label to display the video
         self.video_label: Label = Label(self.root)
-        self.video_label.pack(fill="both", expand=True)
+        self.video_label.pack()
 
-        self.drone_stats = Entry(self.root)
+        self.drone_stats = Text(self.root, height=2, width=30)
         self.drone_stats.pack()
+        self.drone_stats.insert("1.0", f"Battery: xx% \nPing xx ms")
 
-        # Start video stream
-        self.video_stream: DroneCommunication = DroneCommunication()
-        self.video_stream.main()
+        self.running = True
+
+        # Start video stream and communication with the drone
+        self.video_stream: DroneVideoFeed = DroneVideoFeed()
+        self.drone_communication: DroneCommunication = DroneCommunication()
 
         # Initialize joystick
         self.joystick = JoystickHandler()
         self.run_in_thread(self.joystick.start_reading)
 
-        # Initialize drone class
-        self.drone = Drone()
+        # Initialize drone battery variable
+        self.drone_battery = None
 
-        # Start joystick control and ping loops
-        self.control_drone()
-        self.get_ping()
+        # Main thread 
+        self.run_in_thread(self.main)
 
         # Start video update loop
         self.update_video_frame()
 
-        # Bind cleanup to window close
+        # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-
-        # Bind keys
         self.root.bind("q", lambda e: self.cleanup())
 
         # Start Tkinter event loop
         self.root.mainloop()
 
     def update_video_frame(self) -> None:
-        """Update the video frame at 100 FPS (every 10ms)."""
-        # Get the latest frame from the queue
+        """Update the video frame in the Tkinter window."""
         frame = self.video_stream.get_frame()
-
         if frame is not None:
             try:
-                # Convert the frame to an ImageTk object
                 img = Image.fromarray(frame)
                 imgtk = ImageTk.PhotoImage(image=img)
-                self.video_label.imgtk = imgtk
-                self.video_label.config(image=imgtk)
+
+                # Update the label using the main thread
+                self.root.after(0, self.update_label, imgtk)
+
             except Exception as e:
                 print(f"Error updating video frame: {e}")
-
-        # Call this function again in 10ms *Can be adjusted*
+        
         self.root.after(10, self.update_video_frame)
 
-    def cleanup(self) -> None:
-        """Safely clean up resources and close the Tkinter window."""
-        print("Shutting down...")
+    
+    def update_label(self, imgtk):
+        """Safely update Tkinter Label from a different thread"""
+        self.video_label.imgtk = imgtk
+        self.video_label.config(image=imgtk)
 
-        self.video_stream.stop()
-        self.root.quit()
-        self.root.destroy()
-
-    @staticmethod
-    def run_in_thread(func, *args) -> threading.Thread:
-        """General worker function to run a function in a thread"""
-        thread = threading.Thread(target=func, args=args, daemon=True)
-        thread.start()
-        return thread
 
     def control_drone(self):
         # Weights and other values
@@ -114,36 +105,56 @@ class TelloTkinterStream:
                 case 5:
                     yaw += 100 * weight
                 case 6:
-                    self.video_stream.send_command("reboot")
+                    self.drone_communication.send_command("reboot")
                 case 8:
-                    self.video_stream.send_command("takeoff")
+                    self.drone_communication.send_command("takeoff")
                 case 9:
-                    self.video_stream.send_command("land")
+                    self.drone_communication.send_command("land")
                 case 10:
-                    self.video_stream.send_command("battery?", take_response=True)
+                    self.drone_communication.send_command("battery?", take_response=True)
                 case _:
-                    self.video_stream.send_command("emergency")
+                    self.drone_communication.send_command("emergency")
 
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-        self.video_stream.send_command(command, False)
-
-        self.root.after(10, self.control_drone)
+        self.drone_communication.send_command(command, False)
 
     def get_ping(self):
         start_time = time.perf_counter_ns()
-        self.drone.battery = self.video_stream.send_command("battery?", take_response=True)
+        self.drone_battery = self.drone_communication.send_command("battery?", take_response=True)
         end_time = time.perf_counter_ns()
+
+        ping = (end_time - start_time) // 1000000
         
-        print(f"Ping for communication: {(end_time - start_time) // 1000} ms")
+        print(f"Ping for communication: {ping} ms")
+        
+        self.drone_stats.delete("1.0", "end")
+        self.drone_stats.insert("1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping} ms")
 
-        self.drone_stats.insert(0, self.drone.battery)
+    def main(self):
+        while(self.running):
+            self.control_drone()
 
-        self.root.after(1000, self.get_ping)
+            self.get_ping()
 
+            time.sleep(0.05)
 
-class Drone():
-    def __init__(self):
-        self.battery = None
+    def cleanup(self) -> None:
+        """Safely clean up resources and close the Tkinter window."""
+        print("Shutting down...")
+
+        self.running = False
+        self.video_stream.stop()
+        self.drone_communication.stop()
+
+        self.root.quit()
+        self.root.destroy()
+
+    @staticmethod
+    def run_in_thread(func, *args) -> threading.Thread:
+        """General worker function to run a function in a thread"""
+        thread = threading.Thread(target=func, args=args, daemon=True)
+        thread.start()
+        return thread
 
 
 if __name__ == "__main__":

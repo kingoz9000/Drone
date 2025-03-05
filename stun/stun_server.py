@@ -1,4 +1,4 @@
-import socket
+import socket, time
 
 class StunServer:
 
@@ -17,16 +17,40 @@ class StunServer:
         return None
 
     def exchange(self):
+        lasttime = 0
         while True:
+            curtime = time.time()
+            # run every 10 seconds
+            if curtime - lasttime > 10:
+                for k, v in self.clients.items():
+                    if v[2] >= 10:
+                        print(f"Client {k} has disconnected")
+                        # send to the client which has k as a target
+                        for k2, v2 in self.clients.items():
+                            if v2[1] == k:
+                                self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v2[0])
+                                self.clients[k2][1] = None
+
+                        del self.clients[k]
+                    else:
+                        self.server_socket.sendto(f"SERVER HEARTBEAT".encode(), v[0])
+                        v[2] += 1
+                lasttime = curtime
+
             data, addr = self.server_socket.recvfrom(1024)
             message = data.decode().strip()
 
             if message.startswith("REGISTER"):
 
                 client_id = len(self.clients) 
-                self.clients[client_id] = [addr, None]
+                self.clients[client_id] = [addr, None, 0]
                 self.server_socket.sendto(f"REGISTERED {self.clients}".encode(), addr)
                 print(f"Client {client_id} registered from {addr}")
+
+            elif message.startswith("ALIVE"):
+                client_id = self.get_client_id(addr)
+                if client_id is not None:
+                    self.clients[client_id][2] = 0
 
             elif message.startswith("REQUEST"):
                 _, target_id = message.split()

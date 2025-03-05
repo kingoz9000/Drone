@@ -12,7 +12,7 @@ class StunClient:
         self.peer_port = None
         self.SERVER_IP = "130.225.37.157"
         self.SERVER_PORT = 12345
-        self.HOLE_PUNCH_TRIES = 2
+        self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
 
     def register(self):
@@ -39,6 +39,12 @@ class StunClient:
                     self.peer_ip = peer_ip
                     self.peer_port = int(peer_port)
                     self.hole_punch()
+                if message.split()[1] == "HEARTBEAT":
+                    self.sock.sendto(b"ALIVE", (self.SERVER_IP, self.SERVER_PORT))
+                if message.split()[1] == "DISCONNECT":
+                    print("Server disconnected due to other client disconnection")
+                    break
+                    
             
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
