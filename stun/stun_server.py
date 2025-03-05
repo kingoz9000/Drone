@@ -1,4 +1,4 @@
-import socket, time
+import socket, time, threading
 
 class StunServer:
 
@@ -16,7 +16,8 @@ class StunServer:
                 return k
         return None
 
-    def exchange(self):
+
+    def heartbeat(self):
         lasttime = 0
         while True:
             curtime = time.time()
@@ -38,6 +39,9 @@ class StunServer:
                         v[2] += 1
                 lasttime = curtime
 
+
+    def exchange(self):
+        while True:
             data, addr = self.server_socket.recvfrom(1024)
             message = data.decode().strip()
 
@@ -75,4 +79,5 @@ class StunServer:
 
 if __name__ == "__main__":
     server = StunServer()
+    threading.Thread(target=server.heartbeat).start()
     server.exchange()
