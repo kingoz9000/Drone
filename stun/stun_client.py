@@ -14,6 +14,7 @@ class StunClient:
         self.SERVER_PORT = 12345
         self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
+        self.running = True
 
     def register(self):
         self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
@@ -29,7 +30,7 @@ class StunClient:
         threading.Thread(target=self.listen, daemon=True).start()
 
     def listen(self):
-        while True:
+        while self.running:
             data, addr = self.sock.recvfrom(1024)
             message = data.decode()
             if message.startswith("SERVER"):
@@ -45,7 +46,8 @@ class StunClient:
 
                 if message.split()[1] == "DISCONNECT":  
                     print("Server disconnected due to other client disconnection")
-                    break
+                    self.running = False
+                    
                     
             
             if message.startswith("HOLE") and not self.hole_punched:
@@ -67,7 +69,7 @@ class StunClient:
 
 
     def chat_loop(self):
-        while True:
+        while self.running:
             msg = input("You: ")
             msg = f"PEER {msg}"
             self.sock.sendto(msg.encode(), (self.peer_ip, self.peer_port))
@@ -76,10 +78,11 @@ class StunClient:
         self.register()
         self.start_connection_listener()
         self.request_peer()
-        while True:
+        while self.running:
             pass
 
 if __name__ == "__main__":
     client = StunClient()
     client.main()
+    print("Client stopped")
 
