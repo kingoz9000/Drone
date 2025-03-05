@@ -33,6 +33,7 @@ class StunServer:
 
                         del self.clients[k]
                     else:
+                        print("Sending heartbeat to client", k)
                         self.server_socket.sendto(f"SERVER HEARTBEAT".encode(), v[0])
                         v[2] += 1
                 lasttime = curtime
@@ -50,6 +51,7 @@ class StunServer:
             elif message.startswith("ALIVE"):
                 client_id = self.get_client_id(addr)
                 if client_id is not None:
+                    print(f"Client {client_id} is alive")
                     self.clients[client_id][2] = 0
 
             elif message.startswith("REQUEST"):
