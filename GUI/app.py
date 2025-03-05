@@ -2,6 +2,7 @@ from tkinter import Tk, Label, Text
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
+from drone_video_feed import DroneVideoFeed
 import threading
 import time
 
@@ -23,9 +24,9 @@ class TelloTkinterStream:
 
         self.running = True
 
-        # Start video stream
-        self.video_stream: DroneCommunication = DroneCommunication()
-        self.video_stream.main()
+        # Start video stream and communication with the drone
+        self.video_stream: DroneVideoFeed = DroneVideoFeed()
+        self.drone_communication: DroneCommunication = DroneCommunication()
 
         # Initialize joystick
         self.joystick = JoystickHandler()
@@ -77,6 +78,8 @@ class TelloTkinterStream:
 
         self.running = False
         self.video_stream.stop()
+        self.drone_communication.stop()
+
         self.root.quit()
         self.root.destroy()
 
@@ -121,22 +124,22 @@ class TelloTkinterStream:
                 case 5:
                     yaw += 100 * weight
                 case 6:
-                    self.video_stream.send_command("reboot")
+                    self.drone_communication.send_command("reboot")
                 case 8:
-                    self.video_stream.send_command("takeoff")
+                    self.drone_communication.send_command("takeoff")
                 case 9:
-                    self.video_stream.send_command("land")
+                    self.drone_communication.send_command("land")
                 case 10:
-                    self.video_stream.send_command("battery?", take_response=True)
+                    self.drone_communication.send_command("battery?", take_response=True)
                 case _:
-                    self.video_stream.send_command("emergency")
+                    self.drone_communication.send_command("emergency")
 
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-        self.video_stream.send_command(command, False)
+        self.drone_communication.send_command(command, False)
 
     def get_ping(self):
         start_time = time.perf_counter_ns()
-        self.drone.battery = self.video_stream.send_command("battery?", take_response=True)
+        self.drone.battery = self.drone_communication.send_command("battery?", take_response=True)
         end_time = time.perf_counter_ns()
 
         ping = (end_time - start_time) // 1000000
