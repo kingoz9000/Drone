@@ -1,4 +1,4 @@
-from tkinter import Tk, Label, Entry
+from tkinter import Tk, Label, Text
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
@@ -11,14 +11,17 @@ class TelloTkinterStream:
         """Initialize Tkinter window and Tello video stream."""
         self.root: Tk = Tk()
         self.root.title("Tello Video Stream")
-        self.root.geometry("1280x720")
+        self.root.geometry("1280x920")
 
         # Create a label to display the video
         self.video_label: Label = Label(self.root)
-        self.video_label.pack(fill="both", expand=True)
+        self.video_label.pack()
 
-        self.drone_stats = Entry(self.root)
+        self.drone_stats = Text(self.root, height=2, width=30)
         self.drone_stats.pack()
+        self.drone_stats.insert("1.0", f"Battery: xx% \nPing xx ms")
+
+        self.running = True
 
         # Start video stream
         self.video_stream: DroneCommunication = DroneCommunication()
@@ -31,9 +34,8 @@ class TelloTkinterStream:
         # Initialize drone class
         self.drone = Drone()
 
-        # Start joystick control and ping loops
-        self.control_drone()
-        self.get_ping()
+        # Main thread 
+        self.run_in_thread(self.main)
 
         # Start video update loop
         self.update_video_frame()
@@ -48,27 +50,32 @@ class TelloTkinterStream:
         self.root.mainloop()
 
     def update_video_frame(self) -> None:
-        """Update the video frame at 100 FPS (every 10ms)."""
-        # Get the latest frame from the queue
+        """Update the video frame in the Tkinter window."""
         frame = self.video_stream.get_frame()
-
         if frame is not None:
             try:
-                # Convert the frame to an ImageTk object
                 img = Image.fromarray(frame)
                 imgtk = ImageTk.PhotoImage(image=img)
-                self.video_label.imgtk = imgtk
-                self.video_label.config(image=imgtk)
+
+                # Update the label using the main thread
+                self.root.after(0, self.update_label, imgtk)
+
             except Exception as e:
                 print(f"Error updating video frame: {e}")
-
-        # Call this function again in 10ms *Can be adjusted*
+        
         self.root.after(10, self.update_video_frame)
+
+    
+    def update_label(self, imgtk):
+        """Safely update Tkinter Label from a different thread"""
+        self.video_label.imgtk = imgtk
+        self.video_label.config(image=imgtk)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the Tkinter window."""
         print("Shutting down...")
 
+        self.running = False
         self.video_stream.stop()
         self.root.quit()
         self.root.destroy()
@@ -127,19 +134,25 @@ class TelloTkinterStream:
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
         self.video_stream.send_command(command, False)
 
-        self.root.after(10, self.control_drone)
-
     def get_ping(self):
         start_time = time.perf_counter_ns()
         self.drone.battery = self.video_stream.send_command("battery?", take_response=True)
         end_time = time.perf_counter_ns()
+
+        ping = (end_time - start_time) // 1000000
         
-        print(f"Ping for communication: {(end_time - start_time) // 1000} ms")
+        print(f"Ping for communication: {ping} ms")
+        
+        self.drone_stats.delete("1.0", "end")
+        self.drone_stats.insert("1.0", f"Battery: {self.drone.battery.strip()}% \nPing: {ping} ms")
 
-        self.drone_stats.insert(0, self.drone.battery)
+        time.sleep(0.3)
 
-        self.root.after(1000, self.get_ping)
+    def main(self):
+        while(self.running):
+            self.control_drone()
 
+            self.get_ping()
 
 class Drone():
     def __init__(self):

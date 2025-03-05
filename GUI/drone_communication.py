@@ -4,8 +4,7 @@ import numpy as np
 from collections import deque
 import av
 import time
-import datetime
-
+import queue
 
 class DroneCommunication:
     def __init__(self):
@@ -28,8 +27,7 @@ class DroneCommunication:
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout: int = 5
-        self.frame = None
-        self.frame_available: bool = False
+        self.frames_queue = queue.Queue(maxsize=5)
         self.running: bool = True
 
     def send_command(
@@ -63,7 +61,8 @@ class DroneCommunication:
                     "rtsp_transport": "udp",
                     "reorder_queue_size": "0",
                     "flush_packets": "1",
-                },
+                    "max_delay": "0"
+                }
             )
         except av.error.ExitError as av_error:
             print(f"Error opening video stream: {av_error}")
@@ -74,14 +73,19 @@ class DroneCommunication:
                 break
             img = np.array(frame.to_image())
             if img is not None and img.size > 0:
-                self.frame = img
-                self.frame_available = True
+                try:
+                    if not self.frames_queue.full():
+                        self.frames_queue.put_nowait(img)  # Store only the latest frame
+                    else:
+                        self.frames_queue.get_nowait()  # Drop old frame
+                        self.frames_queue.put_nowait(img)
+                except queue.Full:
+                    pass 
 
     def get_frame(self) -> np.ndarray | None:
         """Returns the last frame in the frames queue"""
-        if self.frame_available:
-            self.frame_available = False
-            return self.frame
+        if not self.frames_queue.empty():
+            return self.frames_queue.get_nowait()
         return None
 
     def stop(self) -> None:
