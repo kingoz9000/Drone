@@ -1,26 +1,18 @@
-"""This is on the pie and isolated to the modem and it self"""
-
-from socket import *
+import socket
 import threading
 import time
 
 
-class StunClient:
+class StunHandler:
 
     def __init__(self):
-        self.sock = socket(AF_INET, SOCK_DGRAM)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("", 0))  # Use ephemeral port
         self.client_id = None
         self.peer_addr = None
         self.SERVER_ADDR = ("130.225.37.157", 12345)
         self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
-
-        self.command_sock = socket(AF_INET, SOCK_DGRAM)
-        self.command_addr = ("192.168.10.1", 8889)
-
-        self.video_sock = socket(AF_INET, SOCK_DGRAM)
-        self.video_sock.bind(("0.0.0.0", 11111))
 
     def register(self):
         self.sock.sendto(b"REGISTER", self.SERVER_ADDR)
@@ -37,7 +29,7 @@ class StunClient:
 
     def listen(self):
         while True:
-            data, addr = self.sock.recvfrom(4096)
+            data, addr = self.sock.recvfrom(1024)
             message = data.decode()
             if message.startswith("SERVER"):
                 if message.split()[1] == "CONNECT":
@@ -54,13 +46,11 @@ class StunClient:
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
-                threading.Thread(target=self.chat_loop, daemon=True).start()
+                # Return peer_addr and end process
 
+            # Unneeded as actual communication will be handled elsewhere
             if message.startswith("PEER"):
                 print(f"Peer: {message.split()[1]}")
-                self.command_sock.sendto(
-                    bytes(message.split()[1], "utf-8"), self.command_addr
-                )
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
@@ -69,7 +59,7 @@ class StunClient:
 
     def chat_loop(self):
         while True:
-            msg = self.video_sock.recvfrom(4096)
+            msg = input("You: ")
             msg = f"PEER {msg}"
             self.sock.sendto(msg.encode(), self.peer_addr)
 
@@ -82,5 +72,5 @@ class StunClient:
 
 
 if __name__ == "__main__":
-    client = StunClient()
+    client = StunHandler()
     client.main()
