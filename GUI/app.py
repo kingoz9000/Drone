@@ -24,6 +24,7 @@ class TelloTkinterStream:
         self.drone_stats = Text(self.root, height=2, width=30)
         self.drone_stats.pack()
         self.drone_stats.insert("1.0", f"Battery: xx% \nPing xx ms")
+        self.drone_stats.config(state="disabled")
 
         self.running = True
 
