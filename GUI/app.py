@@ -81,7 +81,6 @@ class TelloTkinterStream:
 
     def control_drone(self):
         if not self.joystick.joystick:
-            print("asd")
             return
 
         # Weights and other values
