@@ -50,10 +50,9 @@ class StunClient:
                 if message.split()[1] == "DISCONNECT":  
                     print("Server disconnected due to other client disconnection")
                     self.running = False
+                    self.sock.close()
                 if message.split()[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
-                    
-                    
             
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
@@ -81,13 +80,14 @@ class StunClient:
             else:
                 msg = f"PEER {msg}"
                 self.sock.sendto(msg.encode(), (self.peer_ip, self.peer_port))
+        print("Chat loop stopped")
 
     def main(self):
         self.register()
         self.start_connection_listener()
         self.request_peer()
         while self.running:
-            pass
+           time.sleep(1) 
 
 if __name__ == "__main__":
     client = StunClient()

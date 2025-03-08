@@ -20,7 +20,7 @@ class StunServer:
         stream_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(stream_handler)
 
-        file_handler = logging.FileHandler(__name__ + ".log")
+        file_handler = logging.FileHandler("stun_server.log")
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
         file_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(file_handler)
