@@ -1,4 +1,7 @@
-import socket, time, threading
+import socket
+import time 
+import threading
+import logging
 
 class StunServer:
 
@@ -8,9 +11,24 @@ class StunServer:
         self.clients = {}
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.bind((self.SERVER_IP, self.SERVER_PORT))
-        print(f"Server listening on {self.SERVER_IP}:{self.SERVER_PORT}")
+
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)
+
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        stream_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(stream_handler)
+
+        file_handler = logging.FileHandler(__name__ + ".log")
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        file_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(file_handler)
+
+        self.logger.info(f"Server listening on {self.SERVER_IP}:{self.SERVER_PORT}")
 
     def get_client_id(self, addr):
+        self.logger.debug(f"Searching for client with address {addr} in dictionary: {self.clients}")
         for k, v in self.clients.items():
             if v[0] == addr:
                 return k
@@ -26,8 +44,7 @@ class StunServer:
                 clients_to_remove = []
                 for k, v in self.clients.items():
                     if v[2] >= 3:
-                        print(f"Client {k} has disconnected")
-                        # send to the client which has k as a target
+                        self.logger.info(f"Client {k} has disconnected")
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
                                 self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v2[0])
@@ -54,7 +71,7 @@ class StunServer:
                 client_id = len(self.clients) 
                 self.clients[client_id] = [addr, None, 0]
                 self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
-                print(f"Client {client_id} registered from {addr}")
+                self.logger.info(f"Client {client_id} registered from {addr}")
 
             elif message.startswith("ALIVE"):
                 client_id = self.get_client_id(addr)
@@ -86,11 +103,12 @@ class StunServer:
                         # Send both clients each other's public IP and port
                         self.server_socket.sendto(f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(), addr)
                         self.server_socket.sendto(f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr)
-                        print(f"Exchanged details between Client {current_client_id} and Client {target_id}")
+                        self.logger.info(f"Exchanged details between Client {current_client_id} and Client {target_id}")
                     else:
-                        print(f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally.")
+                        self.logger.info(f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally.")
                 else:
                     self.server_socket.sendto("NOT_FOUND".encode(), addr)
+                    self.logger.info(f"Client {current_client_id} requested Client {target_id}, but target not found.")
 
 if __name__ == "__main__":
     server = StunServer()
