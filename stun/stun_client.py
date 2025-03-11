@@ -7,13 +7,18 @@ class StunClient:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(("", 0))  # Use ephemeral port
+
         self.client_id = None
+
         self.peer_ip = None
         self.peer_port = None
+
         self.SERVER_IP = "130.225.37.157"
         self.SERVER_PORT = 12345
+
         self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
+
         self.running = True
 
 
@@ -28,6 +33,7 @@ class StunClient:
         if peer_id == "CHECK":
             self.sock.sendto(b"CHECK", (self.SERVER_IP, self.SERVER_PORT))
             self.request_peer()
+
         self.sock.sendto(f"REQUEST {peer_id}".encode(), (self.SERVER_IP, self.SERVER_PORT))
 
     def start_connection_listener(self):
@@ -37,6 +43,7 @@ class StunClient:
         while self.running:
             data, addr = self.sock.recvfrom(1024)
             message = data.decode()
+
             if message.startswith("SERVER"):
                 if message.split()[1] == "CONNECT":
                     _, _, peer_ip, peer_port = message.split()
@@ -64,15 +71,11 @@ class StunClient:
 
             if message.startswith("PEER"):
                 print(f"\nPeer: {message.split()[1]}")
-                
-
-
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
             self.sock.sendto(b"HOLE", (self.peer_ip, self.peer_port))
             time.sleep(0.1)
-
 
     def chat_loop(self):
         while self.running:
