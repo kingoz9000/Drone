@@ -11,7 +11,7 @@ class DroneVideoFeed:
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout: int = 5
-        self.frames_queue = queue.Queue(maxsize=5)
+        self.frames_queue = queue.Queue(maxsize=3)
         self.running: bool = True
 
         self.run_in_thread(self.frame_grab)

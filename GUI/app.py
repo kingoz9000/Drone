@@ -6,26 +6,13 @@ from drone_video_feed import DroneVideoFeed
 import threading
 import time
 import argparse
+import cv2
 from flask import Flask, Response, render_template
 
 
 class TelloTkinterStream:
     def __init__(self, args):
         self.ARGS = args
-
-        # Initialize Tkinter window and Tello video stream.
-        self.root: Tk = Tk()
-        self.root.title("Tello Video Stream")
-        self.root.geometry("1280x920")
-
-        # Create a label to display the video
-        self.video_label: Label = Label(self.root)
-        self.video_label.pack()
-
-        self.drone_stats = Text(self.root, height=2, width=30)
-        self.drone_stats.pack()
-        self.drone_stats.insert("1.0", f"Battery: xx% \nPing xx ms")
-        self.drone_stats.config(state="disabled")
 
         self.running = True
 
@@ -50,55 +37,51 @@ class TelloTkinterStream:
         # Main thread
         self.run_in_thread(self.main)
 
-        # Start video update loop
-        self.update_video_frame()
-
-        # Bind cleanup to window close and q key
-        self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-        self.root.bind("q", lambda e: self.cleanup())
-
         self.app = Flask(__name__)
         self.setup_routes()
 
-        threading.Thread(target=self.app.run, kwargs={"host": "0.0.0.0", "port": 5000, "debug": False, "threaded": True}).start()
+        self.latest_frame = None  # Store last frame
+        self.run_in_thread(self.process_video_stream)
 
-        # Start Tkinter event loop
-        self.root.mainloop()
-    
+        self.app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
 
     def setup_routes(self):
         """Define Flask routes dynamically"""
         self.app.add_url_rule("/", "index", self.index)
-        #self.app.add_url_rule("/video_feed", "video_feed", self.video_feed)
+        self.app.add_url_rule("/video_feed", "video_feed", self.video_feed)
 
     def index(self):
         """Render external HTML file"""
         return render_template("index.html")  
 
-    """def video_feed(self):
-        Route for streaming video in the browser.
-        return Response(self.generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")"""
+    def video_feed(self):
+        '''Route for streaming video in the browser.'''
+        return Response(self.generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    
+    def process_video_stream(self):
+        """Continuously processes and stores the latest frame in a thread."""
+        while self.running:
+            frame = self.video_stream.get_frame()
 
-    def update_video_frame(self) -> None:
-        """Update the video frame in the Tkinter window."""
-        frame = self.video_stream.get_frame()
-        if frame is not None:
-            try:
-                img = Image.fromarray(frame)
-                imgtk = ImageTk.PhotoImage(image=img)
+            if frame is not None:
+                frame = cv2.resize(frame, (640, 480))  # Resize for speed
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Fix blue tint
+                self.latest_frame = frame  # Store latest frame for streaming
 
-                # Update the label using the main thread
-                self.root.after(0, self.update_label, imgtk)
 
-            except Exception as e:
-                print(f"Error updating video frame: {e}")
+    def generate_frames(self):
+        """Yields the most recent frame when requested."""
+        while self.running:
+            if self.latest_frame is not None:
+                _, buffer = cv2.imencode(".jpg", self.latest_frame, [int(cv2.IMWRITE_JPEG_QUALITY), 70])
+                frame_bytes = buffer.tobytes()
 
-        self.root.after(10, self.update_video_frame)
+                yield (
+                    b"--frame\r\n"
+                    b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n"
+                )
 
-    def update_label(self, imgtk):
-        """Safely update Tkinter Label from a different thread"""
-        self.video_label.imgtk = imgtk
-        self.video_label.config(image=imgtk)
+
 
     def control_drone(self):
         if not self.joystick.joystick:
@@ -187,8 +170,6 @@ class TelloTkinterStream:
         self.video_stream.stop()
         self.drone_communication.stop()
 
-        self.root.quit()
-        self.root.destroy()
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
