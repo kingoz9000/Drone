@@ -1,5 +1,5 @@
 from socket import *
-
+from time import sleep
 
 datalist = []
 
@@ -14,4 +14,5 @@ sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 
 while True:
     for frame in datalist:
+        sleep(1 / 30)
         sock.sendto(frame, ("127.0.0.1", 24523))
