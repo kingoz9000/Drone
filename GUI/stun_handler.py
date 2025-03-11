@@ -16,7 +16,7 @@ class StunHandler:
 
     def register(self):
         self.sock.sendto(b"REGISTER", self.SERVER_ADDR)
-        response, _ = self.sock.recvfrom(1024)
+        response, _ = self.sock.recvfrom(4096)
         self.client_id = response.decode().split()[1]
         print(response.decode())
 
@@ -46,6 +46,7 @@ class StunHandler:
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
+
                 # Return peer_addr and end process
 
             # Unneeded as actual communication will be handled elsewhere
@@ -67,10 +68,11 @@ class StunHandler:
         self.register()
         self.start_connection_listener()
         self.request_peer()
-        while True:
-            time.sleep(100)
 
 
 if __name__ == "__main__":
     client = StunHandler()
     client.main()
+
+    while True:
+        time.sleep(100)

@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from joystick import JoystickHandler
 from drone_video_feed import DroneVideoFeed
+from stun_handler import StunHandler
 import threading
 import time
 import argparse
@@ -30,8 +31,22 @@ class TelloTkinterStream:
 
         # TODO: introduce stun peer
 
-        drone_video_addr = ("0.0.0.0", 11111) if not args.stun else ("123", 123)
-        drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else ("123", 123)
+        peer_addr = None
+        if args.stun:
+            stun_handler = StunHandler()
+            stun_handler.main()
+            for attempt in range(10):
+                if stun_handler.hole_punched:
+                    peer_addr = stun_handler.peer_addr
+                    print("Peer to Peer connection established")
+                    break
+                time.sleep(1)
+
+        if peer_addr == None:
+            print("Failed to connect")
+
+        drone_video_addr = ("0.0.0.0", 11111) if not args.stun else peer_addr
+        drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else peer_addr
         # Start video stream and communication with the drone
         self.video_stream: DroneVideoFeed = DroneVideoFeed(drone_video_addr)
         self.drone_communication: DroneCommunication = DroneCommunication(
