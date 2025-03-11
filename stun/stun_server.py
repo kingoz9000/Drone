@@ -27,6 +27,8 @@ class StunServer:
 
         self.logger.info(f"Server listening on {self.SERVER_IP}:{self.SERVER_PORT}")
 
+        self.stun_mode = False
+
     def get_client_id(self, addr):
         self.logger.debug(f"Searching for client with address {addr} in dictionary: {self.clients}")
         for k, v in self.clients.items():
@@ -78,6 +80,10 @@ class StunServer:
                 self.logger.debug(f"Client {client_id} is alive")
                 if client_id is not None:
                     self.clients[client_id][2] = 0
+
+            elif message.startswith("HOLE PUNCHED"):
+                self.logger.info(f"Hole punched with Client {self.get_client_id(addr)}")
+                self.stun_mode = True
 
             elif message.startswith("CHECK"):
                 # send list of clients except the one who requested

@@ -16,6 +16,7 @@ class StunClient:
         self.hole_punched = False
         self.running = True
 
+
     def register(self):
         self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
         response, _ = self.sock.recvfrom(1024)
@@ -57,6 +58,7 @@ class StunClient:
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
+                self.sock.sendto(b"HOLE PUNCHED", (self.SERVER_IP, self.SERVER_PORT))
                 threading.Thread(target=self.chat_loop).start()
 
 
