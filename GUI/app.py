@@ -6,7 +6,7 @@ from drone_video_feed import DroneVideoFeed
 import threading
 import time
 import argparse
-from flask import Flask, Response
+from flask import Flask, Response, render_template
 
 
 class TelloTkinterStream:
@@ -57,8 +57,27 @@ class TelloTkinterStream:
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("q", lambda e: self.cleanup())
 
+        self.app = Flask(__name__)
+        self.setup_routes()
+
+        threading.Thread(target=self.app.run, kwargs={"host": "0.0.0.0", "port": 5000, "debug": False, "threaded": True}).start()
+
         # Start Tkinter event loop
         self.root.mainloop()
+    
+
+    def setup_routes(self):
+        """Define Flask routes dynamically"""
+        self.app.add_url_rule("/", "index", self.index)
+        #self.app.add_url_rule("/video_feed", "video_feed", self.video_feed)
+
+    def index(self):
+        """Render external HTML file"""
+        return render_template("index.html")  
+
+    """def video_feed(self):
+        Route for streaming video in the browser.
+        return Response(self.generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")"""
 
     def update_video_frame(self) -> None:
         """Update the video frame in the Tkinter window."""
