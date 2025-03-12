@@ -131,7 +131,7 @@ class TelloTkinterStream:
                 continue
             match button_key:
                 case 1:
-                    print("Bang!")
+                    self.drone_communication.send_command("flip f")
                 case 2:
                     up_down -= weight
                 case 3:

@@ -2,6 +2,7 @@ import queue
 import threading
 import numpy as np
 import av
+import time
 
 
 class DroneVideoFeed:
@@ -10,7 +11,7 @@ class DroneVideoFeed:
         self.VIDEO_ADDRESS: str = f"udp://@{video_addr[0]}:{str(video_addr[1])}"
 
         # Settings for frame grab & frame_queue
-        self.frame_grab_timeout: int = 5
+        self.frame_grab_timeout: int = 1
         self.frames_queue = queue.Queue(maxsize=5)
         self.running: bool = True
 
@@ -35,19 +36,28 @@ class DroneVideoFeed:
             print(f"Error opening video stream: {av_error}")
             return
 
-        for frame in self.container.decode(video=0):
-            if not self.running:
-                break
-            img = np.array(frame.to_image())
-            if img is not None and img.size > 0:
-                try:
-                    if not self.frames_queue.full():
-                        self.frames_queue.put_nowait(img)  # Store only the latest frame
-                    else:
-                        self.frames_queue.get_nowait()  # Drop old frame
-                        self.frames_queue.put_nowait(img)
-                except queue.Full:
-                    pass
+        try:
+            for frame in self.container.decode(video=0):
+                if not self.running:
+                    break
+                img = np.array(frame.to_image())
+                if img is not None and img.size > 0:
+                    try:
+                        if not self.frames_queue.full():
+                            self.frames_queue.put_nowait(img)  # Store only the latest frame
+                        else:
+                            self.frames_queue.get_nowait()  # Drop old frame
+                            self.frames_queue.put_nowait(img)
+                    except queue.Full:
+                        pass
+        except Exception as e:
+            if self.running:
+                print(e)
+                print("Trying again...")
+                self.container.close()
+                time.sleep(1)
+                
+                self.frame_grab()
 
     def get_frame(self) -> np.ndarray | None:
         """Returns the last frame in the frames queue"""
