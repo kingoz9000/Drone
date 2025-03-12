@@ -2,12 +2,12 @@ import socket
 
 
 class DroneCommunication:
-    def __init__(self, command_addr, command_port):
+    def __init__(self, command_addr, command_returnport):
         """Initialize the DroneCommunication object and set running to True"""
         # Sending commands / Recieving response
         self.COMMAND_ADDR: tuple = command_addr
         self.COMMAND_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.COMMAND_SOCKET.bind(("0.0.0.0", command_port))
+        self.COMMAND_SOCKET.bind(("0.0.0.0", command_returnport))
 
         # Recieving state
         self.STATE_IP: tuple = ("0.0.0.0", 8890)
@@ -22,9 +22,14 @@ class DroneCommunication:
         """Sends a command to the drone by encoding first"""
         self.COMMAND_SOCKET.sendto(command.encode("utf-8"), self.COMMAND_ADDR)
         if take_response:
-            response = self.COMMAND_SOCKET.recv(1024)
-            print(f"Command '{command}': Recived the response: '{response.decode()}'")
-            return response.decode()
+            self.COMMAND_SOCKET.settimeout(0.5)
+            try:
+                response = self.COMMAND_SOCKET.recv(1024).decode()
+                print(f"Command '{command}': Recived the response: '{response}'")
+                return response
+            except socket.timeout:
+                print(f"Command '{command}': No response received within 0.5 seconds")
+                return None
         elif print_command:
             print(f"Command sent '{command} IP: {self.COMMAND_ADDR}'")
 
@@ -37,7 +42,6 @@ class DroneCommunication:
         """Stops the drone by turning off the video stream("streamoff") and setting running to False"""
         self.running = False
         self.send_command("streamoff")
-        self.send_command("reboot")
 
 
 if __name__ == "__main__":
