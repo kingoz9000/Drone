@@ -54,7 +54,6 @@ class StunClient:
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
-                threading.Thread(target=self.chat_loop, daemon=True).start()
 
             if message.startswith("PEER"):
                 print(f"Peer: {message.split()[1]}")
@@ -62,6 +61,7 @@ class StunClient:
                     bytes(message.split()[1], "utf-8"), self.command_addr
                 )
             print(message)
+            self.command_sock.sendto(bytes(message, "utf-8"), self.command_addr)
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
@@ -70,15 +70,16 @@ class StunClient:
 
     def chat_loop(self):
         while True:
-            msg = self.video_sock.recvfrom(4096)
-            msg = f"PEER {msg}"
-            self.sock.sendto(msg.encode(), self.peer_addr)
+            msg, _ = self.video_sock.recvfrom(4096)
+            self.sock.sendto(msg, self.peer_addr)
 
     def main(self):
         self.register()
         self.start_connection_listener()
         self.request_peer()
         while True:
+            input("Take command")
+            self.chat_loop()
             time.sleep(100)
 
 

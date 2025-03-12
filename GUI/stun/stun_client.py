@@ -44,6 +44,7 @@ class StunClient:
         while self.running:
             data, addr = self.sock.recvfrom(4096)
             if self.hole_punched and addr == self.peer_addr:
+                self.sock.sendto(data, ("127.0.0.1", 27463))
                 continue
             message = data.decode()
 
