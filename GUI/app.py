@@ -131,7 +131,7 @@ class TelloTkinterStream:
                 continue
             match button_key:
                 case 1:
-                    self.drone_communication.send_command("flip f")
+                    command_send("flip f")
                 case 2:
                     up_down -= weight
                 case 3:
@@ -149,7 +149,7 @@ class TelloTkinterStream:
                 case 10:
                     command_send("battery?", take_response=True)
                 case _:
-                    self.drone_communication.send_command("emergency")
+                    command_send("emergency")
 
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
         command_send(command, True)
