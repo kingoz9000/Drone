@@ -38,7 +38,8 @@ class StunClient:
         self.sock.sendto(f"REQUEST {peer_id}".encode(), self.SERVER_ADDR)
 
     def start_connection_listener(self):
-        threading.Thread(target=self.listen, daemon=True).start()
+        self.listen_thread = threading.Thread(target=self.listen, daemon=True)
+        self.listen_thread.start()
 
     def listen(self):
         while self.running:
@@ -70,6 +71,7 @@ class StunClient:
                 self.hole_punched = True
                 print("Hole punched!")
                 self.sock.sendto(b"HOLE PUNCHED", self.SERVER_ADDR)
+                self.listen_thread.join()
 
             # Disliked, not sure how to refactor as i dont want peer communication to go through here, but i dont know how to avoid it
             if message.startswith("PEER"):

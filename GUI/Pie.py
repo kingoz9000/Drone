@@ -24,7 +24,7 @@ class StunClient:
 
     def register(self):
         self.sock.sendto(b"REGISTER", self.SERVER_ADDR)
-        response, _ = self.sock.recvfrom(1024)
+        response, _ = self.sock.recvfrom(4096)
         self.client_id = response.decode().split()[1]
         print(response.decode())
 
@@ -60,7 +60,7 @@ class StunClient:
                 self.command_sock.sendto(
                     bytes(message.split()[1], "utf-8"), self.command_addr
                 )
-            print(message)
+            # print(message)
             self.command_sock.sendto(bytes(message, "utf-8"), self.command_addr)
 
     def hole_punch(self):
