@@ -2,6 +2,7 @@ import socket
 import threading
 import time
 
+
 class StunClient:
 
     def __init__(self):
@@ -10,92 +11,87 @@ class StunClient:
 
         self.client_id = None
 
-        self.peer_ip = None
-        self.peer_port = None
+        self.peer_addr = None
 
-        self.SERVER_IP = "130.225.37.157"
-        self.SERVER_PORT = 12345
+        self.SERVER_ADDR = ("130.225.37.157", 12345)
 
         self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
 
         self.running = True
 
-
     def register(self):
-        self.sock.sendto(b"REGISTER", (self.SERVER_IP, self.SERVER_PORT))
-        response, _ = self.sock.recvfrom(1024)
+        self.sock.sendto(b"REGISTER", self.SERVER_ADDR)
+        response, _ = self.sock.recvfrom(4096)
         self.client_id = response.decode().split()[1]
         print(f"Registered with ID: {self.client_id}")
 
-    def request_peer(self):
+    def request_peer(self):  # Perhaps add assumeability for port id 0/1 for Pie.py
         peer_id = input("Enter peer ID: ")
         if peer_id == "CHECK":
-            self.sock.sendto(b"CHECK", (self.SERVER_IP, self.SERVER_PORT))
+            self.sock.sendto(b"CHECK", self.SERVER_ADDR)
             self.request_peer()
 
-        self.sock.sendto(f"REQUEST {peer_id}".encode(), (self.SERVER_IP, self.SERVER_PORT))
+        self.sock.sendto(f"REQUEST {peer_id}".encode(), self.SERVER_ADDR)
 
     def start_connection_listener(self):
         threading.Thread(target=self.listen, daemon=True).start()
 
     def listen(self):
         while self.running:
-            data, addr = self.sock.recvfrom(1024)
+            data, addr = self.sock.recvfrom(4096)
             message = data.decode()
 
             if message.startswith("SERVER"):
                 if message.split()[1] == "CONNECT":
                     _, _, peer_ip, peer_port = message.split()
                     print(f"Received peer details: {peer_ip}:{peer_port}")
-                    self.peer_ip = peer_ip
-                    self.peer_port = int(peer_port)
+                    self.peer_addr = (peer_ip, int(peer_port))
                     self.hole_punch()
 
                 if message.split()[1] == "HEARTBEAT":
-                    self.sock.sendto(b"ALIVE", (self.SERVER_IP, self.SERVER_PORT))
+                    self.sock.sendto(b"ALIVE", self.SERVER_ADDR)
 
-                if message.split()[1] == "DISCONNECT":  
+                if message.split()[1] == "DISCONNECT":
                     print("Server disconnected due to other client disconnection")
                     self.running = False
                     self.sock.close()
+
                 if message.split()[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
-            
+
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
-                self.sock.sendto(b"HOLE PUNCHED", (self.SERVER_IP, self.SERVER_PORT))
-                threading.Thread(target=self.chat_loop).start()
+                self.sock.sendto(b"HOLE PUNCHED", self.SERVER_ADDR)
 
-
+            # Disliked, not sure how to refactor as i dont want peer communication to go through here, but i dont know how to avoid it
             if message.startswith("PEER"):
                 print(f"\nPeer: {message.split()[1]}")
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
-            self.sock.sendto(b"HOLE", (self.peer_ip, self.peer_port))
+            self.sock.sendto(b"HOLE", self.peer_addr)
             time.sleep(0.1)
 
     def chat_loop(self):
         while self.running:
             msg = input("You: ")
-            if msg == "info":
-                print(f"Connected to: {self.peer_ip}:{self.peer_port}")
-            else:
-                msg = f"PEER {msg}"
-                self.sock.sendto(msg.encode(), (self.peer_ip, self.peer_port))
+            msg = f"PEER {msg}"
+            self.sock.sendto(msg.encode(), self.peer_addr)
         print("Chat loop stopped")
 
     def main(self):
         self.register()
         self.start_connection_listener()
         self.request_peer()
-        while self.running:
-           time.sleep(1) 
+
 
 if __name__ == "__main__":
     client = StunClient()
     client.main()
-    print("Client stopped")
 
+    while client.running:
+        if client.hole_punched:
+            break
+    client.chat_loop()

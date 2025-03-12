@@ -13,6 +13,7 @@ class StunHandler:
         self.SERVER_ADDR = ("130.225.37.157", 12345)
         self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
+        self.running = True
 
     def register(self):
         self.sock.sendto(b"REGISTER", self.SERVER_ADDR)
@@ -30,6 +31,7 @@ class StunHandler:
     def listen(self):
         while True:
             data, addr = self.sock.recvfrom(1024)
+            print("[Stun handler]: Recieved something")
             message = data.decode()
             if message.startswith("SERVER"):
                 if message.split()[1] == "CONNECT":
@@ -46,7 +48,6 @@ class StunHandler:
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
-
                 # Return peer_addr and end process
 
             # Unneeded as actual communication will be handled elsewhere

@@ -42,16 +42,17 @@ class TelloTkinterStream:
                     break
                 time.sleep(1)
 
-        if peer_addr == None:
-            print("Failed to connect")
+            if peer_addr is None:
+                print("Failed to connect")
+                return
 
         drone_video_addr = ("0.0.0.0", 11111) if not args.stun else peer_addr
         drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else peer_addr
         # Start video stream and communication with the drone
-        self.video_stream: DroneVideoFeed = DroneVideoFeed(drone_video_addr)
         self.drone_communication: DroneCommunication = DroneCommunication(
             drone_comm_addr
         )
+        self.video_stream: DroneVideoFeed = DroneVideoFeed(drone_video_addr)
 
         # Initialize joystick
         self.joystick = JoystickHandler()
