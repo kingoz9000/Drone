@@ -46,10 +46,12 @@ class StunServer:
                 for k, v in self.clients.items():
                     if v[2] >= 3:
                         self.logger.info(f"Client {k} has disconnected")
+                        # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
                                 self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v2[0])
                                 self.clients[k2][1] = None
+                                self.logger.info(f"Client {k2} disconnected from Client {k}")
 
                         clients_to_remove.append(k)
                     else:
@@ -76,6 +78,7 @@ class StunServer:
                 self.logger.info(f"Client {client_id} registered from {addr}")
 
             elif message.startswith("ALIVE"):
+                self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
                 client_id = self.get_client_id(addr)
                 self.logger.debug(f"Client {client_id} is alive")
                 if client_id is not None:
@@ -100,6 +103,7 @@ class StunServer:
                     self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
 
             elif message.startswith("REQUEST"):
+                self.logger.debug(f"Received request from {addr}")
                 _, target_id = message.split()
                 target_id = int(target_id)
                 current_client_id = self.get_client_id(addr)
