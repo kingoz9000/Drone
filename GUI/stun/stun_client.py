@@ -71,7 +71,6 @@ class StunClient:
                 self.hole_punched = True
                 print("Hole punched!")
                 self.sock.sendto(b"HOLE PUNCHED", self.SERVER_ADDR)
-                self.listen_thread.join()
 
             # Disliked, not sure how to refactor as i dont want peer communication to go through here, but i dont know how to avoid it
             if message.startswith("PEER"):
