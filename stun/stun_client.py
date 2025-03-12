@@ -27,10 +27,8 @@ class StunClient:
         print(f"Registered with ID: {self.client_id}")
 
     def request_peer(self):  # Perhaps add assumeability for port id 0/1 for Pie.py
+        self.sock.sendto(b"CHECK", self.SERVER_ADDR)
         peer_id = input("Enter peer ID: ")
-        if peer_id == "CHECK":
-            self.sock.sendto(b"CHECK", self.SERVER_ADDR)
-            self.request_peer()
 
         self.sock.sendto(f"REQUEST {peer_id}".encode(), self.SERVER_ADDR)
 
@@ -68,6 +66,7 @@ class StunClient:
             # Disliked, not sure how to refactor as i dont want peer communication to go through here, but i dont know how to avoid it
             if message.startswith("PEER"):
                 print(f"\nPeer: {message.split()[1]}")
+            print(message)
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):

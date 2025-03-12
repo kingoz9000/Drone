@@ -61,6 +61,7 @@ class StunClient:
                 self.command_sock.sendto(
                     bytes(message.split()[1], "utf-8"), self.command_addr
                 )
+            print(message)
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
