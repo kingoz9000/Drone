@@ -33,11 +33,11 @@ class TelloTkinterStream:
 
         peer_addr = None
         if args.stun:
-            stun_handler = StunClient()
-            stun_handler.main()
+            self.stun_handler = StunClient()
+            self.stun_handler.main()
             for _ in range(10):
-                if stun_handler.hole_punched:
-                    peer_addr = stun_handler.get_peer_addr()
+                if self.stun_handler.hole_punched:
+                    peer_addr = self.stun_handler.get_peer_addr()
                     print("Peer to Peer connection established")
                     break
                 time.sleep(1)
@@ -48,13 +48,13 @@ class TelloTkinterStream:
         time.sleep(5)
 
         drone_video_addr = ("0.0.0.0", 11111) if not args.stun else peer_addr
-        stun_handler.chat_loop()
+        self.stun_handler.chat_loop()
         drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else peer_addr
         # Start video stream and communication with the drone
         self.drone_communication: DroneCommunication = DroneCommunication(
             drone_comm_addr
         )
-        #self.video_stream: DroneVideoFeed = DroneVideoFeed(drone_video_addr)
+        self.video_stream: DroneVideoFeed = DroneVideoFeed(drone_video_addr)
 
         # Initialize joystick
         self.joystick = JoystickHandler()
@@ -148,7 +148,10 @@ class TelloTkinterStream:
                     self.drone_communication.send_command("emergency")
 
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-        self.drone_communication.send_command(command, True)
+        if self.ARGS.stun:
+            self.stun_handler.send_command(command)
+        else:
+            self.drone_communication.send_command(command, True)
 
     def get_ping(self):
         if self.ARGS.noping:

@@ -84,6 +84,9 @@ class StunClient:
             self.sock.sendto(msg.encode(), self.peer_addr)
         print("Chat loop stopped")
 
+    def send_command(self, command):
+        self.sock.sendto(command.encode(), self.peer_addr)
+
     def main(self):
         self.register()
         self.start_connection_listener()
