@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+from tkinter import Message
 
 
 class StunClient:
@@ -42,6 +43,8 @@ class StunClient:
     def listen(self):
         while self.running:
             data, addr = self.sock.recvfrom(4096)
+            if self.hole_punched and addr == self.peer_addr:
+                continue
             message = data.decode()
 
             if message.startswith("SERVER"):
