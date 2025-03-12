@@ -118,6 +118,11 @@ class TelloTkinterStream:
         up_down = 0
         yaw = 0
 
+        command_send = None
+        if self.ARGS.stun:
+            command_send = self.stun_handler.send_command
+        else:
+            command_send = self.drone_communication.send_command
         # Button actions
         for button_key, button_value in buttons.items():
             if not button_value:
@@ -134,23 +139,18 @@ class TelloTkinterStream:
                 case 5:
                     yaw += weight
                 case 6:
-                    self.drone_communication.send_command("reboot")
+                    command_send("reboot")
                 case 8:
-                    self.drone_communication.send_command("takeoff")
+                    command_send("takeoff")
                 case 9:
-                    self.drone_communication.send_command("land")
+                    command_send("land")
                 case 10:
-                    self.drone_communication.send_command(
-                        "battery?", take_response=True
-                    )
+                    command_send("battery?", take_response=True)
                 case _:
                     self.drone_communication.send_command("emergency")
 
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-        if self.ARGS.stun:
-            self.stun_handler.send_command(command)
-        else:
-            self.drone_communication.send_command(command, True)
+           command_send(command, True)
 
     def get_ping(self):
         if self.ARGS.noping:
