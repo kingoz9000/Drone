@@ -150,7 +150,7 @@ class TelloTkinterStream:
                     self.drone_communication.send_command("emergency")
 
         command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-           command_send(command, True)
+        command_send(command, True)
 
     def get_ping(self):
         if self.ARGS.noping:
