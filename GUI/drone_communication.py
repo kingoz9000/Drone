@@ -25,7 +25,7 @@ class DroneCommunication:
             print(f"Command '{command}': Recived the response: '{response.decode()}'")
             return response.decode()
         elif print_command:
-            print(f"Command sent '{command}'")
+            print(f"Command sent '{command} IP: {self.COMMAND_ADDR}'")
 
     def connect(self) -> None:
         """Connects to the drone by starting SDK mode('command') and turning on the video stream('streamon')"""
@@ -41,5 +41,6 @@ class DroneCommunication:
 
 if __name__ == "__main__":
     drone: DroneCommunication = DroneCommunication()
+
 
     drone.main()
