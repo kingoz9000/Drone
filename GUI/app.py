@@ -46,8 +46,8 @@ class TelloTkinterStream:
                 print("Failed to connect")
                 return
         time.sleep(5)
-        #self.stun_handler.send_command("command")
-        #self.stun_handler.send_command("streamon")
+        self.stun_handler.send_command("command")
+        self.stun_handler.send_command("streamon")
 
         drone_video_addr = ("0.0.0.0", 11111) if not args.stun else (f"0.0.0.0", 27463)
         drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else peer_addr
