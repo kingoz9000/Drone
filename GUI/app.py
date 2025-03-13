@@ -35,7 +35,6 @@ class TelloTkinterStream:
 
         if args.stun:
             self.peer_addr = self.stun_connect()
-            print(self.peer_addr)
             time.sleep(5)
             self.start_stun()
         else:
@@ -160,7 +159,10 @@ class TelloTkinterStream:
 
         self.running = False
         self.video_stream.stop()
-        self.drone_communication.stop()
+        if self.ARGS.stun:
+            self.stun_handler.send_command("streamoff")
+        else:
+            self.drone_communication.stop()
 
         self.root.quit()
         self.root.destroy()
