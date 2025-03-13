@@ -156,21 +156,30 @@ class TelloTkinterStream:
             command_send(command, True)
 
     def get_ping(self):
+        ping_data: list[int] = [0 for _ in range(10)]
         while self.running:
             if self.ARGS.noping:
                 return
 
-            start_time = time.perf_counter_ns()
-            self.drone_battery = self.drone_communication.send_command("battery?", False, True)
-            end_time = time.perf_counter_ns()
-            print(self.drone_battery)
+            for i in range(10):
+                start_time = time.perf_counter_ns()
+                self.drone_battery = self.drone_communication.send_command("battery?", False, True)
+                end_time = time.perf_counter_ns()
+                ping_data[i] = end_time - start_time
 
-            ping = (end_time - start_time) // 1000000
+            ping = sum(ping_data) // 10000000
 
             if type(self.drone_battery) is str:
                 self.drone_stats.delete("1.0", "end")
                 self.drone_stats.insert(
                     "1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping:03d} ms")
+            else:
+                self.drone_stats.delete("1.0", "end")
+                self.drone_stats.insert(
+                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d} ms")
+            
+            if ping < 1000:
+                time.sleep(1 - ping / 1024)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the Tkinter window."""
