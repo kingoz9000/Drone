@@ -25,7 +25,7 @@ class TelloTkinterStream:
         self.drone_stats = Text(self.root, height=2, width=30)
         self.drone_stats.pack()
         self.drone_stats.insert("1.0", f"Battery: xx% \nPing xx ms")
-        self.drone_stats.config(state="disabled")
+        self.drone_stats.config()
 
         self.running = True
 
@@ -51,7 +51,7 @@ class TelloTkinterStream:
 
         drone_video_addr = ("0.0.0.0", 11111) if not args.stun else ("0.0.0.0", 27463)
         drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else peer_addr
-        drone_comm_port = 52397
+        drone_comm_port = 9000
         # Start video stream and communication with the drone
         self.drone_communication = DroneCommunication(drone_comm_addr, drone_comm_port)
         self.video_stream = DroneVideoFeed(drone_video_addr)
@@ -64,8 +64,9 @@ class TelloTkinterStream:
         # Initialize drone battery variable
         self.drone_battery = None
 
-        # Main thread
-        self.run_in_thread(self.main)
+        # Threads for joystick controls and pinging
+        self.run_in_thread(self.control_drone)
+        self.run_in_thread(self.get_ping)
 
         # Start video update loop
         self.update_video_frame()
@@ -99,86 +100,86 @@ class TelloTkinterStream:
         self.video_label.config(image=imgtk)
 
     def control_drone(self):
-        if not self.joystick.joystick:
-            return
+        while self.running:
+            if not self.joystick.joystick:
+                return
 
-        # Weights and other values
-        deadzone = 5
+            # Weights and other values
+            deadzone = 5
 
-        # Values from joystick
-        x, y, z, buttons = self.joystick.get_values()
+            # Values from joystick
+            x, y, z, buttons = self.joystick.get_values()
 
-        weight = (-z + 1) * 50
+            weight = (-z + 1) * 50
 
-        for_backward = x * weight
-        for_backward = 0 if -deadzone < for_backward < deadzone else for_backward
+            for_backward = x * weight
+            for_backward = 0 if -deadzone < for_backward < deadzone else for_backward
 
-        left_right = y * -1 * weight
-        left_right = 0 if -deadzone < left_right < deadzone else left_right
+            left_right = y * -1 * weight
+            left_right = 0 if -deadzone < left_right < deadzone else left_right
 
-        up_down = 0
-        yaw = 0
+            up_down = 0
+            yaw = 0
 
-        command_send = None
-        if self.ARGS.stun:
-            command_send = self.stun_handler.send_command
-        else:
-            command_send = self.drone_communication.send_command
-        # Button actions
-        for button_key, button_value in buttons.items():
-            if not button_value:
-                continue
-            match button_key:
-                case 1:
-                    command_send("flip f")
-                case 2:
-                    up_down -= weight
-                case 3:
-                    up_down += weight
-                case 4:
-                    yaw -= weight
-                case 5:
-                    yaw += weight
-                case 6:
-                    command_send("reboot")
-                case 8:
-                    command_send("takeoff")
-                case 9:
-                    command_send("land")
-                case 10:
-                    command_send("battery?", take_response=True)
-                case _:
-                    command_send("emergency")
+            command_send = None
+            if self.ARGS.stun:
+                command_send = self.stun_handler.send_command
+            else:
+                command_send = self.drone_communication.send_command
+            # Button actions
+            for button_key, button_value in buttons.items():
+                if not button_value:
+                    continue
+                match button_key:
+                    case 1:
+                        command_send("flip f")
+                    case 2:
+                        up_down -= weight
+                    case 3:
+                        up_down += weight
+                    case 4:
+                        yaw -= weight
+                    case 5:
+                        yaw += weight
+                    case 6:
+                        command_send("reboot")
+                    case 8:
+                        command_send("takeoff")
+                    case 9:
+                        command_send("land")
+                    case 10:
+                        command_send("battery?", take_response=True)
+                    case _:
+                        command_send("emergency")
 
-        command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-        command_send(command, True)
+            command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
+            command_send(command, True)
 
     def get_ping(self):
-        if self.ARGS.noping:
-            return
-
-        start_time = time.perf_counter_ns()
-        self.drone_battery = self.drone_communication.send_command(
-            "battery?", take_response=True
-        )
-        end_time = time.perf_counter_ns()
-
-        ping = (end_time - start_time) // 1000000
-
-        print(f"Ping for communication: {ping} ms")
-
-        self.drone_stats.delete("1.0", "end")
-        self.drone_stats.insert(
-            "1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping} ms"
-        )
-
-    def main(self):
+        ping_data: list[int] = [0 for _ in range(10)]
         while self.running:
-            self.control_drone()
+            if self.ARGS.noping:
+                return
 
-            self.get_ping()
+            for i in range(10):
+                start_time = time.perf_counter_ns()
+                self.drone_battery = self.drone_communication.send_command("battery?", False, True)
+                end_time = time.perf_counter_ns()
+                ping_data[i] = end_time - start_time
 
-            time.sleep(0.05)
+            ping = sum(ping_data) // 10000000
+
+            if type(self.drone_battery) is str:
+                self.drone_stats.delete("1.0", "end")
+                self.drone_stats.insert(
+                    "1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping:03d} ms")
+            else:
+                self.drone_stats.delete("1.0", "end")
+                self.drone_stats.insert(
+                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d} ms")
+            
+            if ping < 1000:
+                time.sleep(1 - ping / 1024)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the Tkinter window."""
