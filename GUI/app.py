@@ -22,35 +22,26 @@ class TelloTkinterStream:
         self.video_label: Label = Label(self.root)
         self.video_label.pack()
 
-        self.drone_stats = Text(self.root, height=2, width=30)
-        self.drone_stats.pack()
-        self.drone_stats.insert("1.0", f"Battery: xx% \nPing xx ms")
-        self.drone_stats.config()
+        # Bind cleanup to window close and q key
+        self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
+        self.root.bind("q", lambda e: self.cleanup())
+
+        self.print_to_image("1.0", f"Battery: xx% \nPing xx ms")
 
         self.running = True
 
         # TODO: introduce stun peer
 
-        peer_addr = None
         if args.stun:
-            self.stun_handler = StunClient()
-            self.stun_handler.main()
-            for _ in range(10):
-                if self.stun_handler.hole_punched:
-                    peer_addr = self.stun_handler.get_peer_addr()
-                    print("Peer to Peer connection established")
-                    break
-                time.sleep(1)
-
-            if peer_addr is None:
-                print("Failed to connect")
-                return
-        time.sleep(5)
-        self.stun_handler.send_command("command")
-        self.stun_handler.send_command("streamon")
+            self.peer_addr = self.stun_connect()
+            print(self.peer_addr)
+            time.sleep(5)
+            self.start_stun()
+        else:
+            self.peer_addr = None
 
         drone_video_addr = ("0.0.0.0", 11111) if not args.stun else ("0.0.0.0", 27463)
-        drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else peer_addr
+        drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else self.peer_addr
         drone_comm_port = 9000
         # Start video stream and communication with the drone
         self.drone_communication = DroneCommunication(drone_comm_addr, drone_comm_port)
@@ -71,12 +62,28 @@ class TelloTkinterStream:
         # Start video update loop
         self.update_video_frame()
 
-        # Bind cleanup to window close and q key
-        self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-        self.root.bind("q", lambda e: self.cleanup())
 
         # Start Tkinter event loop
         self.root.mainloop()
+
+    def print_to_image(self, pos, text):
+        self.drone_stats = Text(self.root, height=2, width=30)
+        self.drone_stats.pack()
+        self.drone_stats.insert(pos, text)
+        self.drone_stats.config()
+
+    def stun_connect(self):
+        self.stun_handler = StunClient()
+        self.stun_handler.main()
+        for _ in range(10):
+            if self.stun_handler.hole_punched:
+                print("Peer to Peer connection established")
+                return self.stun_handler.get_peer_addr()
+            time.sleep(1)
+
+    def start_stun(self):
+        self.stun_handler.send_command("command")
+        self.stun_handler.send_command("streamon")
 
     def update_video_frame(self) -> None:
         """Update the video frame in the Tkinter window."""
