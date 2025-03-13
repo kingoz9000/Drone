@@ -44,7 +44,9 @@ class TelloTkinterStream:
         drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else self.peer_addr
         drone_comm_returnport = 9000
         # Start video stream and communication with the drone
-        self.drone_communication = DroneCommunication(drone_comm_addr, drone_comm_returnport)
+        self.drone_communication = DroneCommunication(
+            drone_comm_addr, drone_comm_returnport
+        )
         self.video_stream = DroneVideoFeed(drone_video_addr)
 
         # Initialize joystick
@@ -61,7 +63,6 @@ class TelloTkinterStream:
 
         # Start video update loop
         self.update_video_frame()
-
 
         # Start Tkinter event loop
         self.root.mainloop()
@@ -107,24 +108,23 @@ class TelloTkinterStream:
         self.video_label.config(image=imgtk)
 
     def control_drone(self) -> None:
+        if not self.joystick.joystick:
+            return
+
         button_map = ButtonMap(self.joystick)
 
+        command_send = None
+        if self.ARGS.stun:
+            command_send = self.stun_handler.send_command
+        else:
+            command_send = self.drone_communication.send_command
+
         while self.running:
-            if not self.joystick.joystick:
-                return
-
-            command_send = None
-
-            if self.ARGS.stun:
-                command_send = self.stun_handler.send_command
-            else:
-                command_send = self.drone_communication.send_command
-
             commands = button_map.get_joystick_values()
 
             for command in commands:
                 command_send(command, print_command=False)
-            
+
             time.sleep(0.1)
 
     def get_ping(self) -> None:
@@ -135,7 +135,9 @@ class TelloTkinterStream:
 
             for i in range(10):
                 start_time = time.perf_counter_ns()
-                self.drone_battery = self.drone_communication.send_command("battery?", False, True)
+                self.drone_battery = self.drone_communication.send_command(
+                    "battery?", False, True
+                )
                 end_time = time.perf_counter_ns()
                 ping_data[i] = end_time - start_time
 
@@ -144,12 +146,15 @@ class TelloTkinterStream:
             if type(self.drone_battery) is str:
                 self.drone_stats.delete("1.0", "end")
                 self.drone_stats.insert(
-                    "1.0", f"Battery: {self.drone_battery.strip()}% \nPing: {ping:03d} ms")
+                    "1.0",
+                    f"Battery: {self.drone_battery.strip()}% \nPing: {ping:03d} ms",
+                )
             else:
                 self.drone_stats.delete("1.0", "end")
                 self.drone_stats.insert(
-                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d} ms")
-            
+                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d} ms"
+                )
+
             if ping < 1000:
                 time.sleep(1 - ping / 1024)
 
