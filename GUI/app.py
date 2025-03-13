@@ -4,6 +4,7 @@ from drone_communication import DroneCommunication
 from joystick import JoystickHandler
 from drone_video_feed import DroneVideoFeed
 from stun.stun_client import StunClient
+from button_mapping import ButtonMap
 import threading
 import time
 import argparse
@@ -66,13 +67,13 @@ class TelloTkinterStream:
         # Start Tkinter event loop
         self.root.mainloop()
 
-    def print_to_image(self, pos, text):
+    def print_to_image(self, pos, text) -> None:
         self.drone_stats = Text(self.root, height=2, width=30)
         self.drone_stats.pack()
         self.drone_stats.insert(pos, text)
         self.drone_stats.config()
 
-    def stun_connect(self):
+    def stun_connect(self) -> tuple:
         self.stun_handler = StunClient()
         self.stun_handler.main()
         for _ in range(10):
@@ -81,7 +82,7 @@ class TelloTkinterStream:
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
 
-    def start_stun(self):
+    def start_stun(self) -> None:
         self.stun_handler.send_command("command")
         self.stun_handler.send_command("streamon")
 
@@ -106,63 +107,28 @@ class TelloTkinterStream:
         self.video_label.imgtk = imgtk
         self.video_label.config(image=imgtk)
 
-    def control_drone(self):
+    def control_drone(self) -> None:
+        button_map = ButtonMap(self.joystick)
+
         while self.running:
             if not self.joystick.joystick:
                 return
 
-            # Weights and other values
-            deadzone = 5
-
-            # Values from joystick
-            x, y, z, buttons = self.joystick.get_values()
-
-            weight = (-z + 1) * 50
-
-            for_backward = x * weight
-            for_backward = 0 if -deadzone < for_backward < deadzone else for_backward
-
-            left_right = y * -1 * weight
-            left_right = 0 if -deadzone < left_right < deadzone else left_right
-
-            up_down = 0
-            yaw = 0
-
             command_send = None
+
             if self.ARGS.stun:
                 command_send = self.stun_handler.send_command
             else:
                 command_send = self.drone_communication.send_command
-            # Button actions
-            for button_key, button_value in buttons.items():
-                if not button_value:
-                    continue
-                match button_key:
-                    case 1:
-                        command_send("flip f")
-                    case 2:
-                        up_down -= weight
-                    case 3:
-                        up_down += weight
-                    case 4:
-                        yaw -= weight
-                    case 5:
-                        yaw += weight
-                    case 6:
-                        command_send("reboot")
-                    case 8:
-                        command_send("takeoff")
-                    case 9:
-                        command_send("land")
-                    case 10:
-                        command_send("battery?", take_response=True)
-                    case _:
-                        command_send("emergency")
 
-            command = f"rc {for_backward:.2f} {left_right:.2f} {up_down} {yaw}"
-            command_send(command, True)
+            commands = button_map.get_joystick_values()
 
-    def get_ping(self):
+            for command in commands:
+                command_send(command, print_command=False)
+            
+            time.sleep(0.1)
+
+    def get_ping(self) -> None:
         ping_data: list[int] = [0 for _ in range(10)]
         while self.running:
             if self.ARGS.noping:
