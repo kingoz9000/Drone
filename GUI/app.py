@@ -81,6 +81,15 @@ class TelloTkinterStream:
                 print("Peer to Peer connection established")
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
+            
+    def monitor_connection(self) -> None:
+        while self.running:
+            # update ui if connection is lost
+            if not self.stun_handler.hole_punched:
+                self.drone_stats.insert("1.0", "Connection lost")
+                self.running = False
+                break
+            time.sleep(2)
 
     def start_stun(self) -> None:
         self.stun_handler.send_command("command")
