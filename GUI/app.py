@@ -29,8 +29,6 @@ class TelloTkinterStream:
 
         self.print_to_image("1.0", f"Battery: xx% \nPing xx ms")
 
-        self.running = True
-
         # TODO: introduce stun peer
 
         if args.stun:
@@ -83,11 +81,10 @@ class TelloTkinterStream:
             time.sleep(1)
             
     def monitor_connection(self) -> None:
-        while self.running:
+        while True:
             # update ui if connection is lost
             if not self.stun_handler.hole_punched:
                 self.drone_stats.insert("1.0", "Connection lost")
-                self.running = False
                 break
             time.sleep(2)
 
@@ -128,7 +125,7 @@ class TelloTkinterStream:
         else:
             command_send = self.drone_communication.send_command
 
-        while self.running:
+        while True:
             commands = button_map.get_joystick_values()
 
             for command in commands:
@@ -138,7 +135,7 @@ class TelloTkinterStream:
 
     def get_ping(self) -> None:
         ping_data: list[int] = [0 for _ in range(10)]
-        while self.running:
+        while True:
             if self.ARGS.noping:
                 return
 
@@ -171,8 +168,6 @@ class TelloTkinterStream:
         """Safely clean up resources and close the Tkinter window."""
         print("Shutting down...")
 
-        self.running = False
-        self.video_stream.stop()
         if self.ARGS.stun:
             self.stun_handler.send_command("streamoff")
         else:

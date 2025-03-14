@@ -13,7 +13,6 @@ class DroneVideoFeed:
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout: int = 1
         self.frames_queue = queue.Queue(maxsize=5)
-        self.running: bool = True
 
         self.run_in_thread(self.frame_grab)
 
@@ -38,8 +37,6 @@ class DroneVideoFeed:
 
         try:
             for frame in self.container.decode(video=0):
-                if not self.running:
-                    break
                 img = np.array(frame.to_image())
                 if img is not None and img.size > 0:
                     try:
@@ -51,23 +48,18 @@ class DroneVideoFeed:
                     except queue.Full:
                         pass
         except Exception as e:
-            if self.running:
-                print(e)
-                print("Trying again...")
-                self.container.close()
-                time.sleep(1)
-                
-                self.frame_grab()
+            print(e)
+            print("Trying again...")
+            self.container.close()
+            time.sleep(1)
+            
+            self.frame_grab()
 
     def get_frame(self) -> np.ndarray | None:
         """Returns the last frame in the frames queue"""
         if not self.frames_queue.empty():
             return self.frames_queue.get_nowait()
         return None
-
-    def stop(self) -> None:
-        """Stops the video feed by setting running to False"""
-        self.running = False
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:

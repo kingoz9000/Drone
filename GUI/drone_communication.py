@@ -3,8 +3,7 @@ import socket
 
 class DroneCommunication:
     def __init__(self, command_addr, command_returnport):
-        """Initialize the DroneCommunication object and set running to True"""
-        # Sending commands / Recieving response
+        # Addresses and ports for sending commands / Recieving response
         self.COMMAND_ADDR: tuple = command_addr
         self.COMMAND_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.COMMAND_SOCKET.bind(("0.0.0.0", command_returnport))
@@ -39,12 +38,10 @@ class DroneCommunication:
         self.send_command("streamon")
 
     def stop(self) -> None:
-        """Stops the drone by turning off the video stream("streamoff") and setting running to False"""
-        self.running = False
+        """Stops the drone by turning off the video stream("streamoff")"""
         self.send_command("streamoff")
 
 
 if __name__ == "__main__":
-    drone: DroneCommunication = DroneCommunication()
+    drone = DroneCommunication()
 
-    drone.main()
