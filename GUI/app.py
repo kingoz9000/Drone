@@ -49,8 +49,6 @@ class TelloTkinterStream:
 
         # Initialize joystick
         self.joystick = JoystickHandler()
-        if self.joystick.joystick:
-            self.run_in_thread(self.joystick.start_reading)
 
         # Initialize drone battery variable
         self.drone_battery = None

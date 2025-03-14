@@ -1,5 +1,5 @@
 import pyglet
-import time
+import threading
 
 
 class JoystickHandler:
@@ -10,11 +10,11 @@ class JoystickHandler:
 
         if debug:
             pyglet.clock.schedule_interval(self.get_values, 0.05)  # Update every 50ms
-            self.start_reading()
+        
+        self.run_in_thread(self.start_reading)
 
     def start_reading(self):
         if not self.joystick:
-            print("No valid joystick found")
             return
         # Run Pyglet event loop
         pyglet.app.run()
@@ -53,6 +53,13 @@ class JoystickHandler:
             print(self.joystick.x, self.joystick.y, self.joystick.z, self.buttons)
 
         return (self.joystick.x, self.joystick.y, self.joystick.z, self.buttons)
+    
+    @staticmethod
+    def run_in_thread(func, *args) -> threading.Thread:
+        """General worker function to run a function in a thread"""
+        thread = threading.Thread(target=func, args=args, daemon=True)
+        thread.start()
+        return thread
 
 
 if __name__ == "__main__":
