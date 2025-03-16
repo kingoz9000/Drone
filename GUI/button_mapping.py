@@ -1,8 +1,8 @@
-
+from joystick import JoystickHandler
 
 class ButtonMap:
-    def __init__(self, joystick):
-        self.joystick = joystick
+    def __init__(self):
+        self.joystick = JoystickHandler()
 
         self.deadzone: int = 5
         self.weight: int = 0
@@ -14,6 +14,9 @@ class ButtonMap:
         self.commands: list[str] = []
         
     def get_joystick_values(self) -> list[str]:
+        if not self.joystick.joystick:
+            return
+
         self.commands = []
 
         x, y, z, buttons = self.joystick.get_values()

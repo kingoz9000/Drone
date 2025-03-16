@@ -1,7 +1,6 @@
 from tkinter import Tk, Label, Text
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
-from joystick import JoystickHandler
 from drone_video_feed import DroneVideoFeed
 from stun.stun_client import StunClient
 from button_mapping import ButtonMap
@@ -46,9 +45,6 @@ class TelloTkinterStream:
             drone_comm_addr, drone_comm_returnport
         )
         self.video_stream = DroneVideoFeed(drone_video_addr)
-
-        # Initialize joystick
-        self.joystick = JoystickHandler()
 
         # Initialize drone battery variable
         self.drone_battery = None
@@ -112,10 +108,10 @@ class TelloTkinterStream:
         self.video_label.config(image=imgtk)
 
     def control_drone(self) -> None:
-        if not self.joystick.joystick:
-            return
+        button_map = ButtonMap()
 
-        button_map = ButtonMap(self.joystick)
+        if not button_map.joystick.joystick:
+            return
 
         command_send = None
         if self.ARGS.stun:
