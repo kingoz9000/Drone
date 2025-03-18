@@ -26,9 +26,7 @@ class TelloTkinterStream:
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("q", lambda e: self.cleanup())
 
-        self.print_to_image("1.0", f"Battery: xx% \nPing xx ms")
-
-        # TODO: introduce stun peer
+        self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
         if args.stun:
             self.peer_addr = self.stun_connect()
@@ -39,11 +37,9 @@ class TelloTkinterStream:
 
         drone_video_addr = ("0.0.0.0", 11111) if not args.stun else ("0.0.0.0", 27463)
         drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else self.peer_addr
-        drone_comm_returnport = 9000
+
         # Start video stream and communication with the drone
-        self.drone_communication = DroneCommunication(
-            drone_comm_addr, drone_comm_returnport
-        )
+        self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
         self.video_stream = DroneVideoFeed(drone_video_addr)
 
         # Initialize drone battery variable
@@ -73,7 +69,7 @@ class TelloTkinterStream:
                 print("Peer to Peer connection established")
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
-            
+
     def monitor_connection(self) -> None:
         while True:
             # update ui if connection is lost
