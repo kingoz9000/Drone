@@ -1,4 +1,4 @@
-from tkinter import Tk, Label, Text
+from tkinter import Tk, Canvas, Text
 from PIL import Image, ImageTk
 from drone_communication import DroneCommunication
 from drone_video_feed import DroneVideoFeed
@@ -19,8 +19,8 @@ class TelloTkinterStream:
         self.root.geometry("1280x920")
 
         # Create a label to display the video
-        self.video_label: Label = Label(self.root)
-        self.video_label.pack()
+        self.video_canvas = Canvas(self.root, width=960, height=720)
+        self.video_canvas.pack()
 
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
@@ -88,20 +88,22 @@ class TelloTkinterStream:
         if frame is not None:
             try:
                 img = Image.fromarray(frame)
+                img = img.resize((960, 720), Image.Resampling.LANCZOS)
+
                 imgtk = ImageTk.PhotoImage(image=img)
 
                 # Update the label using the main thread
-                self.root.after(0, self.update_label, imgtk)
+                self.root.after(0, self.update_canvas, imgtk)
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
 
         self.root.after(10, self.update_video_frame)
 
-    def update_label(self, imgtk):
-        """Safely update Tkinter Label from a different thread"""
-        self.video_label.imgtk = imgtk
-        self.video_label.config(image=imgtk)
+    def update_canvas(self, imgtk):
+        """Update Canvas with the new video frame."""
+        self.video_canvas.create_image(0, 0, anchor="nw", image=imgtk)
+        self.video_canvas.imgtk = imgtk  # Prevent garbage collection
 
     def control_drone(self) -> None:
         button_map = ButtonMap()
@@ -148,7 +150,7 @@ class TelloTkinterStream:
             else:
                 self.drone_stats.delete("1.0", "end")
                 self.drone_stats.insert(
-                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d} ms"
+                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d}+ ms"
                 )
 
             if ping < 1000:
