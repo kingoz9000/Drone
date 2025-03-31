@@ -60,7 +60,6 @@ class StunClient:
                 self.command_sock.sendto(
                     bytes(message.split()[1], "utf-8"), self.command_addr
                 )
-            # print(message)
             self.command_sock.sendto(bytes(message, "utf-8"), self.command_addr)
 
     def hole_punch(self):
@@ -77,10 +76,9 @@ class StunClient:
         self.register()
         self.start_connection_listener()
         self.request_peer()
-        while True:
-            input("Take command")
-            self.chat_loop()
-            time.sleep(100)
+
+        input("Press enter when app.py is ready to recieve")
+        self.chat_loop()
 
 
 if __name__ == "__main__":
