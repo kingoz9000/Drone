@@ -29,6 +29,7 @@ class DroneVideoFeed:
                     "reorder_queue_size": "0",
                     "flush_packets": "1",
                     "max_delay": "0",
+                    "hwaccel": "auto",
                 },
             )
         except av.error.ExitError as av_error:
