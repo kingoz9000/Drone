@@ -1,6 +1,6 @@
 import socket
 import time 
-import threading
+from threading import Thread, Lock
 import logging
 
 class StunServer:
@@ -9,6 +9,7 @@ class StunServer:
         self.SERVER_IP = "0.0.0.0"
         self.SERVER_PORT = 12345
         self.clients = {}
+        self.clients_lock = Lock()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.bind((self.SERVER_IP, self.SERVER_PORT))
 
@@ -31,10 +32,11 @@ class StunServer:
 
     def get_client_id(self, addr):
         self.logger.debug(f"Searching for client with address {addr} in dictionary: {self.clients}")
-        for k, v in self.clients.items():
-            if v[0] == addr:
-                return k
-        return None
+        with self.clients_lock:
+            for k, v in self.clients.items():
+                if v[0] == addr:
+                    return k
+            return None
 
 
     def heartbeat(self):
