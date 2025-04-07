@@ -13,6 +13,8 @@ class StunServer:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.bind((self.SERVER_IP, self.SERVER_PORT))
 
+        self.client_timeout = 3
+
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
@@ -46,7 +48,7 @@ class StunServer:
             if curtime - lasttime > 5:
                 clients_to_remove = []
                 for k, v in self.clients.items():
-                    if v[2] >= 3:
+                    if v[2] >= self.client_timeout:
                         self.logger.info(f"Client {k} has disconnected")
                         # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
@@ -98,10 +100,10 @@ class StunServer:
                     if k != client_id:
                         clients_to_send.append((k, v[0][0], v[0][1]))  # Append client ID, IP, and port
                 if clients_to_send:
-                    self.logging.info(f"Sending list of clients to Client {client_id}")
+                    self.logger.info(f"Sending list of clients to Client {client_id}")
                     self.server_socket.sendto(f"SERVER CLIENTS {clients_to_send}".encode(), addr)
                 else:
-                    self.logging.info(f"No clients to send to Client {client_id}")
+                    self.logger.info(f"No clients to send to Client {client_id}")
                     self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
 
             elif message.startswith("REQUEST"):
@@ -127,5 +129,9 @@ class StunServer:
 
 if __name__ == "__main__":
     server = StunServer()
-    threading.Thread(target=server.heartbeat).start()
-    server.exchange()
+    try:
+        threading.Thread(target=server.heartbeat, daemon=True).start()
+        server.exchange()
+    except KeyboardInterrupt:
+        server.logger.info("Shutting down server")
+        server.server_socket.close() 
