@@ -1,6 +1,6 @@
 import socket
 import time 
-from threading import Thread, Lock
+import threading
 import logging
 
 class StunServer:
@@ -9,7 +9,7 @@ class StunServer:
         self.SERVER_IP = "0.0.0.0"
         self.SERVER_PORT = 12345
         self.clients = {}
-        self.clients_lock = Lock()
+        self.clients_lock = threading.Lock()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.bind((self.SERVER_IP, self.SERVER_PORT))
 
