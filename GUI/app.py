@@ -125,6 +125,7 @@ class TelloTkinterStream:
 
             time.sleep(0.1)
 
+    #TODO: fix this function
     def get_ping(self) -> None:
         ping_data: list[int] = [0 for _ in range(10)]
         while True:
