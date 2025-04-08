@@ -77,7 +77,7 @@ class StunClient:
         self.start_connection_listener()
         self.request_peer()
 
-        input("Press enter when app.py is ready to recieve")
+        input("Press enter when app.py is ready to recieve\n")
         self.chat_loop()
 
 
