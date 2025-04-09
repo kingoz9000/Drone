@@ -1,5 +1,6 @@
 from joystick import JoystickHandler
 
+
 class ButtonMap:
     def __init__(self):
         self.joystick = JoystickHandler()
@@ -12,7 +13,7 @@ class ButtonMap:
         self.yaw: int = 0
 
         self.commands: list[str] = []
-        
+
     def get_joystick_values(self) -> list[str]:
         if not self.joystick.joystick:
             return
@@ -24,10 +25,16 @@ class ButtonMap:
         self.weight = (-z + 1) * 50
 
         self.for_backward = x * self.weight
-        self.for_backward = 0 if -self.deadzone < self.for_backward < self.deadzone else self.for_backward
+        self.for_backward = (
+            0
+            if -self.deadzone < self.for_backward < self.deadzone
+            else self.for_backward
+        )
 
         self.left_right = y * -1 * self.weight
-        self.left_right = 0 if -self.deadzone < self.left_right < self.deadzone else self.left_right
+        self.left_right = (
+            0 if -self.deadzone < self.left_right < self.deadzone else self.left_right
+        )
 
         self.up_down = 0
         self.yaw = 0
@@ -55,6 +62,8 @@ class ButtonMap:
                 case _:
                     self.commands.append("emergency")
 
-        self.commands.append(f"rc {self.for_backward:.2f} {self.left_right:.2f} {self.up_down} {self.yaw}")
+        self.commands.append(
+            f"rc {self.for_backward:.2f} {self.left_right:.2f} {self.up_down} {self.yaw}"
+        )
 
         return self.commands

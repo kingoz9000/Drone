@@ -24,7 +24,7 @@ class DroneCommunication:
             self.COMMAND_SOCKET.settimeout(0.5)
             try:
                 response = self.COMMAND_SOCKET.recv(1024).decode()
-                #print(f"Command '{command}': Recived the response: '{response}'")
+                # print(f"Command '{command}': Recived the response: '{response}'")
                 return response
             except socket.timeout:
                 print(f"Command '{command}': No response received within 0.5 seconds")
@@ -44,4 +44,3 @@ class DroneCommunication:
 
 if __name__ == "__main__":
     drone = DroneCommunication()
-

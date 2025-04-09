@@ -42,7 +42,9 @@ class DroneVideoFeed:
                 if img is not None and img.size > 0:
                     try:
                         if not self.frames_queue.full():
-                            self.frames_queue.put_nowait(img)  # Store only the latest frame
+                            self.frames_queue.put_nowait(
+                                img
+                            )  # Store only the latest frame
                         else:
                             self.frames_queue.get_nowait()  # Drop old frame
                             self.frames_queue.put_nowait(img)
@@ -53,7 +55,7 @@ class DroneVideoFeed:
             print("Trying again...")
             self.container.close()
             time.sleep(1)
-            
+
             self.frame_grab()
 
     def get_frame(self) -> np.ndarray | None:
@@ -68,4 +70,3 @@ class DroneVideoFeed:
         thread = threading.Thread(target=func, args=args, daemon=True)
         thread.start()
         return thread
-
