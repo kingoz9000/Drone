@@ -1,7 +1,8 @@
-import socket
-import time 
-import threading
 import logging
+import socket
+import threading
+import time
+
 
 class StunServer:
 
@@ -14,17 +15,22 @@ class StunServer:
         self.server_socket.bind((self.SERVER_IP, self.SERVER_PORT))
 
         self.client_timeout = 3
+        self.next_client_id = 0
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        stream_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
         stream_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(stream_handler)
 
         file_handler = logging.FileHandler("stun_server.log")
-        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        )
         file_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(file_handler)
 
@@ -33,13 +39,14 @@ class StunServer:
         self.stun_mode = False
 
     def get_client_id(self, addr):
-        self.logger.debug(f"Searching for client with address {addr} in dictionary: {self.clients}")
+        self.logger.debug(
+            f"Searching for client with address {addr} in dictionary: {self.clients}"
+        )
         with self.clients_lock:
             for k, v in self.clients.items():
                 if v[0] == addr:
                     return k
             return None
-
 
     def heartbeat(self):
         lasttime = 0
@@ -53,9 +60,13 @@ class StunServer:
                         # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
-                                self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v2[0])
+                                self.server_socket.sendto(
+                                    f"SERVER DISCONNECT".encode(), v2[0]
+                                )
                                 self.clients[k2][1] = None
-                                self.logger.info(f"Client {k2} disconnected from Client {k}")
+                                self.logger.info(
+                                    f"Client {k2} disconnected from Client {k}"
+                                )
 
                         clients_to_remove.append(k)
                     else:
@@ -68,16 +79,17 @@ class StunServer:
 
                 lasttime = curtime
 
-
     def exchange(self):
         while True:
             data, addr = self.server_socket.recvfrom(1024)
             message = data.decode().strip()
 
             if message.startswith("REGISTER"):
+                with self.clients_lock:
+                    client_id = self.next_client_id
+                    self.next_client_id += 1
+                    self.clients[client_id] = [addr, None, 0]
 
-                client_id = len(self.clients) 
-                self.clients[client_id] = [addr, None, 0]
                 self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
                 self.logger.info(f"Client {client_id} registered from {addr}")
 
@@ -98,10 +110,14 @@ class StunServer:
                 clients_to_send = []
                 for k, v in self.clients.items():
                     if k != client_id:
-                        clients_to_send.append((k, v[0][0], v[0][1]))  # Append client ID, IP, and port
+                        clients_to_send.append(
+                            (k, v[0][0], v[0][1])
+                        )  # Append client ID, IP, and port
                 if clients_to_send:
                     self.logger.info(f"Sending list of clients to Client {client_id}")
-                    self.server_socket.sendto(f"SERVER CLIENTS {clients_to_send}".encode(), addr)
+                    self.server_socket.sendto(
+                        f"SERVER CLIENTS {clients_to_send}".encode(), addr
+                    )
                 else:
                     self.logger.info(f"No clients to send to Client {client_id}")
                     self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
@@ -118,14 +134,26 @@ class StunServer:
 
                     if self.clients[target_id][1] == current_client_id:
                         # Send both clients each other's public IP and port
-                        self.server_socket.sendto(f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(), addr)
-                        self.server_socket.sendto(f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr)
-                        self.logger.info(f"Exchanged details between Client {current_client_id} and Client {target_id}")
+                        self.server_socket.sendto(
+                            f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(),
+                            addr,
+                        )
+                        self.server_socket.sendto(
+                            f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr
+                        )
+                        self.logger.info(
+                            f"Exchanged details between Client {current_client_id} and Client {target_id}"
+                        )
                     else:
-                        self.logger.info(f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally.")
+                        self.logger.info(
+                            f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally."
+                        )
                 else:
                     self.server_socket.sendto("NOT_FOUND".encode(), addr)
-                    self.logger.info(f"Client {current_client_id} requested Client {target_id}, but target not found.")
+                    self.logger.info(
+                        f"Client {current_client_id} requested Client {target_id}, but target not found."
+                    )
+
 
 if __name__ == "__main__":
     server = StunServer()
@@ -134,4 +162,4 @@ if __name__ == "__main__":
         server.exchange()
     except KeyboardInterrupt:
         server.logger.info("Shutting down server")
-        server.server_socket.close() 
+        server.server_socket.close()
