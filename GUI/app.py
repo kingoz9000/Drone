@@ -80,8 +80,6 @@ class TelloTkinterStream:
 
     def start_stun(self) -> None:
         self.stun_handler.send_command("command")
-        self.stun_handler.send_command("setfps middle")
-        self.stun_handler.send_command("setresolution low")
         self.stun_handler.send_command("streamon")
 
     def update_video_frame(self) -> None:
