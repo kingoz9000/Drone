@@ -24,11 +24,11 @@ class DroneVideoFeed:
                 timeout=(self.frame_grab_timeout, None),
                 format="h264",
                 options={
-                    "fflags": "nobuffer",
+                    # "fflags": "nobuffer",
                     "rtsp_transport": "udp",
-                    "reorder_queue_size": "0",
-                    "flush_packets": "1",
-                    "max_delay": "0",
+                    # "reorder_queue_size": "0",
+                    # "flush_packets": "1",
+                    # "max_delay": "0",
                     "hwaccel": "auto",
                 },
             )
