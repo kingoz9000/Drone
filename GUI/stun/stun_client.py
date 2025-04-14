@@ -8,10 +8,9 @@ class StunClient:
 
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(("", 0))  # Use ephemeral port
+        self.sock.bind(("", 0))
 
         self.client_id = None
-
         self.peer_addr = None
 
         self.SERVER_ADDR = ("130.225.37.157", 12345)
@@ -20,6 +19,12 @@ class StunClient:
         self.hole_punched = False
 
         self.running = True
+
+        self.command_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.command_addr = ("192.168.10.1", 8889)
+
+        self.video_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.video_sock.bind(("0.0.0.0", 11111))
 
     def register(self):
         self.sock.sendto(b"REGISTER", self.SERVER_ADDR)
@@ -31,10 +36,9 @@ class StunClient:
         if self.peer_addr:
             return self.peer_addr
 
-    def request_peer(self):  # Perhaps add assumeability for port id 0/1 for Pie.py
+    def request_peer(self):
         self.sock.sendto(b"CHECK", self.SERVER_ADDR)
         peer_id = input("Enter peer ID: ")
-
         self.sock.sendto(f"REQUEST {peer_id}".encode(), self.SERVER_ADDR)
 
     def start_connection_listener(self):

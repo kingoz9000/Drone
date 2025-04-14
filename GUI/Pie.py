@@ -1,8 +1,8 @@
 """This is on the pie and isolated to the modem and it self"""
 
-from socket import *
 import threading
 import time
+from socket import *
 
 
 class StunClient:
@@ -10,9 +10,12 @@ class StunClient:
     def __init__(self):
         self.sock = socket(AF_INET, SOCK_DGRAM)
         self.sock.bind(("", 0))  # Use ephemeral port
+
         self.client_id = None
         self.peer_addr = None
+
         self.SERVER_ADDR = ("130.225.37.157", 12345)
+
         self.HOLE_PUNCH_TRIES = 5
         self.hole_punched = False
 
