@@ -7,7 +7,7 @@ from button_mapping import ButtonMap
 from drone_communication import DroneCommunication
 from drone_video_feed import DroneVideoFeed
 from PIL import Image, ImageTk
-from stun.stun_client import StunClient
+from stun import ControlStunClient
 
 
 class TelloTkinterStream:
@@ -62,7 +62,7 @@ class TelloTkinterStream:
         self.drone_stats.config()
 
     def get_peer_address(self) -> tuple:
-        self.stun_handler = StunClient()
+        self.stun_handler = ControlStunClient()
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
