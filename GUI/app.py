@@ -1,11 +1,13 @@
+import argparse
+import threading
+import time
+from tkinter import Canvas, Text, Tk
+
+from button_mapping import ButtonMap
 from drone_communication import DroneCommunication
 from drone_video_feed import DroneVideoFeed
-from stun.stun_client import StunClient
-from button_mapping import ButtonMap
-
-from tkinter import Tk, Canvas, Text
 from PIL import Image, ImageTk
-import threading, time, argparse
+from stun.stun_client import StunClient
 
 
 class TelloTkinterStream:
