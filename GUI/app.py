@@ -74,8 +74,8 @@ class TelloTkinterStream:
 
     def connect_to_drone(self) -> None:
         if args.stun:
-            self.stun_handler.send_command("command")
-            self.stun_handler.send_command("streamon")
+            self.stun_handler.send_command_to_relay("command")
+            self.stun_handler.send_command_to_relay("streamon")
         else:
             self.drone_communication.send_command("command")
             self.drone_communication.send_command("streamon")
@@ -113,7 +113,7 @@ class TelloTkinterStream:
 
         command_send = None
         if self.ARGS.stun:
-            command_send = self.stun_handler.send_command
+            command_send = self.stun_handler.send_command_to_relay
         else:
             command_send = self.drone_communication.send_command
 
@@ -162,7 +162,7 @@ class TelloTkinterStream:
         print("Shutting down...")
 
         if self.ARGS.stun:
-            self.stun_handler.send_command("streamoff")
+            self.stun_handler.send_command_to_relay("streamoff")
         else:
             self.drone_communication.stop()
 
