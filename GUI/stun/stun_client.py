@@ -19,6 +19,7 @@ class StunClient:
         self.hole_punched = False
 
         self.running = True
+        self.relay = False
 
         self.command_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.command_addr = ("192.168.10.1", 8889)
@@ -47,8 +48,9 @@ class StunClient:
 
     def listen(self):
         while self.running:
-            data, addr = self.sock.recvfrom(4096)
-            if self.hole_punched and addr == self.peer_addr:
+            data = self.sock.recv(4096)
+
+            if not self.relay and self.hole_punched:
                 self.sock.sendto(data, ("127.0.0.1", 27463))
                 continue
             message = data.decode()
@@ -65,8 +67,8 @@ class StunClient:
 
                 if message.split()[1] == "DISCONNECT":
                     print("Server disconnected due to other client disconnection")
-                    self.running = False
                     self.sock.close()
+                    self.running = False
 
                 if message.split()[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
@@ -76,22 +78,16 @@ class StunClient:
                 print("Hole punched!")
                 self.sock.sendto(b"HOLE PUNCHED", self.SERVER_ADDR)
 
-            # Disliked, not sure how to refactor as i dont want peer communication to go through here, but i dont know how to avoid it
             if message.startswith("PEER"):
-                print(f"\nPeer: {message.split()[1]}")
-            print(message)
+                # intended for the relay
+                continue
+            print(f"Received message: {message}")        
+            self.command_sock.sendto(bytes(message, "utf-8"), self.command_addr)
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
             self.sock.sendto(b"HOLE", self.peer_addr)
             time.sleep(0.1)
-
-    def chat_loop(self):
-        while self.running:
-            msg = input("You: ")
-            msg = f"PEER {msg}"
-            self.sock.sendto(msg.encode(), self.peer_addr)
-        print("Chat loop stopped")
 
     def send_command(self, command, print_command=False, take_response=False):
         self.sock.sendto(command.encode(), self.peer_addr)
@@ -104,9 +100,10 @@ class StunClient:
 
 if __name__ == "__main__":
     client = StunClient()
+    client.relay = True
     client.main()
 
     while client.running:
         if client.hole_punched:
-            break
-    client.chat_loop()
+            msg = client.video_sock.recv(4096)
+            client.sock.sendto(msg, client.peer_addr)
