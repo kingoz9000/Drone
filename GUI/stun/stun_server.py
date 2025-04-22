@@ -60,18 +60,28 @@ class StunServer:
                         # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
-                                self.server_socket.sendto(
-                                    f"SERVER DISCONNECT".encode(), v2[0]
-                                )
+                                try:
+                                    self.server_socket.sendto(
+                                        f"SERVER DISCONNECT".encode(), v2[0]
+                                    )
+                                    self.logger.info(
+                                        f"Notified Client {k2} about disconnection of Client {k}"
+                                    )
+                                except Exception as e:
+                                    self.logger.error(
+                                        f"Failed to send disconnect message to Client {k2}: {e}"
+                                    )
                                 self.clients[k2][1] = None
-                                self.logger.info(
-                                    f"Client {k2} disconnected from Client {k}"
-                                )
 
                         clients_to_remove.append(k)
                     else:
-                        self.server_socket.sendto(f"SERVER HEARTBEAT".encode(), v[0])
-                        self.logger.debug(f"Sent heartbeat to Client {k}")
+                        try:
+                            self.server_socket.sendto(f"SERVER HEARTBEAT".encode(), v[0])
+                            self.logger.debug(f"Sent heartbeat to Client {k}")
+                        except Exception as e:
+                            self.logger.error(
+                                f"Failed to send heartbeat to Client {k}: {e}"
+                            )
                         v[2] += 1
 
                 for k in clients_to_remove:
@@ -90,8 +100,11 @@ class StunServer:
                     self.next_client_id += 1
                     self.clients[client_id] = [addr, None, 0]
 
-                self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
-                self.logger.info(f"Client {client_id} registered from {addr}")
+                try:
+                    self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
+                    self.logger.info(f"Client {client_id} registered from {addr}")
+                except Exception as e:
+                    self.logger.error(f"Failed to send registration confirmation to {addr}: {e}")
 
             elif message.startswith("ALIVE"):
                 self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
@@ -113,14 +126,17 @@ class StunServer:
                         clients_to_send.append(
                             (k, v[0][0], v[0][1])
                         )  # Append client ID, IP, and port
-                if clients_to_send:
-                    self.logger.info(f"Sending list of clients to Client {client_id}")
-                    self.server_socket.sendto(
-                        f"SERVER CLIENTS {clients_to_send}".encode(), addr
-                    )
-                else:
-                    self.logger.info(f"No clients to send to Client {client_id}")
-                    self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
+                try:
+                    if clients_to_send:
+                        self.logger.info(f"Sending list of clients to Client {client_id}")
+                        self.server_socket.sendto(
+                            f"SERVER CLIENTS {clients_to_send}".encode(), addr
+                        )
+                    else:
+                        self.logger.info(f"No clients to send to Client {client_id}")
+                        self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
+                except Exception as e:
+                    self.logger.error(f"Failed to send client list to {addr}: {e}")
 
             elif message.startswith("REQUEST"):
                 self.logger.debug(f"Received request from {addr}")
@@ -132,27 +148,33 @@ class StunServer:
                     self.clients[current_client_id][1] = target_id
                     target_addr = self.clients[target_id][0]
 
-                    if self.clients[target_id][1] == current_client_id:
-                        # Send both clients each other's public IP and port
-                        self.server_socket.sendto(
-                            f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(),
-                            addr,
-                        )
-                        self.server_socket.sendto(
-                            f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr
-                        )
-                        self.logger.info(
-                            f"Exchanged details between Client {current_client_id} and Client {target_id}"
-                        )
-                    else:
-                        self.logger.info(
-                            f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally."
-                        )
+                    try:
+                        if self.clients[target_id][1] == current_client_id:
+                            # Send both clients each other's public IP and port
+                            self.server_socket.sendto(
+                                f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(),
+                                addr,
+                            )
+                            self.server_socket.sendto(
+                                f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr
+                            )
+                            self.logger.info(
+                                f"Exchanged details between Client {current_client_id} and Client {target_id}"
+                            )
+                        else:
+                            self.logger.info(
+                                f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally."
+                            )
+                    except Exception as e:
+                        self.logger.error(f"Failed to send connection details: {e}")
                 else:
-                    self.server_socket.sendto("NOT_FOUND".encode(), addr)
-                    self.logger.info(
-                        f"Client {current_client_id} requested Client {target_id}, but target not found."
-                    )
+                    try:
+                        self.server_socket.sendto("NOT_FOUND".encode(), addr)
+                        self.logger.info(
+                            f"Client {current_client_id} requested Client {target_id}, but target not found."
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Failed to send NOT_FOUND message to {addr}: {e}")
 
 
 if __name__ == "__main__":

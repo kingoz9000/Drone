@@ -20,10 +20,13 @@ class StunClient:
         self.relay = False
 
     def register(self):
-        self.stun_socket.sendto(b"REGISTER", self.STUN_SERVER_ADDR)
-        response, _ = self.stun_socket.recvfrom(4096)
-        self.client_id = response.decode().split()[1]
-        print(f"Registered with ID: {self.client_id}")
+        try:
+            self.stun_socket.sendto(b"REGISTER", self.STUN_SERVER_ADDR)
+            response, _ = self.stun_socket.recvfrom(4096)
+            self.client_id = response.decode().split()[1]
+            print(f"Registered with ID: {self.client_id}")
+        except Exception as e:
+            print(f"Error during registration: {e}")
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
@@ -33,9 +36,17 @@ class StunClient:
         return thread
 
     def request_peer(self):
-        self.stun_socket.sendto(b"CHECK", self.STUN_SERVER_ADDR)
+        try:
+            self.stun_socket.sendto(b"CHECK", self.STUN_SERVER_ADDR)
+        except Exception as e:
+            print(f"Error sending CHECK message: {e}")
+            return
+
         peer_id = input("Enter peer ID: ")
-        self.stun_socket.sendto(f"REQUEST {peer_id}".encode(), self.STUN_SERVER_ADDR)
+        try:
+            self.stun_socket.sendto(f"REQUEST {peer_id}".encode(), self.STUN_SERVER_ADDR)
+        except Exception as e:
+            print(f"Error sending REQUEST message: {e}")
 
     def start_connection_listener(self):
         self.listen_thread = threading.Thread(target=self.listen, daemon=True)
@@ -43,7 +54,10 @@ class StunClient:
 
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
-            self.stun_socket.sendto(b"HOLE", self.peer_addr)
+            try:
+                self.stun_socket.sendto(b"HOLE", self.peer_addr)
+            except Exception as e:
+                print(f"Error sending HOLE punch message: {e}")
             time.sleep(0.1)
 
     def main(self):
