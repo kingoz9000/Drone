@@ -1,14 +1,12 @@
-import argparse
-import threading
-import time
+import argparse, threading, time
 from tkinter import Canvas, Text, Tk
+from collections import deque
 
 from button_mapping import ButtonMap
 from drone_communication import DroneCommunication
 from drone_video_feed import DroneVideoFeed
 from PIL import Image, ImageTk
 from stun import ControlStunClient
-from collections import deque
 
 
 class TelloTkinterStream:

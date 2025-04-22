@@ -1,6 +1,4 @@
-import asyncio
-import logging
-import time
+import asyncio, logging
 
 
 class StunProtocol(asyncio.DatagramProtocol):

@@ -1,8 +1,4 @@
-import queue
-import threading
-import numpy as np
-import av
-import time
+import queue, threading, av, time, numpy as np
 
 
 class DroneVideoFeed:

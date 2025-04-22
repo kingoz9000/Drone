@@ -1,6 +1,4 @@
-import socket
-import threading
-import time
+import socket, threading, time
 
 
 class StunClient:

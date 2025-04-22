@@ -1,7 +1,4 @@
-import logging
-import socket
-import threading
-import time
+import logging, socket, threading, time
 
 
 class StunServer:

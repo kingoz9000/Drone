@@ -1,6 +1,5 @@
 import socket
 import time
-
 from .stun_client import StunClient
 
 

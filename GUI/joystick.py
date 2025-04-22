@@ -1,5 +1,4 @@
-import pyglet
-import threading
+import pyglet, threading
 
 
 class JoystickHandler:
