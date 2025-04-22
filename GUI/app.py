@@ -77,6 +77,7 @@ class TelloTkinterStream:
         if args.stun:
             self.stun_handler.send_command_to_relay("command")
             self.stun_handler.send_command_to_relay("setresolution low")
+            self.stun_handler.send_command_to_relay("setfps low")
             self.stun_handler.send_command_to_relay("streamon")
         else:
             self.drone_communication.send_command("command")
