@@ -13,8 +13,6 @@ class DroneCommunication:
         self.STATE_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.STATE_SOCKET.bind(self.STATE_IP)
 
-        self.connect()
-
     def send_command(
         self, command: str, print_command: bool = True, take_response: bool = False
     ) -> str | None:
@@ -31,15 +29,6 @@ class DroneCommunication:
                 return None
         elif print_command:
             print(f"Command sent '{command} IP: {self.COMMAND_ADDR}'")
-
-    def connect(self) -> None:
-        """Connects to the drone by starting SDK mode('command') and turning on the video stream('streamon')"""
-        self.send_command("command")
-        self.send_command("streamon")
-
-    def stop(self) -> None:
-        """Stops the drone by turning off the video stream("streamoff")"""
-        self.send_command("streamoff")
 
 
 if __name__ == "__main__":

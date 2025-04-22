@@ -1,12 +1,13 @@
-from tkinter import Tk, Canvas, Text
-from PIL import Image, ImageTk
-from drone_communication import DroneCommunication
-from drone_video_feed import DroneVideoFeed
-from stun.stun_client import StunClient
-from button_mapping import ButtonMap
+import argparse
 import threading
 import time
-import argparse
+from tkinter import Canvas, Text, Tk
+
+from button_mapping import ButtonMap
+from drone_communication import DroneCommunication
+from drone_video_feed import DroneVideoFeed
+from PIL import Image, ImageTk
+from stun import ControlStunClient
 
 
 class TelloTkinterStream:
@@ -29,20 +30,19 @@ class TelloTkinterStream:
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
         if args.stun:
-            self.peer_addr = self.stun_connect()
+            self.peer_addr = self.get_peer_address()
             time.sleep(5)
-            self.start_stun()
+            drone_video_addr = ("0.0.0.0", 27463)
+            drone_comm_addr = self.peer_addr
         else:
-            self.peer_addr = None
-
-        drone_video_addr = ("0.0.0.0", 11111) if not args.stun else ("0.0.0.0", 27463)
-        drone_comm_addr = ("192.168.10.1", 8889) if not args.stun else self.peer_addr
+            drone_video_addr = ("0.0.0.0", 11111)
+            drone_comm_addr = ("192.168.10.1", 8889)
 
         # Start video stream and communication with the drone
         self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
         self.video_stream = DroneVideoFeed(drone_video_addr)
 
-        # Initialize drone battery variable
+        self.connect_to_drone()
         self.drone_battery = None
 
         # Threads for joystick controls and pinging
@@ -61,8 +61,8 @@ class TelloTkinterStream:
         self.drone_stats.insert(pos, text)
         self.drone_stats.config()
 
-    def stun_connect(self) -> tuple:
-        self.stun_handler = StunClient()
+    def get_peer_address(self) -> tuple:
+        self.stun_handler = ControlStunClient()
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
@@ -70,17 +70,15 @@ class TelloTkinterStream:
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
 
-    def monitor_connection(self) -> None:
-        while True:
-            # update ui if connection is lost
-            if not self.stun_handler.hole_punched:
-                self.drone_stats.insert("1.0", "Connection lost")
-                break
-            time.sleep(2)
+        raise Exception("Failed to establish peer-to-peer connection")
 
-    def start_stun(self) -> None:
-        self.stun_handler.send_command("command")
-        self.stun_handler.send_command("streamon")
+    def connect_to_drone(self) -> None:
+        if args.stun:
+            self.stun_handler.send_command_to_relay("command")
+            self.stun_handler.send_command_to_relay("streamon")
+        else:
+            self.drone_communication.send_command("command")
+            self.drone_communication.send_command("streamon")
 
     def update_video_frame(self) -> None:
         """Update the video frame in the Tkinter window."""
@@ -88,6 +86,8 @@ class TelloTkinterStream:
         if frame is not None:
             try:
                 img = Image.fromarray(frame)
+
+                # Maybe remove this
                 img = img.resize((960, 720), Image.Resampling.LANCZOS)
 
                 imgtk = ImageTk.PhotoImage(image=img)
@@ -108,12 +108,12 @@ class TelloTkinterStream:
     def control_drone(self) -> None:
         button_map = ButtonMap()
 
-        if not button_map.joystick.joystick:
+        if not button_map.joystick_handler.joystick:
             return
 
         command_send = None
         if self.ARGS.stun:
-            command_send = self.stun_handler.send_command
+            command_send = self.stun_handler.send_command_to_relay
         else:
             command_send = self.drone_communication.send_command
 
@@ -162,7 +162,7 @@ class TelloTkinterStream:
         print("Shutting down...")
 
         if self.ARGS.stun:
-            self.stun_handler.send_command("streamoff")
+            self.stun_handler.send_command_to_relay("streamoff")
         else:
             self.drone_communication.stop()
 
