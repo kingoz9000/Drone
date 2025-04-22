@@ -1,4 +1,4 @@
-from joystick import JoystickHandler
+from .joystick import JoystickHandler
 
 
 class ButtonMap:
