@@ -60,6 +60,10 @@ class StunClient:
                 self.command_sock.sendto(
                     bytes(message.split()[1], "utf-8"), self.command_addr
                 )
+
+            if message.startswith("streamon"):
+                threading.Thread(target=self.chat_loop, daemon=True).start()
+
             self.command_sock.sendto(bytes(message, "utf-8"), self.command_addr)
 
     def hole_punch(self):
