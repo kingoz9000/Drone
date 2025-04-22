@@ -42,6 +42,11 @@ class TelloTkinterStream:
         self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
         self.video_stream = DroneVideoFeed(drone_video_addr)
 
+        if args.stun:
+            self.send_command = self.stun_handler.send_command_to_relay
+        else:
+            self.send_command = self.drone_communication.send_command
+
         self.connect_to_drone()
         self.drone_battery = None
 
@@ -73,12 +78,8 @@ class TelloTkinterStream:
         raise Exception("Failed to establish peer-to-peer connection")
 
     def connect_to_drone(self) -> None:
-        if args.stun:
-            self.stun_handler.send_command_to_relay("command")
-            self.stun_handler.send_command_to_relay("streamon")
-        else:
-            self.drone_communication.send_command("command")
-            self.drone_communication.send_command("streamon")
+        self.send_command("command")
+        self.send_command("streamon")
 
     def update_video_frame(self) -> None:
         """Update the video frame in the Tkinter window."""
@@ -111,22 +112,17 @@ class TelloTkinterStream:
         if not button_map.joystick_handler.joystick:
             return
 
-        command_send = None
-        if self.ARGS.stun:
-            command_send = self.stun_handler.send_command_to_relay
-        else:
-            command_send = self.drone_communication.send_command
-
         while True:
             commands = button_map.get_joystick_values()
 
             for command in commands:
-                command_send(command, print_command=False)
+                self.send_command(command, print_command=False)
 
             time.sleep(0.1)
 
     # TODO: fix this function
     def get_ping(self) -> None:
+
         ping_data: list[int] = [0 for _ in range(10)]
         while True:
             if self.ARGS.noping:
@@ -134,9 +130,7 @@ class TelloTkinterStream:
 
             for i in range(10):
                 start_time = time.perf_counter_ns()
-                self.drone_battery = self.drone_communication.send_command(
-                    "battery?", False, True
-                )
+                self.drone_battery = self.send_command("battery?", False, True)
                 end_time = time.perf_counter_ns()
                 ping_data[i] = end_time - start_time
 
@@ -161,10 +155,7 @@ class TelloTkinterStream:
         """Safely clean up resources and close the Tkinter window."""
         print("Shutting down...")
 
-        if self.ARGS.stun:
-            self.stun_handler.send_command_to_relay("streamoff")
-        else:
-            self.drone_communication.stop()
+        self.send_command("streamoff")
 
         self.root.quit()
         self.root.destroy()
