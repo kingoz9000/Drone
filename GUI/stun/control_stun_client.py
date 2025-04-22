@@ -1,4 +1,5 @@
 from .stun_client import StunClient
+import socket
 
 
 class ControlStunClient(StunClient):
@@ -30,12 +31,12 @@ class ControlStunClient(StunClient):
                 # Response
                 elif flag == 1:
                     # Skal sendes til TKinter
-                    self.state = data[1:]
+                    self.response = data[1:]
                     continue
 
                 # State
                 elif flag == 2:
-                    self.response = data[1:]
+                    self.state = data[1:]
                     continue
 
             message = data.decode()

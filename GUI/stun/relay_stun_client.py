@@ -58,21 +58,30 @@ class RelayStunClient(StunClient):
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
                     self.hole_punch()
+                    continue
+
                 elif parts[1] == "HEARTBEAT":
                     self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)
+                    continue
+
                 elif parts[1] == "DISCONNECT":
                     print("Server disconnected.")
                     self.stun_socket.close()
                     self.running = False
+                    continue
+
                 elif parts[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
+                    continue
 
             elif message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
                 self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
+                continue
 
-            elif message.startswith("PEER"):
+            elif message == "battery?":
+                self.send_command_to_drone(message, take_response=True)
                 continue
 
             # This is command forwarding (from operator to drone)

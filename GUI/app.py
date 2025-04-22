@@ -33,19 +33,15 @@ class TelloTkinterStream:
             self.peer_addr = self.get_peer_address()
             time.sleep(5)
             drone_video_addr = ("0.0.0.0", 27463)
-            drone_comm_addr = self.peer_addr
+            self.send_command = self.stun_handler.send_command_to_relay
         else:
             drone_video_addr = ("0.0.0.0", 11111)
             drone_comm_addr = ("192.168.10.1", 8889)
+            self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
+            self.send_command = self.drone_communication.send_command
 
         # Start video stream and communication with the drone
-        self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
         self.video_stream = DroneVideoFeed(drone_video_addr)
-
-        if args.stun:
-            self.send_command = self.stun_handler.send_command_to_relay
-        else:
-            self.send_command = self.drone_communication.send_command
 
         self.connect_to_drone()
         self.drone_battery = None
