@@ -18,6 +18,7 @@ class TelloTkinterStream:
         self.root: Tk = Tk()
         self.root.title("Tello Video Stream")
         self.root.geometry("1280x920")
+        self.root.geometry("1280x920")
 
         # Create a label to display the video
         self.video_canvas = Canvas(self.root, width=960, height=720)
@@ -75,6 +76,7 @@ class TelloTkinterStream:
     def connect_to_drone(self) -> None:
         if args.stun:
             self.stun_handler.send_command_to_relay("command")
+            self.stun_handler.send_command_to_relay("setresolution low")
             self.stun_handler.send_command_to_relay("streamon")
         else:
             self.drone_communication.send_command("command")
@@ -88,7 +90,7 @@ class TelloTkinterStream:
                 img = Image.fromarray(frame)
 
                 # Maybe remove this
-                img = img.resize((960, 720), Image.Resampling.LANCZOS)
+                # img = img.resize((960, 720), Image.Resampling.LANCZOS)
 
                 imgtk = ImageTk.PhotoImage(image=img)
 

@@ -32,6 +32,8 @@ class RelayStunClient(StunClient):
 
     def send_data_to_operator(self, data, prefix=0):
         shifted = bytearray([prefix]) + data
+        if not self.peer_addr:
+            return
         self.stun_socket.sendto(shifted, self.peer_addr)
 
     def state_socket_handler(self):
@@ -74,7 +76,6 @@ class RelayStunClient(StunClient):
                 continue
 
             # This is command forwarding (from operator to drone)
-            print(f"Received message: {message}")
             self.send_command_to_drone(message, take_response=False)
 
 
