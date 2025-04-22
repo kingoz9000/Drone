@@ -8,6 +8,7 @@ from drone_communication import DroneCommunication
 from drone_video_feed import DroneVideoFeed
 from PIL import Image, ImageTk
 from stun import ControlStunClient
+from collections import deque
 
 
 class TelloTkinterStream:
@@ -116,44 +117,41 @@ class TelloTkinterStream:
 
             time.sleep(0.1)
 
-    # TODO: fix this function
     def get_ping(self) -> None:
+        if self.ARGS.noping:
+            return
 
-        ping_data: list[int] = [0 for _ in range(10)]
+        ping_data = deque(maxlen=10)
+        prev_length = 0
+
         while True:
-            if self.ARGS.noping:
-                return
+            start_time = time.perf_counter_ns()
+            self.drone_battery = self.send_command("battery?", False, True)
 
-            prev_length = 0
+            if self.ARGS.stun:
+                while self.stun_handler.response.qsize() == prev_length:
+                    time.sleep(0.01)
+                self.drone_battery = self.stun_handler.response.get()
+                prev_length = self.stun_handler.response.qsize()
 
-            for i in range(10):
-                start_time = time.perf_counter_ns()
-                self.drone_battery = self.send_command("battery?", False, True)
+            end_time = time.perf_counter_ns()
+            ping_ns = end_time - start_time
+            ping_data.append(ping_ns)
 
-                if self.ARGS.stun:
-                    while self.stun_handler.response.qsize() == prev_length:
-                        time.sleep(0.01)
-                    prev_length = self.stun_handler.response.qsize()
+            avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
 
-                end_time = time.perf_counter_ns()
-                ping_data[i] = end_time - start_time
-
-            ping = sum(ping_data) // 10000000
+            self.drone_stats.delete("1.0", "end")
 
             if type(self.drone_battery) is str:
-                self.drone_stats.delete("1.0", "end")
                 self.drone_stats.insert(
                     "1.0",
-                    f"Battery: {self.drone_battery.strip()}% \nPing: {ping:03d} ms",
+                    f"Battery: {self.drone_battery.strip()}% \nPing: {avg_ping_ms:03d} ms",
                 )
+                time.sleep(0.2)
             else:
-                self.drone_stats.delete("1.0", "end")
                 self.drone_stats.insert(
-                    "1.0", f"Bad connection! Lost packages\nPing: {ping:03d}+ ms"
+                    "1.0", f"Bad connection! Lost packages\nPing: {avg_ping_ms:03d}+ ms"
                 )
-
-            if ping < 1000:
-                time.sleep(1 - ping / 1024)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the Tkinter window."""
