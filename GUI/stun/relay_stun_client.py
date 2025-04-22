@@ -31,7 +31,7 @@ class RelayStunClient(StunClient):
                 print(f"Command '{command}': No response received within 0.5 seconds")
 
     def send_data_to_operator(self, data, prefix=0):
-        shifted = bytearray([prefix]) + data
+        shifted = bytearray([prefix]) + data.encode()
         if not self.peer_addr:
             return
         self.stun_socket.sendto(shifted, self.peer_addr)

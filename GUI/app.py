@@ -124,9 +124,17 @@ class TelloTkinterStream:
             if self.ARGS.noping:
                 return
 
+            prev_length = 0
+
             for i in range(10):
                 start_time = time.perf_counter_ns()
                 self.drone_battery = self.send_command("battery?", False, True)
+
+                if self.ARGS.stun:
+                    while self.stun_handler.response.qsize() == prev_length:
+                        time.sleep(0.01)
+                    prev_length = self.stun_handler.response.qsize()
+
                 end_time = time.perf_counter_ns()
                 ping_data[i] = end_time - start_time
 

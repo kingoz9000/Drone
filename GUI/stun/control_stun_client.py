@@ -1,10 +1,12 @@
 from .stun_client import StunClient
+from queue import Queue
 import socket
 
 
 class ControlStunClient(StunClient):
     def __init__(self):
         super().__init__()
+        self.response = Queue()
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         self.stun_socket.sendto(command.encode(), self.peer_addr)
@@ -31,7 +33,7 @@ class ControlStunClient(StunClient):
                 # Response
                 elif flag == 1:
                     # Skal sendes til TKinter
-                    self.response = data[1:]
+                    self.response.put(data[1:])
                     continue
 
                 # State
