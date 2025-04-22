@@ -1,5 +1,6 @@
 import socket
 import time
+
 from .stun_client import StunClient
 
 
@@ -61,6 +62,10 @@ class RelayStunClient(StunClient):
 
                 elif parts[1] == "HEARTBEAT":
                     self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)
+                    continue
+
+                elif parts[1] == "INVALID_ID":
+                    print("Invalid target ID.")
                     continue
 
                 elif parts[1] == "DISCONNECT":

@@ -1,6 +1,7 @@
-from .stun_client import StunClient
-from queue import Queue
 import socket
+from queue import Queue
+
+from .stun_client import StunClient
 
 
 class ControlStunClient(StunClient):
@@ -49,6 +50,9 @@ class ControlStunClient(StunClient):
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
                     self.hole_punch()
+
+                if message.split()[1] == "INVALID_ID":
+                    print("Invalid target ID.")
 
                 if message.split()[1] == "HEARTBEAT":
                     self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)

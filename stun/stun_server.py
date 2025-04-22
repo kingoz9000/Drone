@@ -1,4 +1,7 @@
-import logging, socket, threading, time
+import logging
+import socket
+import threading
+import time
 
 
 class StunServer:
@@ -73,7 +76,9 @@ class StunServer:
                         clients_to_remove.append(k)
                     else:
                         try:
-                            self.server_socket.sendto(f"SERVER HEARTBEAT".encode(), v[0])
+                            self.server_socket.sendto(
+                                f"SERVER HEARTBEAT".encode(), v[0]
+                            )
                             self.logger.debug(f"Sent heartbeat to Client {k}")
                         except Exception as e:
                             self.logger.error(
@@ -101,7 +106,9 @@ class StunServer:
                     self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
                     self.logger.info(f"Client {client_id} registered from {addr}")
                 except Exception as e:
-                    self.logger.error(f"Failed to send registration confirmation to {addr}: {e}")
+                    self.logger.error(
+                        f"Failed to send registration confirmation to {addr}: {e}"
+                    )
 
             elif message.startswith("ALIVE"):
                 self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
@@ -125,7 +132,9 @@ class StunServer:
                         )  # Append client ID, IP, and port
                 try:
                     if clients_to_send:
-                        self.logger.info(f"Sending list of clients to Client {client_id}")
+                        self.logger.info(
+                            f"Sending list of clients to Client {client_id}"
+                        )
                         self.server_socket.sendto(
                             f"SERVER CLIENTS {clients_to_send}".encode(), addr
                         )
@@ -138,7 +147,12 @@ class StunServer:
             elif message.startswith("REQUEST"):
                 self.logger.debug(f"Received request from {addr}")
                 _, target_id = message.split()
-                target_id = int(target_id)
+                if target_id.isdigit():
+                    target_id = int(target_id)
+                else:
+                    self.logger.error(f"Invalid target ID: {target_id}")
+                    self.server_socket.sendto("SERVER INVALID_ID".encode(), addr)
+                    continue
                 current_client_id = self.get_client_id(addr)
 
                 if target_id in self.clients:
@@ -153,7 +167,8 @@ class StunServer:
                                 addr,
                             )
                             self.server_socket.sendto(
-                                f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr
+                                f"SERVER CONNECT {addr[0]} {addr[1]}".encode(),
+                                target_addr,
                             )
                             self.logger.info(
                                 f"Exchanged details between Client {current_client_id} and Client {target_id}"
@@ -171,7 +186,9 @@ class StunServer:
                             f"Client {current_client_id} requested Client {target_id}, but target not found."
                         )
                     except Exception as e:
-                        self.logger.error(f"Failed to send NOT_FOUND message to {addr}: {e}")
+                        self.logger.error(
+                            f"Failed to send NOT_FOUND message to {addr}: {e}"
+                        )
 
 
 if __name__ == "__main__":
