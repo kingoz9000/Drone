@@ -21,7 +21,7 @@ class TelloTkinterStream:
         self.root.geometry("1280x920")
 
         # Create a label to display the video
-        self.video_canvas = Canvas(self.root, width=960, height=720)
+        self.video_canvas = Canvas(self.root, width=854, height=480)
         self.video_canvas.pack()
 
         # Bind cleanup to window close and q key
@@ -90,7 +90,7 @@ class TelloTkinterStream:
                 img = Image.fromarray(frame)
 
                 # Maybe remove this
-                # img = img.resize((960, 720), Image.Resampling.LANCZOS)
+                img = img.resize((854, 480), Image.Resampling.LANCZOS)
 
                 imgtk = ImageTk.PhotoImage(image=img)
 
