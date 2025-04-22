@@ -149,11 +149,11 @@ class StunServer:
                 _, target_id = message.split()
                 if target_id.isdigit():
                     target_id = int(target_id)
+                    current_client_id = self.get_client_id(addr)
                 else:
                     self.logger.error(f"Invalid target ID: {target_id}")
                     self.server_socket.sendto("SERVER INVALID_ID".encode(), addr)
                     continue
-                current_client_id = self.get_client_id(addr)
 
                 if target_id in self.clients:
                     self.clients[current_client_id][1] = target_id
