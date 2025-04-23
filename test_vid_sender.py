@@ -4,7 +4,7 @@ import struct
 
 # Configuration
 VIDEO_FILE = "testvideo.mp4"  # Replace with your video file path
-LOOPBACK_IP = "127.0.0.1"
+LOOPBACK_IP = "192.168.186.135"
 PORT = 5000
 MAX_PACKET_SIZE = 65507  # Maximum UDP packet size
 
