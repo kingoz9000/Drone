@@ -20,12 +20,13 @@ class DroneVideoFeed:
                 timeout=(self.frame_grab_timeout, None),
                 format="h264",
                 options={
-                    # "fflags": "nobuffer",
-                    "rtsp_transport": "udp",
-                    # "reorder_queue_size": "0",
-                    # "flush_packets": "1",
-                    # "max_delay": "0",
-                    "hwaccel": "auto",
+                    "fflags": "nobuffer+discardcorrupt",  # Disable internal buffering, drop broken packets
+                    "flags": "low_delay",  # Favor low-latency decoding
+                    "rtsp_transport": "udp",  # You're using raw UDP
+                    "flush_packets": "1",  # Flush on every packet (don't wait for more data)
+                    "max_delay": "0",  # Zero delay tolerance
+                    "reorder_queue_size": "0",  # Disable reordering in ffmpeg
+                    "hwaccel": "auto",  # Let it use GPU if available
                 },
             )
         except av.error.ExitError as av_error:

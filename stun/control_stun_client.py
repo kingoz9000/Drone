@@ -20,6 +20,9 @@ class ControlStunClient(StunClient):
     def listen(self):
         file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}.txt"
 
+        reorder_buffer = []  # List of (seq_num, data)
+        MIN_BUFFER_SIZE = 6
+
         while self.running:
             data = self.stun_socket.recv(4096)
 
@@ -31,12 +34,18 @@ class ControlStunClient(StunClient):
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
                     seq_num = int.from_bytes(data[1:3], 'big')
-                    data = data[3:]
+                    payload = data[3:]
                     #print(f"From client: {seq_num}")
                     with open(file_name, "a") as file:
                         file.write(f"{seq_num}, ")
 
-                    self.stun_socket.sendto(data, ("127.0.0.1", 27463))
+                    reorder_buffer.append((seq_num, payload))
+                    reorder_buffer.sort()
+
+                    if len(reorder_buffer) >= MIN_BUFFER_SIZE:
+                        ordered_seq, ordered_data = reorder_buffer.pop(0)
+                        self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+
                     continue
 
                 # Response
