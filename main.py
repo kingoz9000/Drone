@@ -30,14 +30,14 @@ class TelloTkinterStream:
         self.connection_stats = {
             'battery': None, 
             'ping': None,
-            'packet loss': None,
+            'packet_loss': None,
             'packets': None
         }
         
         UI_stats = (
             f"Battery: {self.connection_stats['battery']}\n"
             f"Ping: {self.connection_stats['ping']}\n"
-            f"Packet Loss: {self.connection_stats['packet loss']}\n"
+            f"Packet Loss: {self.connection_stats['packet_loss']}\n"
             f"Packets: {self.connection_stats['packets']}\n"            
         ) 
         
