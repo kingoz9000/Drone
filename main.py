@@ -26,15 +26,23 @@ class TelloTkinterStream:
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("q", lambda e: self.cleanup())
 
-        #self.print_to_image("1.0", "Battery: xx% \nPing xx ms \nPacket loss: xx%")
-        
         self.stats_lock = threading.Lock() # thread safe UI updates
         self.connection_stats = {
-            'battery': None,
+            'battery': None, 
             'ping': None,
             'packet loss': None,
             'packets': None
         }
+        
+        UI_stats = (
+            f"Battery: {self.connection_stats['battery']}\n"
+            f"Ping: {self.connection_stats['ping']}\n"
+            f"Packet Loss: {self.connection_stats['packet loss']}\n"
+            f"Packets: {self.connection_stats['packets']}\n"            
+        ) 
+        
+        # Show stats on UI
+        self.print_to_image("1.0", UI_stats)
         
         if args.stun:
             self.peer_addr = self.get_peer_address()
