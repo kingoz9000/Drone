@@ -129,7 +129,7 @@ class TelloTkinterStream:
             if self.ARGS.stun:
                 while self.stun_handler.response.qsize() == prev_length:
                     time.sleep(0.01)
-                self.drone_battery = self.stun_handler.response.get()
+                self.drone_battery = self.stun_handler.response.get().decode()
                 prev_length = self.stun_handler.response.qsize()
 
             end_time = time.perf_counter_ns()

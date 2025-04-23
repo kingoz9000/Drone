@@ -27,7 +27,9 @@ class ControlStunClient(StunClient):
                 # Check if the first byte is 0 or 1
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
-                    data = data[1:]
+                    seq_num = int.from_bytes(data[1:3], 'big')
+                    data = data[3:]
+                    print(f"From client: {seq_num}")
                     self.stun_socket.sendto(data, ("127.0.0.1", 27463))
                     continue
 
