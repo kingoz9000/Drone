@@ -1,4 +1,4 @@
-import socket, time
+import time
 from queue import Queue
 
 from .stun_client import StunClient
