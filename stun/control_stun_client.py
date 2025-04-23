@@ -1,4 +1,4 @@
-import socket
+import socket, time
 from queue import Queue
 
 from .stun_client import StunClient
@@ -17,6 +17,8 @@ class ControlStunClient(StunClient):
             return self.peer_addr
 
     def listen(self):
+        file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}.txt"
+
         while self.running:
             data = self.stun_socket.recv(4096)
 
@@ -30,8 +32,8 @@ class ControlStunClient(StunClient):
                     seq_num = int.from_bytes(data[1:3], 'big')
                     data = data[3:]
                     #print(f"From client: {seq_num}")
-                    #with open("packets.txt", "a") as file:
-                    #    file.write(f"{seq_num}, ")
+                    with open(file_name, "a") as file:
+                        file.write(f"{seq_num}, ")
 
                     self.stun_socket.sendto(data, ("127.0.0.1", 27463))
                     continue

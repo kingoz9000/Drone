@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 # Convert to list of integers
-datafile = "packets.txt"  # Replace with your data file path
+datafile = "cellular_packets.txt"  # Replace with your data file path
 
 #recieved packets are in datafile seperated by comma
 with open(datafile, "r") as f:
