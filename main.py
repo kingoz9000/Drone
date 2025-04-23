@@ -118,6 +118,8 @@ class TelloTkinterStream:
     def get_ping(self) -> None:
         if self.ARGS.noping:
             return
+        
+        file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}ping.txt"
 
         ping_data = deque(maxlen=10)
         prev_length = 0
@@ -135,6 +137,9 @@ class TelloTkinterStream:
             end_time = time.perf_counter_ns()
             ping_ns = end_time - start_time
             ping_data.append(ping_ns)
+
+            with open(file_name, "a") as file:
+                file.write(f"{ping_ns}, ")
 
             avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
 

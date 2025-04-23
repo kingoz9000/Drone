@@ -18,7 +18,7 @@ class ControlStunClient(StunClient):
             return self.peer_addr
 
     def listen(self):
-        file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}.txt"
+        file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}seq.txt"
 
         reorder_buffer = []  # List of (seq_num, data)
         MIN_BUFFER_SIZE = 6
