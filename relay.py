@@ -15,5 +15,5 @@ while client.running:
 
         msg = client.drone_video_socket.recv(4096)
         client.send_data_to_operator(seq_byte + msg)
-        print(f"From relay: {seq_num}")
+        #print(f"From relay: {seq_num}")
         seq_num = (seq_num + 1) % 65536
