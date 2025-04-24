@@ -105,7 +105,7 @@ class StunServer:
                             client_id = num
                             flag = True
                             break
-                    if not flag:
+                    if not flag and len(self.clients) != 0:
                         client_id = len(self.clients) + 1
                     self.clients[client_id] = [addr, None, 0]
 
