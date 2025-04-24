@@ -18,7 +18,7 @@ class ControlStunClient(StunClient):
             return self.peer_addr
 
     def listen(self):
-        file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}seq.txt"
+        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
         reorder_buffer = []  # List of (seq_num, data)
         MIN_BUFFER_SIZE = 6
@@ -33,9 +33,9 @@ class ControlStunClient(StunClient):
                 # Check if the first byte is 0 or 1
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
-                    seq_num = int.from_bytes(data[1:3], 'big')
+                    seq_num = int.from_bytes(data[1:3], "big")
                     payload = data[3:]
-                    #print(f"From client: {seq_num}")
+                    # print(f"From client: {seq_num}")
                     with open(file_name, "a") as file:
                         file.write(f"{seq_num}, ")
 
