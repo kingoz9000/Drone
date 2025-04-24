@@ -186,8 +186,8 @@ class TelloCustomTkinterStream:
             ping_ns = end_time - start_time
             ping_data.append(ping_ns)
 
-            with open(file_name, "a") as file:
-                file.write(f"{ping_ns}, ")
+            #with open(file_name, "a") as file:
+            #    file.write(f"{ping_ns}, ")
 
             self.avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
 
