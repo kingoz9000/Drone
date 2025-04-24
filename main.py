@@ -164,8 +164,10 @@ class TelloCustomTkinterStream:
     def get_ping(self) -> None:
         if self.ARGS.noping:
             return
-        
-        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}ping.txt"
+
+        file_name = (
+            f"Data/{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}ping.txt"
+        )
 
         ping_data = deque(maxlen=10)
         prev_length = 0
