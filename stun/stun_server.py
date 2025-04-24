@@ -100,6 +100,7 @@ class StunServer:
                 with self.clients_lock:
                     client_id = 0
                     flag = False
+                    print("Is this fish")
                     for num, idx in enumerate(self.clients.keys()):
                         if num != idx:
                             client_id = num
