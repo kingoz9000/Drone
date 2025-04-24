@@ -99,7 +99,8 @@ class StunServer:
             if message.startswith("REGISTER"):
                 with self.clients_lock:
                     client_id = 0
-                    for idx, num in enumerate(self.clients.keys()):
+                    clients_copy = self.clients.keys().sort()
+                    for idx, num in enumerate(clients_copy):
                         if idx == num:
                             continue
                         client_id = idx
