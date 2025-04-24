@@ -7,6 +7,8 @@ from GUI.drone_communication import DroneCommunication
 from GUI.drone_video_feed import DroneVideoFeed
 from PIL import Image, ImageTk
 from stun import ControlStunClient
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class TelloCustomTkinterStream:
@@ -19,11 +21,19 @@ class TelloCustomTkinterStream:
 
         self.root = ctk.CTk()
         self.root.title("Tello Video Stream")
-        self.root.geometry("1280x920")
+        self.root.geometry("1280x1000")
+        self.avg_ping_ms = 0
 
         # Create a canvas to display the video
         self.video_canvas = ctk.CTkCanvas(self.root, width=960, height=720)
         self.video_canvas.pack(pady=20)
+
+        # Create a frame for the graph
+        self.graph_frame = ctk.CTkFrame(self.root, width=200, height=500)
+        self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
+
+        # Initialize the graph
+        self.init_graph()
 
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
@@ -48,15 +58,48 @@ class TelloCustomTkinterStream:
         self.connect_to_drone()
         self.drone_battery = None
 
-        # Threads for joystick controls and pinging
+        # Threads for joystick controls, pinging, and graph updates
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
+        self.run_in_thread(self.update_graph)
 
         # Start video update loop
         self.update_video_frame()
 
         # Start customTkinter event loop
         self.root.mainloop()
+
+    def init_graph(self):
+        self.fig, self.ax = plt.subplots(figsize=(3, 2), dpi=100)
+        self.fig.patch.set_alpha(0)
+        self.ax.patch.set_alpha(0)
+        background_color = "#242424"
+        self.ax.tick_params(colors="white")
+        self.ax.set_title("Ping", color="white")
+        self.fig.patch.set_facecolor(background_color)
+        self.ax.set_facecolor(background_color)
+        self.ax.set_xlabel("Time (s)",color="white")
+        self.ax.set_ylabel("Ping (ms)",color="white")
+        self.ax.set_ylim(0, 150)
+        print(self.ax.get_facecolor())  
+        
+        
+        self.ping_data = deque([0] * 50, maxlen=50)  # last 50 ping values
+        self.line, = self.ax.plot(self.ping_data, color="blue")
+
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.graph_frame)
+        self.canvas.get_tk_widget().pack()
+        self.canvas.get_tk_widget().configure(bg=background_color, highlightthickness=0)
+
+    def update_graph(self):
+        while True:
+            self.ping_data.append(self.avg_ping_ms)
+            self.line.set_ydata(self.ping_data)
+            self.ax.set_xlim(0, len(self.ping_data))
+            self.ax.set_ylim(0, max(max(self.ping_data), 150))
+            print(self.ax.get_facecolor())      
+            self.canvas.draw()
+            time.sleep(0.5)  
 
     def print_to_image(self, pos, text) -> None:
         self.drone_stats = ctk.CTkTextbox(self.root, height=50, width=300)
@@ -144,7 +187,7 @@ class TelloCustomTkinterStream:
             with open(file_name, "a") as file:
                 file.write(f"{ping_ns}, ")
 
-            avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
+            self.avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
 
             self.drone_stats.configure(state="normal")
             self.drone_stats.delete("1.0", "end")
@@ -152,12 +195,12 @@ class TelloCustomTkinterStream:
             if type(self.drone_battery) is str:
                 self.drone_stats.insert(
                     "1.0",
-                    f"Battery: {self.drone_battery.strip()}% \nPing: {avg_ping_ms:03d} ms",
+                    f"Battery: {self.drone_battery.strip()}% \nPing: {self.avg_ping_ms:03d} ms",
                 )
                 time.sleep(0.2)
             else:
                 self.drone_stats.insert(
-                    "1.0", f"Bad connection! Lost packages\nPing: {avg_ping_ms:03d}+ ms"
+                    "1.0", f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms"
                 )
             self.drone_stats.configure(state="disabled")
 
