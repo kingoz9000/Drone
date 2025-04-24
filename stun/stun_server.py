@@ -98,9 +98,11 @@ class StunServer:
 
             if message.startswith("REGISTER"):
                 with self.clients_lock:
+                    client_id = 0
                     for num, idx in enumerate(self.clients.keys()):
                         if len(self.clients) > num:
                             client_id = num + 1
+                            break
                         if num == idx:
                             continue
                         client_id = num
