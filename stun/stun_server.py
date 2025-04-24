@@ -99,14 +99,14 @@ class StunServer:
             if message.startswith("REGISTER"):
                 with self.clients_lock:
                     client_id = 0
-                    for num, idx in enumerate(self.clients.keys()):
-                        if len(self.clients) > num:
-                            client_id = num + 1
-                            break
-                        if num == idx:
+                    clients_copy = self.clients.keys().sort()
+                    for idx, num in enumerate(clients_copy):
+                        if idx == num:
                             continue
-                        client_id = num
-
+                        client_id = idx
+                        break
+                    else:
+                        client_id = len(self.clients)
                     self.clients[client_id] = [addr, None, 0]
 
                 try:
