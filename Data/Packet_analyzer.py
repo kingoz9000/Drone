@@ -53,6 +53,14 @@ for displacement, (count, percentage) in sorted_displacement_percentages.items()
 
 # generate histogram
 
+# Output
+print(f"Total packets: {total_packets}")
+print(f"Reordered packets: {reorder_count}")
+print(f"Reorder frequency: {reorder_frequency:.2%}")
+if most_common_displacement:
+    print(f"Most common displacement: {most_common_displacement[0]} with count {most_common_displacement[1]}")
+
+
 counts = [sorted_displacement_percentages[d][0] for d in displacements]
 
 plt.figure(figsize=(10, 5))
@@ -67,9 +75,3 @@ plt.show()
 
 # 16 ms per package
 
-# Output
-print(f"Total packets: {total_packets}")
-print(f"Reordered packets: {reorder_count}")
-print(f"Reorder frequency: {reorder_frequency:.2%}")
-if most_common_displacement:
-    print(f"Most common displacement: {most_common_displacement[0]} with count {most_common_displacement[1]}")

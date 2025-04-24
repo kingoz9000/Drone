@@ -1,7 +1,7 @@
 import argparse, threading, time
-from tkinter import Canvas, Text, Tk
 from collections import deque
 
+import customtkinter as ctk
 from joystick.button_mapping import ButtonMap
 from GUI.drone_communication import DroneCommunication
 from GUI.drone_video_feed import DroneVideoFeed
@@ -9,22 +9,25 @@ from PIL import Image, ImageTk
 from stun import ControlStunClient
 
 
-class TelloTkinterStream:
+class TelloCustomTkinterStream:
     def __init__(self, args):
         self.ARGS = args
 
-        # Initialize Tkinter window and Tello video stream.
-        self.root: Tk = Tk()
+        # Initialize customTkinter window and Tello video stream.
+        ctk.set_appearance_mode("Dark")  # Options: "System", "Dark", "Light"
+        ctk.set_default_color_theme("blue")  # Options: "blue", "green", "dark-blue"
+
+        self.root = ctk.CTk()
         self.root.title("Tello Video Stream")
         self.root.geometry("1280x920")
 
-        # Create a label to display the video
-        self.video_canvas = Canvas(self.root, width=960, height=720)
-        self.video_canvas.pack()
+        # Create a canvas to display the video
+        self.video_canvas = ctk.CTkCanvas(self.root, width=960, height=720)
+        self.video_canvas.pack(pady=20)
 
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-        self.root.bind("q", lambda e: self.cleanup())
+        self.root.bind("<q>", lambda e: self.cleanup())
 
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
@@ -52,14 +55,14 @@ class TelloTkinterStream:
         # Start video update loop
         self.update_video_frame()
 
-        # Start Tkinter event loop
+        # Start customTkinter event loop
         self.root.mainloop()
 
     def print_to_image(self, pos, text) -> None:
-        self.drone_stats = Text(self.root, height=2, width=30)
-        self.drone_stats.pack()
+        self.drone_stats = ctk.CTkTextbox(self.root, height=50, width=300)
+        self.drone_stats.pack(pady=10)
         self.drone_stats.insert(pos, text)
-        self.drone_stats.config()
+        self.drone_stats.configure(state="disabled")
 
     def get_peer_address(self) -> tuple:
         self.stun_handler = ControlStunClient()
@@ -77,18 +80,18 @@ class TelloTkinterStream:
         self.send_command("streamon")
 
     def update_video_frame(self) -> None:
-        """Update the video frame in the Tkinter window."""
+        """Update the video frame in the customTkinter window."""
         frame = self.video_stream.get_frame()
         if frame is not None:
             try:
                 img = Image.fromarray(frame)
 
-                # Maybe remove this
+                # Resize the image
                 img = img.resize((960, 720), Image.Resampling.LANCZOS)
 
                 imgtk = ImageTk.PhotoImage(image=img)
 
-                # Update the label using the main thread
+                # Update the canvas using the main thread
                 self.root.after(0, self.update_canvas, imgtk)
 
             except Exception as e:
@@ -119,7 +122,7 @@ class TelloTkinterStream:
         if self.ARGS.noping:
             return
         
-        file_name = f"{time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())}ping.txt"
+        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}ping.txt"
 
         ping_data = deque(maxlen=10)
         prev_length = 0
@@ -143,6 +146,7 @@ class TelloTkinterStream:
 
             avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
 
+            self.drone_stats.configure(state="normal")
             self.drone_stats.delete("1.0", "end")
 
             if type(self.drone_battery) is str:
@@ -155,9 +159,10 @@ class TelloTkinterStream:
                 self.drone_stats.insert(
                     "1.0", f"Bad connection! Lost packages\nPing: {avg_ping_ms:03d}+ ms"
                 )
+            self.drone_stats.configure(state="disabled")
 
     def cleanup(self) -> None:
-        """Safely clean up resources and close the Tkinter window."""
+        """Safely clean up resources and close the customTkinter window."""
         print("Shutting down...")
 
         self.send_command("streamoff")
@@ -181,4 +186,4 @@ if __name__ == "__main__":
     parser.add_argument("-np", "--noping", help="Disable ping", action="store_true")
     args = parser.parse_args()
 
-    TelloTkinterStream(args)
+    TelloCustomTkinterStream(args)
