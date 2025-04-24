@@ -81,7 +81,7 @@ class TelloCustomTkinterStream:
         self.ax.set_xlabel("Time (s)",color="white")
         self.ax.set_ylabel("Ping (ms)",color="white")
         self.ax.set_ylim(0, 150)
-        print(self.ax.get_facecolor())  
+        #print(self.ax.get_facecolor())  
         
         
         self.ping_data = deque([0] * 50, maxlen=50)  # last 50 ping values
@@ -97,7 +97,7 @@ class TelloCustomTkinterStream:
             self.line.set_ydata(self.ping_data)
             self.ax.set_xlim(0, len(self.ping_data))
             self.ax.set_ylim(0, max(max(self.ping_data), 150))
-            print(self.ax.get_facecolor())      
+            #print(self.ax.get_facecolor())      
             self.canvas.draw()
             time.sleep(0.5)  
 
@@ -186,8 +186,8 @@ class TelloCustomTkinterStream:
             ping_ns = end_time - start_time
             ping_data.append(ping_ns)
 
-            #with open(file_name, "a") as file:
-            #    file.write(f"{ping_ns}, ")
+            with open(file_name, "a") as file:
+                file.write(f"{ping_ns}, ")
 
             self.avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
 
