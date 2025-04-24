@@ -183,13 +183,13 @@ class TelloCustomTkinterStream:
                 prev_length = self.stun_handler.response.qsize()
 
             end_time = time.perf_counter_ns()
-            ping_ns = end_time - start_time
-            ping_data.append(ping_ns)
+            ping_ms = (end_time - start_time) // 1_000_000
+            ping_data.append(ping_ms)
 
             with open(file_name, "a") as file:
-                file.write(f"{ping_ns}, ")
+                file.write(f"{ping_ms}, ")
 
-            self.avg_ping_ms = sum(ping_data) // len(ping_data) // 1_000_000
+            self.avg_ping_ms = sum(ping_data) // len(ping_data)
 
             self.drone_stats.configure(state="normal")
             self.drone_stats.delete("1.0", "end")
