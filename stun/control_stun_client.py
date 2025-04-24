@@ -23,6 +23,8 @@ class ControlStunClient(StunClient):
         reorder_buffer = []  # List of (seq_num, data)
         MIN_BUFFER_SIZE = 6
 
+        writer = open("Data/" + file_name, "a")
+
         while self.running:
             data = self.stun_socket.recv(4096)
 
@@ -36,8 +38,8 @@ class ControlStunClient(StunClient):
                     seq_num = int.from_bytes(data[1:3], "big")
                     payload = data[3:]
                     # print(f"From client: {seq_num}")
-                    with open("Data/" + file_name, "a") as file:
-                        file.write(f"{seq_num}, ")
+
+                    writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
 
                     reorder_buffer.append((seq_num, payload))
                     reorder_buffer.sort()
