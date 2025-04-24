@@ -36,7 +36,7 @@ class ControlStunClient(StunClient):
                     seq_num = int.from_bytes(data[1:3], "big")
                     payload = data[3:]
                     # print(f"From client: {seq_num}")
-                    with open(file_name, "a") as file:
+                    with open("Data/" + file_name, "a") as file:
                         file.write(f"{seq_num}, ")
 
                     reorder_buffer.append((seq_num, payload))
