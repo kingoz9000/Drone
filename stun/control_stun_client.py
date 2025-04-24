@@ -22,6 +22,8 @@ class ControlStunClient(StunClient):
 
         reorder_buffer = []  # List of (seq_num, data)
         MIN_BUFFER_SIZE = 6
+        MAX_BUFFER_SIZE = 50
+        MAX_AGE = 0.5
 
         while self.running:
             data = self.stun_socket.recv(4096)
@@ -35,14 +37,22 @@ class ControlStunClient(StunClient):
                 if flag == 0:
                     seq_num = int.from_bytes(data[1:3], "big")
                     payload = data[3:]
+                    current_time = time.time()
                     # print(f"From client: {seq_num}")
                     with open(file_name, "a") as file:
                         file.write(f"{seq_num}, ")
 
-                    reorder_buffer.append((seq_num, payload))
+                    reorder_buffer.append((seq_num, payload, current_time))
                     reorder_buffer.sort()
-
-                    if len(reorder_buffer) >= MIN_BUFFER_SIZE:
+                    
+                    # remove old packets from the buffer
+                    reorder_buffer = [
+                        (seq_num, data, timestamp)
+                        for seq_num, data, timestamp in reorder_buffer
+                        if current_time - timestamp < MAX_AGE
+                    ]
+                        
+                    if len(reorder_buffer) >= MIN_BUFFER_SIZE and len(reorder_buffer) <= MAX_BUFFER_SIZE:
                         ordered_seq, ordered_data = reorder_buffer.pop(0)
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
 
