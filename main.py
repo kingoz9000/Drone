@@ -31,16 +31,41 @@ class TelloCustomTkinterStream:
         # Create a frame for the graph
         self.graph_frame = ctk.CTkFrame(self.root, width=200, height=500)
         self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
+        
 
         # Initialize the graph
         self.init_graph()
+        
+        # Create a frame for the stats
+        self.stats_frame = ctk.CTkFrame(self.root, width=300, height=100)
+        self.stats_frame.pack(side="right", fill="y", padx=20, pady=20)
+        
+        # Create a text box 
+        self.stats_textbox = ctk.CTkTextbox(self.stats_frame, height=50, width=300)
+        self.stats_textbox.pack(side="top", pady=10)
 
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("<q>", lambda e: self.cleanup())
 
-        self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
-
+        self.stats_lock = threading.Lock() # thread safe UI updates
+        self.connection_stats = {
+            'battery': None, 
+            'ping': None,
+            'packet_loss': None,
+            'packets': None
+        }
+        
+        UI_stats = (
+            f"Battery: {self.connection_stats['battery']}\n"
+            f"Ping: {self.connection_stats['ping']}\n"
+            f"Packet Loss: {self.connection_stats['packet_loss']}\n"
+            f"Packets: {self.connection_stats['packets']}\n"            
+        ) 
+        
+        # Show stats on UI
+        self.print_to_image("1.0", UI_stats)
+        
         if args.stun:
             self.peer_addr = self.get_peer_address()
             time.sleep(5)
@@ -62,6 +87,9 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.update_graph)
+
+        # Thread for packet loss measurement
+        self.run_in_thread(self.get_packet_loss)
 
         # Start video update loop
         self.update_video_frame()
@@ -107,6 +135,18 @@ class TelloCustomTkinterStream:
         self.drone_stats.insert(pos, text)
         self.drone_stats.configure(state="disabled")
 
+    def update_stats(self) -> None:
+        """Update the stats in the Tkinter window."""
+        with self.stats_lock:
+            self.drone_stats.delete("1.0", "end")
+            self.drone_stats.insert(
+                "1.0",
+                f"Battery: {self.connection_stats['battery']}% \n"
+                f"Ping: {self.connection_stats['ping']} ms \n"
+                f"Packet loss: {self.connection_stats['packet loss']}% \n"
+                f"Packets: {self.connection_stats['packets']}\n",
+            )
+        
     def get_peer_address(self) -> tuple:
         self.stun_handler = ControlStunClient(self.ARGS.log)
         self.stun_handler.main()
@@ -194,18 +234,73 @@ class TelloCustomTkinterStream:
 
             self.drone_stats.configure(state="normal")
             self.drone_stats.delete("1.0", "end")
-
             if type(self.drone_battery) is str:
-                self.drone_stats.insert(
-                    "1.0",
-                    f"Battery: {self.drone_battery.strip()}% \nPing: {self.avg_ping_ms:03d} ms",
-                )
+                with self.stats_lock:
+                    self.connection_stats['ping'] = f"{self.avg_ping_ms:03d} ms"
+                    self.connection_stats['battery'] = f"{self.drone_battery.strip()}%"
+                    self.update_stats()
                 time.sleep(0.2)
             else:
                 self.drone_stats.insert(
                     "1.0", f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms"
                 )
             self.drone_stats.configure(state="disabled")
+
+    def get_packet_loss(self) -> None:
+        """Check for packet loss and update the UI accordingly."""
+        if self.ARGS.noloss:
+            return
+
+        packets_sent = []
+        packets_received = []
+        total_packets_sent = 0
+        total_packets_received = 0
+        SAMPLE_SIZE = 100  # Number of packets per test
+
+        while True:
+            if self.ARGS.stun:
+                for _ in range(SAMPLE_SIZE):
+                    try:
+                        # send test packet
+                        test_packet_response = self.stun_handler.send_command(
+                            "command", False, True
+                        )
+                        packets_sent.append(1)
+                        total_packets_sent += 1
+                        if test_packet_response is not None:  # track pakckets
+                            packets_received.append(1)  # success
+                            total_packets_received += 1
+                        else:
+                            packets_received.append(0)  # failure
+
+                        # continually update the packet loss
+                        if len(packets_sent) > SAMPLE_SIZE:
+                            packets_sent.pop(0)
+                            packets_received.pop(0)
+                        time.sleep(0.01)
+                    
+                    except Exception as e:
+                        print(f"Error in packet loss measurment: {e}")
+                        break
+
+                packets_received_sum = sum(packets_received)
+                packets_sent_count = len(packets_sent)
+                if packets_sent_count > 0:
+                    # Calculate packet loss percentage
+                    packet_loss = (
+                        (packets_sent_count - packets_received_sum)
+                        / packets_sent_count
+                        * 100
+                    )
+                else:
+                    packet_loss = 0.00
+
+                # update UI
+                with self.stats_lock:
+                    self.connection_stats['packet loss'] = f"{packet_loss:.2f}%"
+                    self.connection_stats['packets'] = f"{total_packets_received} / {total_packets_sent}"
+                    self.update_stats()
+                time.sleep(0.1)  # delay to avoid overwhelming the UI
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""
@@ -223,14 +318,15 @@ class TelloCustomTkinterStream:
         thread.start()
         return thread
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-s", "--stun", help="Use stun to remote control", action="store_true"
     )
     parser.add_argument("-np", "--noping", help="Disable ping", action="store_true")
-    parser.add_argument("-l", "--log", help="Log data", action="store_true")
+    parser.add_argument(
+        "-nl", "--noloss", help="Disable packet loss", action="store_true"
+    )
     args = parser.parse_args()
 
     TelloCustomTkinterStream(args)
