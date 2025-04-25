@@ -23,6 +23,9 @@ class ControlStunClient(StunClient):
         reorder_buffer: list[tuple] = [] 
         MIN_BUFFER_SIZE = 6
         last_seq_num = 0
+        # Open this once before your loop starts
+        
+        #video_file = open("output_stream.h264", "ab")  # append in binary mode
 
         while self.running:
             data = self.stun_socket.recv(4096)
@@ -49,6 +52,7 @@ class ControlStunClient(StunClient):
                             print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
 
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+                        #video_file.write(ordered_data)
                         last_seq_num = ordered_seq
 
                     continue
