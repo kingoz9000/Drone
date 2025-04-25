@@ -72,7 +72,7 @@ class RelayStunClient(StunClient):
                     print("Server disconnected.")
                     self.stun_socket.close()
                     self.running = False
-                    continue
+                    exit(1)
 
                 elif parts[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
@@ -90,17 +90,3 @@ class RelayStunClient(StunClient):
 
             # This is command forwarding (from operator to drone)
             self.send_command_to_drone(message, take_response=False)
-
-
-if __name__ == "__main__":
-    client = RelayStunClient()
-    client.relay = True
-    # Response from drone to the relay but not to the operator
-    client.drone_command_socket.bind(("0.0.0.0", 9000))
-    client.main()
-    client.run_in_thread(client.state_socket_handler)
-
-    while client.running:
-        if client.hole_punched:
-            msg = client.drone_video_socket.recv(4096)
-            client.send_data_to_operator(msg)

@@ -148,7 +148,7 @@ class TelloCustomTkinterStream:
             )
         
     def get_peer_address(self) -> tuple:
-        self.stun_handler = ControlStunClient()
+        self.stun_handler = ControlStunClient(self.ARGS.log)
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
@@ -226,8 +226,9 @@ class TelloCustomTkinterStream:
             ping_ms = (end_time - start_time) // 1_000_000
             ping_data.append(ping_ms)
 
-            with open(file_name, "a") as file:
-                file.write(f"{ping_ms}, ")
+            if self.ARGS.log:
+                with open(file_name, "a") as file:
+                    file.write(f"{ping_ms}, ")
 
             self.avg_ping_ms = sum(ping_data) // len(ping_data)
 

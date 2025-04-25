@@ -1,13 +1,14 @@
-import socket
-from queue import Queue
+import time, heapq
 
+from queue import Queue
 from .stun_client import StunClient
 
 
 class ControlStunClient(StunClient):
-    def __init__(self):
+    def __init__(self, log):
         super().__init__()
         self.response = Queue()
+        self.log = log
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         self.stun_socket.sendto(command.encode(), self.peer_addr)
@@ -17,6 +18,12 @@ class ControlStunClient(StunClient):
             return self.peer_addr
 
     def listen(self):
+        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
+
+        reorder_buffer: list[tuple] = [] 
+        MIN_BUFFER_SIZE = 6
+        last_seq_num = 0
+
         while self.running:
             data = self.stun_socket.recv(4096)
 
@@ -27,8 +34,23 @@ class ControlStunClient(StunClient):
                 # Check if the first byte is 0 or 1
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
-                    data = data[1:]
-                    self.stun_socket.sendto(data, ("127.0.0.1", 27463))
+                    seq_num = int.from_bytes(data[1:3], "big")
+                    payload = data[3:]
+                    # print(f"From client: {seq_num}")
+                    if self.log:
+                        with open("Data/" + file_name, "a") as writer:
+                            writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
+                    heapq.heappush(reorder_buffer, (seq_num, payload))
+
+                    if len(reorder_buffer) >= MIN_BUFFER_SIZE:
+                        ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
+                        
+                        if ordered_seq != last_seq_num + 1:
+                            print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
+
+                        self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+                        last_seq_num = ordered_seq
+
                     continue
 
                 # Response
