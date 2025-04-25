@@ -108,7 +108,7 @@ class TelloCustomTkinterStream:
         self.drone_stats.configure(state="disabled")
 
     def get_peer_address(self) -> tuple:
-        self.stun_handler = ControlStunClient()
+        self.stun_handler = ControlStunClient(self.ARGS.log)
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
@@ -186,8 +186,9 @@ class TelloCustomTkinterStream:
             ping_ms = (end_time - start_time) // 1_000_000
             ping_data.append(ping_ms)
 
-            with open(file_name, "a") as file:
-                file.write(f"{ping_ms}, ")
+            if self.ARGS.log:
+                with open(file_name, "a") as file:
+                    file.write(f"{ping_ms}, ")
 
             self.avg_ping_ms = sum(ping_data) // len(ping_data)
 
@@ -229,6 +230,7 @@ if __name__ == "__main__":
         "-s", "--stun", help="Use stun to remote control", action="store_true"
     )
     parser.add_argument("-np", "--noping", help="Disable ping", action="store_true")
+    parser.add_argument("-l", "--log", help="Log data", action="store_true")
     args = parser.parse_args()
 
     TelloCustomTkinterStream(args)
