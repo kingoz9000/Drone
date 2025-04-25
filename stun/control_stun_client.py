@@ -1,7 +1,6 @@
-import time
+import time, heapq
 
 from queue import Queue
-
 from .stun_client import StunClient
 
 
@@ -21,8 +20,9 @@ class ControlStunClient(StunClient):
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
-        reorder_buffer = []  # List of (seq_num, data)
+        reorder_buffer: list[tuple] = [] 
         MIN_BUFFER_SIZE = 6
+        last_seq_num = 0
 
         while self.running:
             data = self.stun_socket.recv(4096)
@@ -40,13 +40,16 @@ class ControlStunClient(StunClient):
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
                             writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
-
-                    reorder_buffer.append((seq_num, payload))
-                    reorder_buffer.sort()
+                    heapq.heappush(reorder_buffer, (seq_num, payload))
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:
-                        ordered_seq, ordered_data = reorder_buffer.pop(0)
+                        ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
+                        
+                        if ordered_seq != last_seq_num + 1:
+                            print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
+
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+                        last_seq_num = ordered_seq
 
                     continue
 
