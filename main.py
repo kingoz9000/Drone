@@ -32,8 +32,9 @@ class TelloCustomTkinterStream:
         self.graph_frame = ctk.CTkFrame(self.root, width=200, height=500)
         self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
 
-        # Initialize the graph
         self.init_graph()
+        self.init_battery_circle()
+        self.init_drone_stats()
 
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
@@ -51,6 +52,9 @@ class TelloCustomTkinterStream:
             drone_comm_addr = ("192.168.10.1", 8889)
             self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
             self.send_command = self.drone_communication.send_command
+            self.run_in_thread(
+                self.drone_communication.wifi_state_socket_handler
+            )  # Grab stats directly from drone
 
         # Start video stream and communication with the drone
         self.video_stream = DroneVideoFeed(drone_video_addr)
@@ -62,6 +66,8 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.update_graph)
+        self.run_in_thread(self.update_battery_circle)
+        self.run_in_thread(self.fetch_and_update_drone_stats)
 
         # Start video update loop
         self.update_video_frame()
@@ -78,18 +84,110 @@ class TelloCustomTkinterStream:
         self.ax.set_title("Ping", color="white")
         self.fig.patch.set_facecolor(background_color)
         self.ax.set_facecolor(background_color)
-        self.ax.set_xlabel("Time (s)",color="white")
-        self.ax.set_ylabel("Ping (ms)",color="white")
+        self.ax.set_xlabel("Time (s)", color="white")
+        self.ax.set_ylabel("Ping (ms)", color="white")
         self.ax.set_ylim(0, 150)
-        #print(self.ax.get_facecolor())  
-        
-        
+        # print(self.ax.get_facecolor())
+
         self.ping_data = deque([0] * 50, maxlen=50)  # last 50 ping values
-        self.line, = self.ax.plot(self.ping_data, color="blue")
+        (self.line,) = self.ax.plot(self.ping_data, color="blue")
 
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.graph_frame)
         self.canvas.get_tk_widget().pack()
         self.canvas.get_tk_widget().configure(bg=background_color, highlightthickness=0)
+
+    def init_battery_circle(self):
+        self.battery_canvas = ctk.CTkCanvas(
+            self.root, width=100, height=100, bg="#242424", highlightthickness=0
+        )
+        self.battery_canvas.place(
+            relx=1.0, rely=1.0, anchor="se", x=-20, y=-20
+        )  # Lower-right corner with padding
+
+        self.battery_canvas.create_oval(10, 10, 90, 90, outline="white", width=2)
+
+        self.battery_arc = self.battery_canvas.create_arc(
+            10, 10, 90, 90, start=90, extent=0, fill="green", outline=""
+        )
+        self.battery_canvas.create_text(
+            50, 50, text="Battery", fill="white", font=("Arial", 8), tags="battery_text"
+        )
+
+    def init_drone_stats(self):
+        self.drone_stats_box = ctk.CTkTextbox(
+            self.root, height=150, width=400, bg_color="#242424"
+        )
+        self.drone_stats_box.place(
+            relx=0.5, rely=1.0, anchor="s", y=-10
+        )  # Bottom center
+        self.drone_stats_box.configure(
+            state="disabled", font=("Arial", 15), fg_color="#242424", text_color="white"
+        )
+
+    def update_drone_stats(self, pitch, roll, yaw, altitude, speed, battery):
+        stats_text = (
+            f"Pitch: {pitch}°\n"
+            f"Roll: {roll}°\n"
+            f"Yaw: {yaw}°\n"
+            f"Altitude: {altitude} m\n"
+            f"Speed: {speed} m/s\n"
+            f"Battery: {battery}%"
+        )
+        self.drone_stats_box.configure(state="normal")
+        self.drone_stats_box.delete("1.0", "end")
+        self.drone_stats_box.insert("1.0", stats_text)
+        self.drone_stats_box.configure(state="disabled")
+
+    def get_drone_stats(self):
+        try:
+            if self.ARGS.stun:
+                stats = self.stun_handler.get_drone_stats()
+            else:
+                # get stats directly from drone
+                stats = self.drone_communication.stats 
+
+            pitch = stats.get("pitch", 0)
+            roll = stats.get("roll", 0)
+            yaw = stats.get("yaw", 0)
+            altitude = 0
+            speed = stats.get("vgx", 0)
+            board_temp = stats.get("temph", 0)
+
+            return pitch, roll, yaw, altitude, speed, board_temp
+        except Exception as e:
+            print(f"Error fetching stats: {e}")
+            return 0, 0, 0, 0, 0, 0
+
+
+    def fetch_and_update_drone_stats(self):
+        while True:
+            pitch, roll, yaw, altitude, speed, board_temp = self.get_drone_stats()
+            self.update_drone_stats(pitch, roll, yaw, altitude, speed, board_temp)
+            time.sleep(1)
+
+    def update_battery_circle(self):
+        while True:
+            if self.drone_battery and isinstance(self.drone_battery, str):
+                try:
+                    battery_level = int(self.drone_battery.strip())
+
+                    text = f"{battery_level}%"
+                    self.battery_canvas.itemconfig(
+                        self.battery_canvas.find_withtag("battery_text"), text=text
+                    )
+                    extent = (battery_level / 100) * 360
+                    self.battery_canvas.itemconfig(self.battery_arc, extent=-extent)
+
+                    if battery_level > 50:
+                        self.battery_canvas.itemconfig(self.battery_arc, fill="green")
+                    elif battery_level > 20:
+                        self.battery_canvas.itemconfig(self.battery_arc, fill="orange")
+                    else:
+                        self.battery_canvas.itemconfig(self.battery_arc, fill="red")
+                except ValueError:
+                    pass
+
+            time.sleep(5)
 
     def update_graph(self):
         while True:
@@ -97,9 +195,23 @@ class TelloCustomTkinterStream:
             self.line.set_ydata(self.ping_data)
             self.ax.set_xlim(0, len(self.ping_data))
             self.ax.set_ylim(0, max(max(self.ping_data), 150))
-            #print(self.ax.get_facecolor())      
+            # print(self.ax.get_facecolor())
             self.canvas.draw()
-            time.sleep(0.5)  
+            time.sleep(0.5)
+
+    def update_drone_stats(self, pitch, roll, yaw, altitude, speed, board_temp):
+        stats_text = (
+            f"Pitch: {pitch}°\n"
+            f"Roll: {roll}°\n"
+            f"Yaw: {yaw}°\n"
+            f"Altitude: {altitude} m\n"
+            f"Speed: {speed} m/s\n"
+            f"Board temperature: {board_temp}%"
+        )
+        self.drone_stats_box.configure(state="normal")
+        self.drone_stats_box.delete("1.0", "end")
+        self.drone_stats_box.insert("1.0", stats_text)
+        self.drone_stats_box.configure(state="disabled")
 
     def print_to_image(self, pos, text) -> None:
         self.drone_stats = ctk.CTkTextbox(self.root, height=50, width=300)
@@ -203,7 +315,8 @@ class TelloCustomTkinterStream:
                 time.sleep(0.2)
             else:
                 self.drone_stats.insert(
-                    "1.0", f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms"
+                    "1.0",
+                    f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms",
                 )
             self.drone_stats.configure(state="disabled")
 

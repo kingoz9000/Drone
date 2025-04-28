@@ -1,5 +1,5 @@
 import time
-
+import threading
 from queue import Queue
 
 from .stun_client import StunClient
@@ -10,6 +10,8 @@ class ControlStunClient(StunClient):
         super().__init__()
         self.response = Queue()
         self.log = log
+        self.drone_stats = {}
+        self.stats_lock = threading.Lock()
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         self.stun_socket.sendto(command.encode(), self.peer_addr)
@@ -17,6 +19,11 @@ class ControlStunClient(StunClient):
     def get_peer_addr(self):
         if self.peer_addr:
             return self.peer_addr
+        
+    def get_drone_stats(self):
+        with self.stats_lock:
+            stats = self.drone_stats.copy()
+        return stats
 
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
@@ -39,7 +46,9 @@ class ControlStunClient(StunClient):
                     # print(f"From client: {seq_num}")
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
-                            writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
+                            writer.write(
+                                f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n"
+                            )
 
                     reorder_buffer.append((seq_num, payload))
                     reorder_buffer.sort()
@@ -58,7 +67,22 @@ class ControlStunClient(StunClient):
 
                 # State
                 elif flag == 2:
-                    self.state = data[1:]
+                    drone_data = data[1:]
+
+                    for part in drone_data:
+                        key, value = part.split(":")
+                        if "," in value:
+                            with self.stats_lock:
+                                self.drone_stats[key] = tuple(map(float, value.split(",")))
+                        else:
+                            try:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = (
+                                        float(value) if "." in value else int(value)
+                                    )
+                            except ValueError:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = value
                     continue
 
             message = data.decode()
