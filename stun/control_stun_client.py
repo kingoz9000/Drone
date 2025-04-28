@@ -1,4 +1,4 @@
-import time
+import time, heapq
 import threading
 from queue import Queue
 
@@ -28,8 +28,12 @@ class ControlStunClient(StunClient):
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
-        reorder_buffer = []  # List of (seq_num, data)
+        reorder_buffer: list[tuple] = [] 
         MIN_BUFFER_SIZE = 6
+        last_seq_num = 0
+        # Open this once before your loop starts
+        
+        #video_file = open("output_stream.h264", "ab")  # append in binary mode
 
         while self.running:
             data = self.stun_socket.recv(4096)
@@ -46,16 +50,18 @@ class ControlStunClient(StunClient):
                     # print(f"From client: {seq_num}")
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
-                            writer.write(
-                                f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n"
-                            )
-
-                    reorder_buffer.append((seq_num, payload))
-                    reorder_buffer.sort()
+                            writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
+                    heapq.heappush(reorder_buffer, (seq_num, payload))
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:
-                        ordered_seq, ordered_data = reorder_buffer.pop(0)
+                        ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
+                        
+                        if ordered_seq != last_seq_num + 1:
+                            print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
+
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+                        #video_file.write(ordered_data)
+                        last_seq_num = ordered_seq
 
                     continue
 
