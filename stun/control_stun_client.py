@@ -74,21 +74,25 @@ class ControlStunClient(StunClient):
                 # State
                 elif flag == 2:
                     drone_data = data[1:]
+                    try:
+                        drone_data = drone_data.decode().strip().strip(";").split(";")
+                        for part in drone_data:
+                            key, value = part.split(":")
+                            if "," in value:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = tuple(map(float, value.split(",")))
+                            else:
+                                try:
+                                    with self.stats_lock:
+                                        self.drone_stats[key] = (
+                                            float(value) if "." in value else int(value)
+                                        )
+                                except ValueError:
+                                    with self.stats_lock:
+                                        self.drone_stats[key] = value
+                    except Exception as e:
+                        print(f"Error in decoding: {e}")
 
-                    for part in drone_data:
-                        key, value = part.split(":")
-                        if "," in value:
-                            with self.stats_lock:
-                                self.drone_stats[key] = tuple(map(float, value.split(",")))
-                        else:
-                            try:
-                                with self.stats_lock:
-                                    self.drone_stats[key] = (
-                                        float(value) if "." in value else int(value)
-                                    )
-                            except ValueError:
-                                with self.stats_lock:
-                                    self.drone_stats[key] = value
                     continue
 
             message = data.decode()

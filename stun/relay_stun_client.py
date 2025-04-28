@@ -41,7 +41,7 @@ class RelayStunClient(StunClient):
         self.state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.state_socket.bind(state_addr)
         while self.running:
-            state = self.drone_video_socket.recv(4096)
+            state = self.state_socket.recv(4096)
             self.send_data_to_operator(state, prefix=2)
             time.sleep(self.stats_refresh_rate)
 
