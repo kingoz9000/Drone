@@ -18,14 +18,14 @@ class ControlStunClient(StunClient):
             return self.peer_addr
 
     def listen(self):
-        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
+        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}rec_check.txt"
 
-        reorder_buffer: list[tuple] = [] 
+        reorder_buffer: list[tuple] = []
         MIN_BUFFER_SIZE = 6
         last_seq_num = 0
         # Open this once before your loop starts
-        
-        #video_file = open("output_stream.h264", "ab")  # append in binary mode
+
+        # video_file = open("output_stream.h264", "ab")  # append in binary mode
 
         while self.running:
             data = self.stun_socket.recv(4096)
@@ -38,21 +38,24 @@ class ControlStunClient(StunClient):
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
                     seq_num = int.from_bytes(data[1:3], "big")
-                    payload = data[3:]
+                    payload = data[3:-4]
+                    checksum = payload + data[-4:]
                     # print(f"From client: {seq_num}")
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
-                            writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
+                            writer.write(
+                                f"Received seq:{seq_num}, checksum:{checksum.hex()}, payload size:{len(payload)} bytes\n"
+                            )
                     heapq.heappush(reorder_buffer, (seq_num, payload))
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:
                         ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
-                        
+
                         if ordered_seq != last_seq_num + 1:
                             print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
 
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
-                        #video_file.write(ordered_data)
+                        # video_file.write(ordered_data)
                         last_seq_num = ordered_seq
 
                     continue

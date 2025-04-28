@@ -3,6 +3,8 @@ import time
 
 from .stun_client import StunClient
 
+import hashlib
+
 
 class RelayStunClient(StunClient):
     def __init__(self):
@@ -15,7 +17,6 @@ class RelayStunClient(StunClient):
 
         self.state = None
         self.response = None
-
         self.stats_refresh_rate = 0.5  # seconds
 
     def send_command_to_drone(self, command, take_response=False):
