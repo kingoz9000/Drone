@@ -15,10 +15,6 @@ class ControlStunClient(StunClient):
         self.drone_stats = {}
         self.stats_lock = threading.Lock()
 
-        self.WEBSERVER_IP = "130.225.37.157"
-        self.WEBSERVER_PORT = 31295
-        self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         self.stun_socket.sendto(command.encode(), self.sending_addr)
 
@@ -58,9 +54,6 @@ class ControlStunClient(StunClient):
                 if flag == 0:
                     seq_num = int.from_bytes(data[1:3], "big")
                     payload = data[3:]
-
-                    self.webserver_socket.sendto(
-                        data[1:], (self.WEBSERVER_IP, self.WEBSERVER_PORT))
 
                     # print(f"From client: {seq_num}")
                     if self.log:
