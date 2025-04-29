@@ -16,7 +16,7 @@ class ControlStunClient(StunClient):
         self.stats_lock = threading.Lock()
 
         self.WEBSERVER_IP = "130.225.37.157"
-        self.WEBSERVER_PORT = 27463
+        self.WEBSERVER_PORT = 31295
         self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
