@@ -1,6 +1,7 @@
 import heapq
 import threading
 import time
+import socket
 from queue import Queue
 
 from .stun_client import StunClient
@@ -13,6 +14,10 @@ class ControlStunClient(StunClient):
         self.log = log
         self.drone_stats = {}
         self.stats_lock = threading.Lock()
+
+        self.WEBSERVER_IP = "130.225.37.157"
+        self.WEBSERVER_PORT = 27463
+        self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         self.stun_socket.sendto(command.encode(), self.peer_addr)
@@ -68,6 +73,8 @@ class ControlStunClient(StunClient):
                             print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
 
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+                        self.webserver_socket.sendto(
+                            ordered_data, (self.WEBSERVER_IP, self.WEBSERVER_PORT))
                         # video_file.write(ordered_data)
                         last_seq_num = ordered_seq
 
