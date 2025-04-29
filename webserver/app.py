@@ -3,27 +3,13 @@ import threading
 import time
 
 import cv2
+import numpy as np
 from flask import Flask, Response, render_template
 
 app = Flask(__name__)
 
 frame = None  # Shared frame
 lock = threading.Lock()  # To protect access to frame
-
-
-def camera_reader():
-    global frame
-    cap = cv2.VideoCapture(0)
-
-    while True:
-        ret, new_frame = cap.read()
-        if not ret:
-            continue
-
-        with lock:
-            frame = new_frame.copy()
-
-        time.sleep(0.01)
 
 
 @app.route("/")
@@ -36,6 +22,35 @@ def video_feed():
     return Response(
         generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
     )
+
+
+def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
+    global frame
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((server_ip, server_port))
+
+    print(f"✅ Listening for video packets on UDP {server_ip}:{server_port}")
+
+    packet_data = b""
+
+    while True:
+        packet, addr = sock.recvfrom(65536)  # Large buffer to avoid split packets
+        packet_data += packet
+
+        try:
+            nparr = np.frombuffer(packet_data, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            if img is not None:
+                with lock:
+                    frame = img.copy()
+                packet_data = b""  # Reset after successful frame decoding
+
+        except Exception as e:
+            print(f"❌ Frame decode error: {e}")
+            packet_data = b""
+            time.sleep(0.01)
 
 
 def generate_frames():
@@ -69,5 +84,5 @@ def generate_frames():
 
 
 if __name__ == "__main__":
-    threading.Thread(target=camera_reader, daemon=True).start()
-    app.run(debug=True)
+    threading.Thread(target=udp_video_reader, daemon=True).start()
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
