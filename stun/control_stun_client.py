@@ -113,6 +113,7 @@ class ControlStunClient(StunClient):
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
                     self.hole_punch()
+                    self.is_connected = True
 
                 if message.split()[1] == "INVALID_ID":
                     print("Invalid target ID.")

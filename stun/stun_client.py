@@ -57,4 +57,4 @@ class StunClient:
     def main(self):
         self.register()
         self.run_in_thread(self.listen)
-        self.request_peer()
+        #self.request_peer()

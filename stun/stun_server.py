@@ -142,7 +142,7 @@ class StunServer:
     
             elif message.startswith("DISCONNECT"):
                 print("Received disconnect message")
-                for k in self.clients.keys().copy():
+                for k in list(self.clients.keys()).copy():
                     self.logger.info(f"Client {self.get_client_id(k)} disconnected")
                     self.server_socket.sendto(f"SERVER DISCONNECT".encode(), self.clients[k][0])
                     self.clients.pop(k)
