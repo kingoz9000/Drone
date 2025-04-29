@@ -1,14 +1,19 @@
-import argparse, threading, time
+import argparse
+import socket
+import threading
+import time
 from collections import deque
 
 import customtkinter as ctk
-from joystick.button_mapping import ButtonMap
-from GUI.drone_communication import DroneCommunication
-from GUI.drone_video_feed import DroneVideoFeed
-from PIL import Image, ImageTk
-from stun import ControlStunClient
+import cv2
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from PIL import Image, ImageTk
+
+from GUI.drone_communication import DroneCommunication
+from GUI.drone_video_feed import DroneVideoFeed
+from joystick.button_mapping import ButtonMap
+from stun import ControlStunClient
 
 
 class TelloCustomTkinterStream:
@@ -47,6 +52,9 @@ class TelloCustomTkinterStream:
             time.sleep(5)
             drone_video_addr = ("0.0.0.0", 27463)
             self.send_command = self.stun_handler.send_command_to_relay
+            self.WEBSERVER_IP = "130.225.37.157"
+            self.WEBSERVER_PORT = 27463
+            self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
             drone_video_addr = ("0.0.0.0", 11111)
             drone_comm_addr = ("192.168.10.1", 8889)
@@ -144,7 +152,7 @@ class TelloCustomTkinterStream:
                 stats = self.stun_handler.get_drone_stats()
             else:
                 # get stats directly from drone
-                stats = self.drone_communication.stats 
+                stats = self.drone_communication.stats
 
             pitch = stats.get("pitch", 0)
             roll = stats.get("roll", 0)
@@ -157,7 +165,6 @@ class TelloCustomTkinterStream:
         except Exception as e:
             print(f"Error fetching stats: {e}")
             return 0, 0, 0, 0, 0, 0
-
 
     def fetch_and_update_drone_stats(self):
         while True:
@@ -245,9 +252,22 @@ class TelloCustomTkinterStream:
                 img = img.resize((960, 720), Image.Resampling.LANCZOS)
 
                 imgtk = ImageTk.PhotoImage(image=img)
-
                 # Update the canvas using the main thread
                 self.root.after(0, self.update_canvas, imgtk)
+
+                if self.ARGS.stun and self.webserver_socket:
+                    # Compress frame as JPEG
+                    encode_param = [
+                        int(cv2.IMWRITE_JPEG_QUALITY),
+                        80,
+                    ]  # 80% quality JPEG
+                    result, encimg = cv2.imencode(".jpg", frame, encode_param)
+
+                    if result:
+                        data = encimg.tobytes()
+                        self.webserver_socket.sendto(
+                            data, (self.WEBSERVER_IP, self.WEBSERVER_PORT)
+                        )
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
