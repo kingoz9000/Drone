@@ -256,7 +256,7 @@ class TelloCustomTkinterStream:
                 # Update the canvas using the main thread
                 self.root.after(0, self.update_canvas, imgtk)
 
-                if self.ARGS.stun and self.webserver_socket:
+                if self.ARGS.stun and self.webserver_socket and False:
                     # Compress frame as JPEG
                     encode_param = [
                         int(cv2.IMWRITE_JPEG_QUALITY),

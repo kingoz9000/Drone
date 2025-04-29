@@ -35,27 +35,17 @@ def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
 
     print(f"✅ Listening for video packets on UDP {server_ip}:{server_port}")
 
-    packet_data = b""
+    cap = cv2.VideoCapture("udp://0.0.0.0:27463", cv2.CAP_FFMPEG)
 
-    while True:
-        packet, addr = sock.recvfrom(65536)
-        packet_data += packet
+    while cap.isOpened():
+        ret, data = cap.read()
+        if not ret:
+            continue
+        data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
+        data = cv2.resize(data, (1280, 720))
+        with lock:
+            frame = data
 
-        try:
-            nparr = np.frombuffer(packet_data, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-            if img is not None:
-                img = cv2.resize(img, (1280, 720))  # Scale up if you want
-                with lock:
-                    frame = img.copy()
-                packet_data = b""
-
-        except Exception as e:
-            print(f"❌ Frame decode error: {e}")
-            packet_data = b""
-            time.sleep(0.01)
 
 
 def webcam_reader():
