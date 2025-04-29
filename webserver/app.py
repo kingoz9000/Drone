@@ -1,7 +1,7 @@
 import argparse
 import socket
 import threading
-import time
+import time, av, heapq
 
 import cv2
 import numpy as np
@@ -9,7 +9,8 @@ from flask import Flask, Response, render_template
 
 app = Flask(__name__)
 
-frame = None  # Shared frame
+frame_queue = []  # Shared frame
+frame = None  # Current frame
 lock = threading.Lock()  # To protect access to frame
 
 args = None  # Global to hold parsed args
@@ -27,25 +28,57 @@ def video_feed():
     )
 
 
-def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
+def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
     global frame
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((server_ip, server_port))
+    print(f"✅ Listening for H.264 video stream on {video_address}")
 
-    print(f"✅ Listening for video packets on UDP {server_ip}:{server_port}")
+    try:
+        container = av.open(
+            video_address,
+            format="h264",
+            timeout=(2, None),
+            options={
+                "fflags": "nobuffer+discardcorrupt",
+                "flags": "low_delay",
+                "rtsp_transport": "udp",
+                "flush_packets": "1",
+                "max_delay": "0",
+                "reorder_queue_size": "0",
+                "hwaccel": "auto",
+            },
+        )
 
-    cap = cv2.VideoCapture("udp://0.0.0.0:27463", cv2.CAP_FFMPEG)
+        for packet in container.demux(video=0):
+            for pyav_frame in packet.decode():
+                img = np.array(pyav_frame.to_image())
 
-    while cap.isOpened():
-        ret, data = cap.read()
-        if not ret:
-            continue
-        data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
-        data = cv2.resize(data, (1280, 720))
-        with lock:
-            frame = data
+                if img is not None and img.size > 0:
+                    img = cv2.resize(img, (1280, 720))
+                    print("Kolle holder mig kolle")
+                    with lock:
+                        seq_num, frame = frame_sorter(img)
 
+    except Exception as e:
+        print(e)
+        print("Trying again...")
+        container.close()
+        time.sleep(1)
+
+        udp_av_reader()
+
+
+def frame_sorter(data):
+    global frame_queue  
+    MIN_BUFFER_SIZE = 12
+
+    seq_num = int.from_bytes(data[:2], "big")
+    payload = data[2:]
+
+    heapq.heappush(frame_queue, (seq_num, payload))
+
+    if len(frame_queue) >= MIN_BUFFER_SIZE:
+        ordered_seq, ordered_data = heapq.heappop(frame_queue)
+        return ordered_seq, ordered_data
 
 
 def webcam_reader():
@@ -113,6 +146,6 @@ if __name__ == "__main__":
     if args.webcam:
         threading.Thread(target=webcam_reader, daemon=True).start()
     else:
-        threading.Thread(target=udp_video_reader, daemon=True).start()
+        threading.Thread(target=udp_av_reader, daemon=True).start()
 
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
