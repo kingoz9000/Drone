@@ -1,7 +1,7 @@
 from stun.relay_stun_client import RelayStunClient
 import hashlib
 from main import args
-
+import time
 
 client = RelayStunClient(args.log)
 client.relay = True
@@ -11,6 +11,7 @@ client.main()
 client.run_in_thread(client.state_socket_handler)
 
 seq_num = 0
+relay_checksums = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}relaycheck.txt"
 
 while client.running:
     if client.hole_punched:
@@ -21,7 +22,7 @@ while client.running:
 
         # Log the checksum with sequence number and timestamp
         if args.log:
-            with open("Data/relay_checksums.log", "a") as relay_check:
+            with open("Data/" + relay_checksums, "a") as relay_check:
                 relay_check.write(
                     f"Seq: {seq_num}, Checksum: {checksum.hex()}, Message Size: {len(msg)} bytes\n"
                 )
