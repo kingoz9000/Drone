@@ -270,7 +270,7 @@ class TelloCustomTkinterStream:
                 img = Image.fromarray(frame)
 
                 # Resize the image
-                img = img.resize((960, 720), Image.Resampling.LANCZOS)
+                img = img.resize((int(960 * self.scale), int(720 * self.scale)), Image.Resampling.LANCZOS)
 
                 imgtk = ImageTk.PhotoImage(image=img)
                 # Update the canvas using the main thread
