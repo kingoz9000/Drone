@@ -1,7 +1,7 @@
 import argparse
 import socket
 import threading
-import time
+import time, av
 
 import cv2
 import numpy as np
@@ -46,6 +46,40 @@ def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
         with lock:
             frame = data
 
+
+def udp_av_reader(video_address="udp://0.0.0.0:27463"):
+    global frame
+    print(f"✅ Listening for H.264 video stream on {video_address}")
+
+    while True:
+        try:
+            container = av.open(
+                video_address,
+                format="h264",
+                timeout=(2, None),
+                options={
+                    "fflags": "nobuffer+discardcorrupt",
+                    "flags": "low_delay",
+                    "rtsp_transport": "udp",
+                    "flush_packets": "1",
+                    "max_delay": "0",
+                    "reorder_queue_size": "0",
+                    "hwaccel": "auto",
+                },
+            )
+
+            for packet in container.demux(video=0):
+                for pyav_frame in packet.decode():
+                    img = np.array(pyav_frame.to_image())
+
+                    if img is not None and img.size > 0:
+                        img = cv2.resize(img, (1280, 720))
+                        with lock:
+                            frame = img.copy()
+
+        except Exception as e:
+            print(f"❌ AV decode error: {e}")
+            time.sleep(1)
 
 
 def webcam_reader():
@@ -113,6 +147,6 @@ if __name__ == "__main__":
     if args.webcam:
         threading.Thread(target=webcam_reader, daemon=True).start()
     else:
-        threading.Thread(target=udp_video_reader, daemon=True).start()
+        threading.Thread(target=udp_av_reader, daemon=True).start()
 
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
