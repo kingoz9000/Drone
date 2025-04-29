@@ -39,10 +39,6 @@ class StunClient:
         except Exception as e:
             print(f"Error sending REQUEST message: {e}")
 
-    def start_connection_listener(self):
-        self.listen_thread = threading.Thread(target=self.listen, daemon=True)
-        self.listen_thread.start()
-
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
             try:
@@ -51,7 +47,14 @@ class StunClient:
                 print(f"Error sending HOLE punch message: {e}")
             time.sleep(0.1)
 
+    @staticmethod
+    def run_in_thread(func, *args) -> threading.Thread:
+        """General worker function to run a function in a thread"""
+        thread = threading.Thread(target=func, args=args, daemon=True)
+        thread.start()
+        return thread
+
     def main(self):
         self.register()
-        self.start_connection_listener()
+        self.run_in_thread(self.listen)
         self.request_peer()
