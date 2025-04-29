@@ -8,6 +8,7 @@ class StunClient:
 
         self.client_id = None
         self.peer_addr = None
+        self.sending_addr = None
 
         self.STUN_SERVER_ADDR = ("130.225.37.157", 12345)
 
@@ -16,6 +17,7 @@ class StunClient:
 
         self.running = True
         self.relay = False
+        self.turn_mode = False
 
     def register(self):
         try:
@@ -57,4 +59,3 @@ class StunClient:
     def main(self):
         self.register()
         self.run_in_thread(self.listen)
-        #self.request_peer()

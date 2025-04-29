@@ -20,7 +20,7 @@ class ControlStunClient(StunClient):
         self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
-        self.stun_socket.sendto(command.encode(), self.peer_addr)
+        self.stun_socket.sendto(command.encode(), self.sending_addr)
 
     def get_peer_addr(self):
         if self.peer_addr:
@@ -119,6 +119,7 @@ class ControlStunClient(StunClient):
                     _, _, peer_ip, peer_port = message.split()
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
+                    self.sending_addr = self.peer_addr
                     self.hole_punch()
                     self.is_connected = True
 
@@ -135,6 +136,13 @@ class ControlStunClient(StunClient):
 
                 if message.split()[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
+                    self.request_peer()
+                if message.split()[1] == "TURN_MODE":
+                    print("Turn mode activated.")
+                    self.sending_addr = self.STUN_SERVER_ADDR
+                    self.turn_mode = True
+                    continue
+                
 
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True

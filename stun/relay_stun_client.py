@@ -32,9 +32,9 @@ class RelayStunClient(StunClient):
 
     def send_data_to_operator(self, data, prefix=0):
         shifted = bytearray([prefix]) + data
-        if not self.peer_addr:
+        if not self.sending_addr:
             return
-        self.stun_socket.sendto(shifted, self.peer_addr)
+        self.stun_socket.sendto(shifted, self.sending_addr)
 
     def state_socket_handler(self):
         state_addr = ("0.0.0.0", 8890)
@@ -57,6 +57,7 @@ class RelayStunClient(StunClient):
                     _, _, peer_ip, peer_port = parts
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
+                    self.sending_addr = self.peer_addr
                     self.hole_punch()
                     continue
 
@@ -76,6 +77,12 @@ class RelayStunClient(StunClient):
 
                 elif parts[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
+                    continue
+                elif parts[1] == "TURN_MODE":
+                    print("Turn mode activated.")
+                    self.sending_addr = self.STUN_SERVER_ADDR
+
+                    self.turn_mode = True
                     continue
 
             elif message.startswith("HOLE") and not self.hole_punched:

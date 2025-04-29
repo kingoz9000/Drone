@@ -36,7 +36,7 @@ class StunServer:
 
         self.logger.info(f"Server listening on {self.SERVER_IP}:{self.SERVER_PORT}")
 
-        self.stun_mode = False
+        self.stun_mode = True
 
     def get_client_id(self, addr):
         self.logger.debug(
@@ -146,6 +146,16 @@ class StunServer:
                     self.logger.info(f"Client {self.get_client_id(k)} disconnected")
                     self.server_socket.sendto(f"SERVER DISCONNECT".encode(), self.clients[k][0])
                     self.clients.pop(k)
+            
+            elif message.startswith("REQUEST_TURN_MODE"):
+                self.logger.debug(f"Client {self.get_client_id(addr)} requested TURN mode")
+                
+                #check connection with other client
+
+                
+                #if connection is ok, send TURN mode request
+                self.switch_turn_mode()
+                pass
                     
 
             elif message.startswith("ALIVE"):
@@ -157,7 +167,6 @@ class StunServer:
 
             elif message.startswith("HOLE PUNCHED"):
                 self.logger.info(f"Hole punched with Client {self.get_client_id(addr)}")
-                self.stun_mode = True
 
             elif message.startswith("CHECK"):
                 # send list of clients except the one who requested
@@ -169,7 +178,7 @@ class StunServer:
                             (k, v[0][0], v[0][1])
                         )  # Append client ID, IP, and port
                 try:
-                    if clients_to_send:
+                    if clients_to_send and not auto_connect_mode:
                         self.logger.info(
                             f"Sending list of clients to Client {client_id}"
                         )
@@ -227,6 +236,35 @@ class StunServer:
                         self.logger.error(
                             f"Failed to send NOT_FOUND message to {addr}: {e}"
                         )
+            # TURN-specific behavior
+            elif message.startswith("RELAY") and not self.stun_mode:
+                # if message is from client 1, send to client 2 and vice versa
+
+                if self.getclient_id(addr) == 0:
+                    self.server_socket.sendto(message[6:].encode(), self.clients[1][0])
+
+                elif self.getclient_id(addr) == 1:
+                    self.server_socket.sendto(message[6:].encode(), self.clients[0][0])
+                else:
+                    self.server_socket.sendto("INVALID_ID".encode(), addr)
+                    self.logger.error(f"Invalid target ID: {target_id}")
+
+    def switch_turn_mode(self):
+        self.logger.debug("TURN mode active: relaying messages")
+        # send "TURN MODE activated" to all clients
+        for k, v in self.clients.items():
+            try:
+                self.server_socket.sendto(
+                    f"SERVER TURN_MODE".encode(), v[0]
+                )
+                self.logger.info(f"Sent TURN mode activation to Client {k}")
+            except Exception as e:
+                self.logger.error(
+                    f"Failed to send TURN mode activation to Client {k}: {e}"
+                )
+
+        self.stun_mode = False
+        pass
 
 
 if __name__ == "__main__":
