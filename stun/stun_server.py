@@ -92,6 +92,7 @@ class StunServer:
                 lasttime = curtime
 
     def exchange(self):
+        auto_connect_mode = True  # Set this to False for manual connection mode
         while True:
             data, addr = self.server_socket.recvfrom(1024)
             message = data.decode().strip()
@@ -116,13 +117,35 @@ class StunServer:
                     self.logger.error(
                         f"Failed to send registration confirmation to {addr}: {e}"
                     )
+
+                # Auto-connect logic
+                if auto_connect_mode and len(self.clients) == 2:
+                    client_ids = list(self.clients.keys())
+                    client1_id, client2_id = client_ids[0], client_ids[1]
+                    client1_addr, client2_addr = self.clients[client1_id][0], self.clients[client2_id][0]
+
+                    try:
+                        # Send connection details to both clients
+                        self.server_socket.sendto(
+                            f"SERVER CONNECT {client2_addr[0]} {client2_addr[1]}".encode(),
+                            client1_addr,
+                        )
+                        self.server_socket.sendto(
+                            f"SERVER CONNECT {client1_addr[0]} {client1_addr[1]}".encode(),
+                            client2_addr,
+                        )
+                        self.logger.info(
+                            f"Automatically connected Client {client1_id} and Client {client2_id}"
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Failed to auto-connect clients: {e}")
     
             elif message.startswith("DISCONNECT"):
                 print("Received disconnect message")
-                for k,v in self.clients.items():
+                for k in self.clients.keys().copy():
                     self.logger.info(f"Client {self.get_client_id(k)} disconnected")
-                    self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v[0])
-                    del self.clients[k]
+                    self.server_socket.sendto(f"SERVER DISCONNECT".encode(), self.clients[k][0])
+                    self.clients.pop(k)
                     
 
             elif message.startswith("ALIVE"):
