@@ -57,6 +57,7 @@ def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
                     print("Kolle holder mig kolle")
                     with lock:
                         seq_num, frame = frame_sorter(img)
+                        print(f"Frame sorted: {seq_num}")
 
     except Exception as e:
         print(e)
@@ -69,7 +70,7 @@ def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
 
 def frame_sorter(data):
     global frame_queue  
-    MIN_BUFFER_SIZE = 12
+    MIN_BUFFER_SIZE = 6
 
     seq_num = int.from_bytes(data[:2], "big")
     payload = data[2:]
@@ -79,6 +80,10 @@ def frame_sorter(data):
     if len(frame_queue) >= MIN_BUFFER_SIZE:
         ordered_seq, ordered_data = heapq.heappop(frame_queue)
         return ordered_seq, ordered_data
+    else:
+        print("Buffer not full yet")
+        return None, None
+    
 
 
 def webcam_reader():
