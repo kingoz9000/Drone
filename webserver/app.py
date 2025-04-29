@@ -27,15 +27,15 @@ def video_feed():
     )
 
 
-def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
+def udp_video_reader(server_ip="0.0.0.0", server_port=31295):
     global frame
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((server_ip, server_port))
+    #sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #sock.bind((server_ip, server_port))
 
     print(f"✅ Listening for video packets on UDP {server_ip}:{server_port}")
 
-    cap = cv2.VideoCapture("udp://@0.0.0.0:27463", cv2.CAP_FFMPEG)
+    cap = cv2.VideoCapture("udp://@0.0.0.0:31295", cv2.CAP_FFMPEG)
 
     while cap.isOpened():
         ret, data = cap.read()
@@ -47,7 +47,7 @@ def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
             frame = data
 
 
-def udp_av_reader(video_address="udp://@0.0.0.0:27463"):
+def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
     global frame
     print(f"✅ Listening for H.264 video stream on {video_address}")
 
