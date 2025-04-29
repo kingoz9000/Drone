@@ -240,6 +240,7 @@ class TelloCustomTkinterStream:
     def connect_to_drone(self) -> None:
         self.send_command("command")
         self.send_command("streamon")
+        self.send_command("motoron")
 
     def update_video_frame(self) -> None:
         """Update the video frame in the customTkinter window."""

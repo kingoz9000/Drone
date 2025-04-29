@@ -14,7 +14,7 @@ class StunServer:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.bind((self.SERVER_IP, self.SERVER_PORT))
 
-        self.client_timeout = 3
+        self.client_timeout = 1
         self.next_client_id = 0
 
         self.logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class StunServer:
         lasttime = 0
         while True:
             curtime = time.time()
-            if curtime - lasttime > 5:
+            if curtime - lasttime > 3:
                 clients_to_remove = []
                 for k, v in self.clients.items():
                     if v[2] >= self.client_timeout:
@@ -99,7 +99,7 @@ class StunServer:
             if message.startswith("REGISTER"):
                 with self.clients_lock:
                     client_id = 0
-                    clients_copy = self.clients.keys().sort()
+                    clients_copy = sorted(self.clients.keys())
                     for idx, num in enumerate(clients_copy):
                         if idx == num:
                             continue
@@ -119,9 +119,9 @@ class StunServer:
     
             elif message.startswith("DISCONNECT"):
                 print("Received disconnect message")
-                for k in self.clients:
+                for k,v in self.clients.items():
                     self.logger.info(f"Client {self.get_client_id(k)} disconnected")
-                    self.server_socket.sendto(f"SERVER DISCONNECT".encode(), k)
+                    self.server_socket.sendto(f"SERVER DISCONNECT".encode(), v[0])
                     del self.clients[k]
                     
 
