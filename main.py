@@ -44,9 +44,7 @@ class TelloCustomTkinterStream:
         )
         self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
 
-        self.init_graph()
-        self.init_battery_circle()
-        self.init_drone_stats()
+        self.init_ui_components()
 
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
@@ -88,11 +86,13 @@ class TelloCustomTkinterStream:
         # Start customTkinter event loop
         self.root.mainloop()
 
-    def init_graph(self):
+    def init_ui_components(self):
+        background_color = "#242424"
+        
+        # --- Graph ---
         self.fig, self.ax = plt.subplots(figsize=(3, 2), dpi=100)
         self.fig.patch.set_alpha(0)
         self.ax.patch.set_alpha(0)
-        background_color = "#242424"
         self.ax.tick_params(colors="white")
         self.ax.set_title("Ping", color="white")
         self.fig.patch.set_facecolor(background_color)
@@ -100,70 +100,45 @@ class TelloCustomTkinterStream:
         self.ax.set_xlabel("Time (s)", color="white")
         self.ax.set_ylabel("Ping (ms)", color="white")
         self.ax.set_ylim(0, 150)
-        # print(self.ax.get_facecolor())
-
-        self.ping_data = deque([0] * 50, maxlen=50)  # last 50 ping values
+        self.ping_data = deque([0] * 50, maxlen=50)
         (self.line,) = self.ax.plot(self.ping_data, color="blue")
-
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.graph_frame)
-        self.canvas.get_tk_widget().pack()
-        self.canvas.get_tk_widget().configure(bg=background_color, highlightthickness=0)
+        canvas_widget = self.canvas.get_tk_widget()
+        canvas_widget.pack()
+        canvas_widget.configure(bg=background_color, highlightthickness=0)
 
-    def init_battery_circle(self):
+        # --- Battery Circle ---
+        size = int(100 * self.scale)
         self.battery_canvas = ctk.CTkCanvas(
-            self.root,
-            width=int(100 * self.scale),
-            height=int(100 * self.scale),
-            bg="#242424",
-            highlightthickness=0,
+            self.root, width=size, height=size, bg=background_color, highlightthickness=0
         )
-        self.battery_canvas.place(
-            relx=1.0, rely=1.0, anchor="se", x=-20, y=-20
-        )  # Lower-right corner with padding
-
+        self.battery_canvas.place(relx=1.0, rely=1.0, anchor="se", x=-20, y=-20)
         self.battery_canvas.create_oval(
-            int(10 * self.scale),
-            int(10 * self.scale),
-            int(90 * self.scale),
-            int(90 * self.scale),
-            outline="white",
-            width=2,
+            int(10 * self.scale), int(10 * self.scale), int(90 * self.scale), int(90 * self.scale),
+            outline="white", width=2
         )
-
         self.battery_arc = self.battery_canvas.create_arc(
-            int(10 * self.scale),
-            int(10 * self.scale),
-            int(90 * self.scale),
-            int(90 * self.scale),
-            start=90,
-            extent=0,
-            fill="green",
-            outline="",
+            int(10 * self.scale), int(10 * self.scale), int(90 * self.scale), int(90 * self.scale),
+            start=90, extent=0, fill="green", outline=""
         )
         self.battery_canvas.create_text(
-            int(50 * self.scale),
-            int(50 * self.scale),
-            text="Battery",
-            fill="white",
-            font=("Arial", int(8 * self.scale)),
-            tags="battery_text",
+            int(50 * self.scale), int(50 * self.scale),
+            text="Battery", fill="white", font=("Arial", int(8 * self.scale)),
+            tags="battery_text"
         )
-
-    def init_drone_stats(self):
+        # --- Drone Stats Box ---
         self.drone_stats_box = ctk.CTkTextbox(
             self.root,
             height=int(150 * self.scale),
             width=int(400 * self.scale),
-            bg_color="#242424",
+            bg_color=background_color
         )
-        self.drone_stats_box.place(
-            relx=0.5, rely=1.0, anchor="s", y=-10
-        )  # Bottom center
+        self.drone_stats_box.place(relx=0.5, rely=1.0, anchor="s", y=-10)
         self.drone_stats_box.configure(
             state="disabled",
             font=("Arial", int(15 * self.scale)),
-            fg_color="#242424",
-            text_color="white",
+            fg_color=background_color,
+            text_color="white"
         )
 
 
@@ -174,7 +149,7 @@ class TelloCustomTkinterStream:
                     stats = self.stun_handler.get_drone_stats()
                 else:
                     # get stats directly from drone
-                    stats = self.drone_communication.stats
+                    stats = self.drone_communication.get_direct_drone_stats()
                 
             except Exception as e:
                 print(f"Error fetching stats: {e}")
@@ -212,24 +187,19 @@ class TelloCustomTkinterStream:
         self.canvas.draw()
 
     def update_drone_stats(self, stats):
-        try:
-            stats_text = (
-                f"Pitch: {stats["pitch"]}°\n"
-                f"Roll: {stats["roll"]}°\n"
-                f"Yaw: {stats["yaw"]}°\n"
-                f"Altitude: {stats["baro"]} m\n"
-                f"Speed: {math.sqrt((stats["vgx"])**2+(stats["vgx"])**2+(stats["vgx"])**2)} m/s\n"
-                f"Board temperature: {stats["temph"]} °C"
-            )
-        except:
-            stats_text = (
-                f"Pitch: 0°\n"
-                f"Roll: 0°\n"
-                f"Yaw: 0°\n"
-                f"Altitude: 0 m\n"
-                f"Speed: 0 m/s\n"
-                f"Board temperature: 0 °C"
-            )
+        if not isinstance(stats, dict):
+            print("Error: stats is not a dictionary")
+            return
+
+        stats_text = (
+            f"Pitch: {stats.get('pitch', 0)}°\n"
+            f"Roll: {stats.get('roll', 0)}°\n"
+            f"Yaw: {stats.get('yaw', 0)}°\n"
+            f"Altitude: {stats.get('baro', 0)} m\n"
+            f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
+            f"Board temperature: {stats.get('temph', 0)} °C"
+        )
+
         self.drone_stats_box.configure(state="normal")
         self.drone_stats_box.delete("1.0", "end")
         self.drone_stats_box.insert("1.0", stats_text)

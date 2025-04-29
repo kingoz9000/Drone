@@ -1,5 +1,6 @@
 import socket
 import time
+import threading
 
 
 class DroneCommunication:
@@ -15,6 +16,7 @@ class DroneCommunication:
         self.STATE_SOCKET.bind(self.STATE_IP)
         self.STATE_REFRESH_RATE = 1
         self.stats = {}
+        self.stats_lock = threading.Lock()
 
     def send_command(
         self, command: str, print_command: bool = True, take_response: bool = False
@@ -33,19 +35,28 @@ class DroneCommunication:
         elif print_command:
             print(f"Command sent '{command} IP: {self.COMMAND_ADDR}'")
 
+    def get_direct_drone_stats(self):
+        with self.stats_lock:
+            stats = self.stats.copy()
+        return stats
+    
+    
     def wifi_state_socket_handler(self):
         while True:
             self.drone_stats = self.STATE_SOCKET.recv(4096).decode().strip().strip(";").split(";")
-            
+
             for part in self.drone_stats:
                 key, value = part.split(":")
                 if "," in value:
-                    self.stats[key] = tuple(map(float, value.split(",")))
+                    with self.stats_lock:
+                        self.stats[key] = tuple(map(float, value.split(",")))
                 else:
                     try:
-                        self.stats[key] = float(value) if "." in value else int(value)
+                        with self.stats_lock:
+                            self.stats[key] = float(value) if "." in value else int(value)
                     except ValueError:
-                        self.stats[key] = value
+                        with self.stats_lock:
+                            self.stats[key] = value
             time.sleep(self.STATE_REFRESH_RATE )
 
 
