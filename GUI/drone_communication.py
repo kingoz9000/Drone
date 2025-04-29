@@ -34,7 +34,6 @@ class DroneCommunication:
             print(f"Command sent '{command} IP: {self.COMMAND_ADDR}'")
 
     def wifi_state_socket_handler(self):
-        
         while True:
             self.drone_stats = self.STATE_SOCKET.recv(4096).decode().strip().strip(";").split(";")
             
