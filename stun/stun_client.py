@@ -26,13 +26,6 @@ class StunClient:
         except Exception as e:
             print(f"Error during registration: {e}")
 
-    @staticmethod
-    def run_in_thread(func, *args) -> threading.Thread:
-        """General worker function to run a function in a thread"""
-        thread = threading.Thread(target=func, args=args, daemon=True)
-        thread.start()
-        return thread
-
     def request_peer(self):
         try:
             self.stun_socket.sendto(b"CHECK", self.STUN_SERVER_ADDR)
