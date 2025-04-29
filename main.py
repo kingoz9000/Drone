@@ -53,7 +53,7 @@ class TelloCustomTkinterStream:
             drone_video_addr = ("0.0.0.0", 27463)
             self.send_command = self.stun_handler.send_command_to_relay
             self.WEBSERVER_IP = "130.225.37.157"
-            self.WEBSERVER_PORT = 31295
+            self.WEBSERVER_PORT = 27463
             self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
             drone_video_addr = ("0.0.0.0", 11111)
