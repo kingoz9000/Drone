@@ -35,7 +35,7 @@ def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
 
     print(f"✅ Listening for video packets on UDP {server_ip}:{server_port}")
 
-    cap = cv2.VideoCapture("udp://0.0.0.0:27463", cv2.CAP_FFMPEG)
+    cap = cv2.VideoCapture("udp://@0.0.0.0:27463", cv2.CAP_FFMPEG)
 
     while cap.isOpened():
         ret, data = cap.read()
@@ -47,7 +47,7 @@ def udp_video_reader(server_ip="0.0.0.0", server_port=27463):
             frame = data
 
 
-def udp_av_reader(video_address="udp://0.0.0.0:27463"):
+def udp_av_reader(video_address="udp://@0.0.0.0:27463"):
     global frame
     print(f"✅ Listening for H.264 video stream on {video_address}")
 
@@ -74,6 +74,7 @@ def udp_av_reader(video_address="udp://0.0.0.0:27463"):
 
                     if img is not None and img.size > 0:
                         img = cv2.resize(img, (1280, 720))
+                        print("Kolle holder mig kolle")
                         with lock:
                             frame = img.copy()
 
