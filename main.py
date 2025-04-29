@@ -326,6 +326,9 @@ class TelloCustomTkinterStream:
 
         self.send_command("streamoff")
 
+        if self.ARGS.stun:
+            self.stun_handler.disconnect_from_stunserver()
+
         self.root.quit()
         self.root.destroy()
 

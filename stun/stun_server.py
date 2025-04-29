@@ -116,6 +116,14 @@ class StunServer:
                     self.logger.error(
                         f"Failed to send registration confirmation to {addr}: {e}"
                     )
+    
+            elif message.startswith("DISCONNECT"):
+                print("Received disconnect message")
+                for k in self.clients:
+                    self.logger.info(f"Client {self.get_client_id(k)} disconnected")
+                    self.server_socket.sendto(f"SERVER DISCONNECT".encode(), k)
+                    del self.clients[k]
+                    
 
             elif message.startswith("ALIVE"):
                 self.logger.debug(f"Client {self.get_client_id(addr)} is alive")

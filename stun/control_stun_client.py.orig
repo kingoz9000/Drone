@@ -1,7 +1,11 @@
-import time, heapq
+<<<<<<< HEAD
+import time
 import threading
-from queue import Queue
+=======
+import time, heapq
 
+>>>>>>> 2bf1d11d75deada77d0355da6dbb1134aa158d6e
+from queue import Queue
 from .stun_client import StunClient
 
 
@@ -24,11 +28,6 @@ class ControlStunClient(StunClient):
         with self.stats_lock:
             stats = self.drone_stats.copy()
         return stats
-
-    def disconnect_from_stunserver(self):
-        self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)
-        self.stun_socket.close()
-        self.running = False
 
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
@@ -55,8 +54,17 @@ class ControlStunClient(StunClient):
                     # print(f"From client: {seq_num}")
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
+<<<<<<< HEAD
+                            writer.write(
+                                f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n"
+                            )
+
+                    reorder_buffer.append((seq_num, payload))
+                    reorder_buffer.sort()
+=======
                             writer.write(f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n")
                     heapq.heappush(reorder_buffer, (seq_num, payload))
+>>>>>>> 2bf1d11d75deada77d0355da6dbb1134aa158d6e
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:
                         ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
@@ -79,25 +87,21 @@ class ControlStunClient(StunClient):
                 # State
                 elif flag == 2:
                     drone_data = data[1:]
-                    try:
-                        drone_data = drone_data.decode().strip().strip(";").split(";")
-                        for part in drone_data:
-                            key, value = part.split(":")
-                            if "," in value:
-                                with self.stats_lock:
-                                    self.drone_stats[key] = tuple(map(float, value.split(",")))
-                            else:
-                                try:
-                                    with self.stats_lock:
-                                        self.drone_stats[key] = (
-                                            float(value) if "." in value else int(value)
-                                        )
-                                except ValueError:
-                                    with self.stats_lock:
-                                        self.drone_stats[key] = value
-                    except Exception as e:
-                        print(f"Error in decoding: {e}")
 
+                    for part in drone_data:
+                        key, value = part.split(":")
+                        if "," in value:
+                            with self.stats_lock:
+                                self.drone_stats[key] = tuple(map(float, value.split(",")))
+                        else:
+                            try:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = (
+                                        float(value) if "." in value else int(value)
+                                    )
+                            except ValueError:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = value
                     continue
 
             message = data.decode()
