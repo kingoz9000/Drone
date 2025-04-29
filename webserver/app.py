@@ -51,36 +51,40 @@ def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
     global frame
     print(f"✅ Listening for H.264 video stream on {video_address}")
 
-    while True:
-        try:
-            container = av.open(
-                video_address,
-                format="h264",
-                timeout=(2, None),
-                options={
-                    "fflags": "nobuffer+discardcorrupt",
-                    "flags": "low_delay",
-                    "rtsp_transport": "udp",
-                    "flush_packets": "1",
-                    "max_delay": "0",
-                    "reorder_queue_size": "0",
-                    "hwaccel": "auto",
-                },
-            )
+    try:
+        container = av.open(
+            video_address,
+            format="h264",
+            timeout=(2, None),
+            options={
+                "fflags": "nobuffer+discardcorrupt",
+                "flags": "low_delay",
+                "rtsp_transport": "udp",
+                "flush_packets": "1",
+                "max_delay": "0",
+                "reorder_queue_size": "0",
+                "hwaccel": "auto",
+            },
+        )
 
-            for packet in container.demux(video=0):
-                for pyav_frame in packet.decode():
-                    img = np.array(pyav_frame.to_image())
+        for packet in container.demux(video=0):
+            for pyav_frame in packet.decode():
+                img = np.array(pyav_frame.to_image())
 
-                    if img is not None and img.size > 0:
-                        img = cv2.resize(img, (1280, 720))
-                        print("Kolle holder mig kolle")
-                        with lock:
-                            frame = img.copy()
+                if img is not None and img.size > 0:
+                    img = cv2.resize(img, (1280, 720))
+                    print("Kolle holder mig kolle")
+                    with lock:
+                        frame = img.copy()
 
-        except Exception as e:
-            print(f"❌ AV decode error: {e}")
-            time.sleep(1)
+    except Exception as e:
+        print(e)
+        print("Trying again...")
+        container.close()
+        time.sleep(1)
+
+        udp_av_reader()
+
 
 
 def webcam_reader():
