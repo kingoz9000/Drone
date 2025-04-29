@@ -48,16 +48,20 @@ class ControlStunClient(StunClient):
 
         while self.running:
             data = self.stun_socket.recv(4096)
+            
 
             if not self.relay and self.hole_punched:
                 # Loopback for the operator
                 flag = data[0]
 
-                # Check if the first byte is 0 or 1
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
                     seq_num = int.from_bytes(data[1:3], "big")
                     payload = data[3:]
+
+                    self.webserver_socket.sendto(
+                        data[1:], (self.WEBSERVER_IP, self.WEBSERVER_PORT))
+
                     # print(f"From client: {seq_num}")
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
@@ -73,8 +77,6 @@ class ControlStunClient(StunClient):
                             print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
 
                         self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
-                        self.webserver_socket.sendto(
-                            ordered_data, (self.WEBSERVER_IP, self.WEBSERVER_PORT))
                         # video_file.write(ordered_data)
                         last_seq_num = ordered_seq
 

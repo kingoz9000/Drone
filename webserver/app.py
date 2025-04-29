@@ -1,7 +1,7 @@
 import argparse
 import socket
 import threading
-import time, av
+import time, av, heapq
 
 import cv2
 import numpy as np
@@ -9,7 +9,8 @@ from flask import Flask, Response, render_template
 
 app = Flask(__name__)
 
-frame = None  # Shared frame
+frame_queue = []  # Shared frame
+frame = None  # Current frame
 lock = threading.Lock()  # To protect access to frame
 
 args = None  # Global to hold parsed args
@@ -25,26 +26,6 @@ def video_feed():
     return Response(
         generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame"
     )
-
-
-def udp_video_reader(server_ip="0.0.0.0", server_port=31295):
-    global frame
-    #sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    #sock.bind((server_ip, server_port))
-
-    print(f"✅ Listening for video packets on UDP {server_ip}:{server_port}")
-
-    cap = cv2.VideoCapture("udp://@0.0.0.0:31295", cv2.CAP_FFMPEG)
-
-    while cap.isOpened():
-        ret, data = cap.read()
-        if not ret:
-            continue
-        data = cv2.cvtColor(data, cv2.COLOR_BGR2RGB)
-        data = cv2.resize(data, (1280, 720))
-        with lock:
-            frame = data
 
 
 def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
@@ -75,7 +56,7 @@ def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
                     img = cv2.resize(img, (1280, 720))
                     print("Kolle holder mig kolle")
                     with lock:
-                        frame = img.copy()
+                        seq_num, frame = frame_sorter(img)
 
     except Exception as e:
         print(e)
@@ -85,6 +66,19 @@ def udp_av_reader(video_address="udp://@0.0.0.0:31295"):
 
         udp_av_reader()
 
+
+def frame_sorter(data):
+    global frame_queue  
+    MIN_BUFFER_SIZE = 12
+
+    seq_num = int.from_bytes(data[:2], "big")
+    payload = data[2:]
+
+    heapq.heappush(frame_queue, (seq_num, payload))
+
+    if len(frame_queue) >= MIN_BUFFER_SIZE:
+        ordered_seq, ordered_data = heapq.heappop(frame_queue)
+        return ordered_seq, ordered_data
 
 
 def webcam_reader():

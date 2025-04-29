@@ -52,9 +52,6 @@ class TelloCustomTkinterStream:
             time.sleep(5)
             drone_video_addr = ("0.0.0.0", 27463)
             self.send_command = self.stun_handler.send_command_to_relay
-            self.WEBSERVER_IP = "130.225.37.157"
-            self.WEBSERVER_PORT = 27463
-            self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
             drone_video_addr = ("0.0.0.0", 11111)
             drone_comm_addr = ("192.168.10.1", 8889)
@@ -255,20 +252,6 @@ class TelloCustomTkinterStream:
                 imgtk = ImageTk.PhotoImage(image=img)
                 # Update the canvas using the main thread
                 self.root.after(0, self.update_canvas, imgtk)
-
-                if self.ARGS.stun and self.webserver_socket and False:
-                    # Compress frame as JPEG
-                    encode_param = [
-                        int(cv2.IMWRITE_JPEG_QUALITY),
-                        80,
-                    ]  # 80% quality JPEG
-                    result, encimg = cv2.imencode(".jpg", frame, encode_param)
-
-                    if result:
-                        data = encimg.tobytes()
-                        self.webserver_socket.sendto(
-                            data, (self.WEBSERVER_IP, self.WEBSERVER_PORT)
-                        )
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
