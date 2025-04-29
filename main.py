@@ -23,21 +23,23 @@ class TelloCustomTkinterStream:
         # Initialize customTkinter window and Tello video stream.
         ctk.set_appearance_mode("Dark")  # Options: "System", "Dark", "Light"
         ctk.set_default_color_theme("blue")  # Options: "blue", "green", "dark-blue"
-
-        self.root = ctk.CTk()
+        self.scale = self.ARGS.rasmus if self.ARGS.rasmus else 1.0
+        self.root = ctk.CTk()       
         self.root.title("Tello Video Stream")
-        self.root.geometry("1280x1000")
+        self.root.geometry(f"{int(1280*self.scale)}x{int(1000*self.scale)}")
         self.avg_ping_ms = 0
+        
+        self.root.call('tk', 'scaling', self.scale)
 
         # Create a canvas to display the video
-        self.video_canvas = ctk.CTkCanvas(self.root, width=960, height=720)
+        self.video_canvas = ctk.CTkCanvas(self.root, width=int(960*self.scale)  , height=int(720*self.scale))
         self.video_canvas.pack(pady=20)
 
         # Create a frame for the graph
-        self.graph_frame = ctk.CTkFrame(self.root, width=200, height=500)
+        self.graph_frame = ctk.CTkFrame(self.root, width=int(200*self.scale), height=int(500*self.scale))
         self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
 
-        self.init_graph()
+        self.init_graph()   
         self.init_battery_circle()
         self.init_drone_stats()
 
@@ -103,30 +105,30 @@ class TelloCustomTkinterStream:
 
     def init_battery_circle(self):
         self.battery_canvas = ctk.CTkCanvas(
-            self.root, width=100, height=100, bg="#242424", highlightthickness=0
+            self.root, width=int(100*self.scale), height=int(100*self.scale), bg="#242424", highlightthickness=0
         )
         self.battery_canvas.place(
             relx=1.0, rely=1.0, anchor="se", x=-20, y=-20
         )  # Lower-right corner with padding
 
-        self.battery_canvas.create_oval(10, 10, 90, 90, outline="white", width=2)
+        self.battery_canvas.create_oval(int(10*self.scale), int(10*self.scale), int(90*self.scale), int(90*self.scale), outline="white", width=2)
 
         self.battery_arc = self.battery_canvas.create_arc(
-            10, 10, 90, 90, start=90, extent=0, fill="green", outline=""
+            int(10*self.scale), int(10*self.scale), int(90*self.scale), int(90*self.scale), start=90, extent=0, fill="green", outline=""
         )
         self.battery_canvas.create_text(
-            50, 50, text="Battery", fill="white", font=("Arial", 8), tags="battery_text"
+            int(50*self.scale), int(50*self.scale), text="Battery", fill="white", font=("Arial", int(8*self.scale)), tags="battery_text"
         )
 
     def init_drone_stats(self):
         self.drone_stats_box = ctk.CTkTextbox(
-            self.root, height=150, width=400, bg_color="#242424"
+            self.root, height=int(150*self.scale), width=int(400*self.scale), bg_color="#242424"
         )
         self.drone_stats_box.place(
             relx=0.5, rely=1.0, anchor="s", y=-10
         )  # Bottom center
         self.drone_stats_box.configure(
-            state="disabled", font=("Arial", 15), fg_color="#242424", text_color="white"
+            state="disabled", font=("Arial", int(15*self.scale)), fg_color="#242424", text_color="white"
         )
 
     def update_drone_stats(self, pitch, roll, yaw, altitude, speed, battery):
@@ -218,7 +220,7 @@ class TelloCustomTkinterStream:
         self.drone_stats_box.configure(state="disabled")
 
     def print_to_image(self, pos, text) -> None:
-        self.drone_stats = ctk.CTkTextbox(self.root, height=50, width=300)
+        self.drone_stats = ctk.CTkTextbox(self.root, height=int(50*self.scale), width=int(300*self.scale))
         self.drone_stats.pack(pady=10)
         self.drone_stats.insert(pos, text)
         self.drone_stats.configure(state="disabled")
@@ -309,6 +311,8 @@ class TelloCustomTkinterStream:
             self.avg_ping_ms = sum(ping_data) // len(ping_data)
 
             self.drone_stats.configure(state="normal")
+            self.drone_stats.configure(font=("Arial", int(15*self.scale)))
+            self.drone_stats.configure()
             self.drone_stats.delete("1.0", "end")
 
             if type(self.drone_battery) is str:
@@ -351,6 +355,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("-np", "--noping", help="Disable ping", action="store_true")
     parser.add_argument("-l", "--log", help="Log data", action="store_true")
+    parser.add_argument("-r", "--rasmus", help="Rasmus scaling", type=float, default=1.0
+)
     args = parser.parse_args()
 
     TelloCustomTkinterStream(args)
