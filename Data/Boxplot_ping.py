@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 # Load ping data
-with open("Data/Cellular_test_1/2025-04-24_12-23-01ping.txt", "r") as f:
+with open("Data/Ethernet_test_1/2025-04-29_17-48-21ping.txt", "r") as f:
     data = f.read()
     data = data.split(", ")
     data = [int(num) for num in data]

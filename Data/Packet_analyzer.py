@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 # Convert to list of integers
-datafile = "Data/Cellular_test_1/2025-04-24_12-22-52seq.txt"  # Replace with your data file path
+datafile = "Data/Ethernet_test_1/2025-04-29_17-48-15seq.txt"  # Replace with your data file path
 
 #recieved packets are in datafile seperated by comma
 with open(datafile, "r") as f:
@@ -32,6 +32,8 @@ most_common_displacement = displacement_counter.most_common(1)[0] if displacemen
 
 # Total packets
 total_packets = len(received_packets)
+
+print(f"Total packets: {total_packets}, max_number: {max(received_packets)}")
 
 reorder_frequency = reorder_count / total_packets
 

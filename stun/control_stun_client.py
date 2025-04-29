@@ -44,7 +44,6 @@ class ControlStunClient(StunClient):
 
         while self.running:
             data = self.stun_socket.recv(4096)
-            
 
             if not self.relay and self.hole_punched:
                 # Loopback for the operator
@@ -58,9 +57,8 @@ class ControlStunClient(StunClient):
                     # print(f"From client: {seq_num}")
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
-                            writer.write(
-                                f"{seq_num}, {time.perf_counter_ns() // 1_000_000}\n"
-                            )
+                            writer.write(f"{seq_num}, ")
+                            
                     heapq.heappush(reorder_buffer, (seq_num, payload))
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:
@@ -137,7 +135,6 @@ class ControlStunClient(StunClient):
                     self.sending_addr = self.STUN_SERVER_ADDR
                     self.turn_mode = True
                     continue
-                
 
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True

@@ -67,8 +67,8 @@ def plot_combined(out_of_order_counts, ping_deltas, bin_size, ma_window=5):
     plt.show()
 
 # --- Run it ---
-seq_path = "Cellular_test_1/2025-04-24_12-22-52seq.txt"
-ping_path = "Cellular_test_1/2025-04-24_12-23-01ping.txt"
+seq_path = "Data/Ethernet_test_1/2025-04-29_17-48-21ping.txt"
+ping_path = "Data/Ethernet_test_1/2025-04-29_17-48-15seq.txt"
 
 seq_data = load_seq_data(seq_path)
 ping_data = load_ping_data(ping_path)
