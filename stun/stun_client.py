@@ -39,10 +39,6 @@ class StunClient:
         except Exception as e:
             print(f"Error sending REQUEST message: {e}")
 
-    def start_connection_listener(self):
-        self.run_in_thread(self.listen)
-        self.listen_thread.start()
-
     def hole_punch(self):
         for _ in range(self.HOLE_PUNCH_TRIES):
             try:
@@ -60,5 +56,5 @@ class StunClient:
 
     def main(self):
         self.register()
-        self.start_connection_listener()
+        self.run_in_thread(self.listen)
         self.request_peer()
