@@ -211,7 +211,8 @@ class TelloCustomTkinterStream:
 
         while True:
             start_time = time.perf_counter_ns()
-            if self.stun_mode:
+
+            if self.stun_handler.turn_mode:
                 self.drone_battery = self.send_command("RELAY battery?", False, True)
             else:
                 self.drone_battery = self.send_command("battery?", False, True)
