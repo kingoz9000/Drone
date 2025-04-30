@@ -33,12 +33,8 @@ def start_ffmpeg():
         "+nobuffer",
         "-i",
         f"udp://0.0.0.0:{UDP_PORT}",
-        "-vf",
-        "format=yuv420p",  # Converts pixel format from BGR to something suitable for HLS
         "-c:v",
-        "libx264",  # Re-encode to H.264
-        "-preset",
-        "veryfast",  # Speeds up encoding
+        "copy",
         "-f",
         "hls",
         "-hls_time",
