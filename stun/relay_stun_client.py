@@ -32,7 +32,7 @@ class RelayStunClient(StunClient):
 
     def send_data_to_operator(self, data, prefix=0):
         if self.turn_mode:
-            data = f"RELAY {data}"
+            data = b"RELAY " + data
 
         shifted = bytearray([prefix]) + data
         if not self.sending_addr:
