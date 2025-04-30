@@ -55,3 +55,24 @@ def init_ui_components(instance,plt,FigureCanvasTkAgg):
         fg_color=background_color,
         text_color="white"
     )
+
+def update_battery_circle(instance):
+    if instance.drone_battery and isinstance(instance.drone_battery, str):
+        try:
+            battery_level = int(instance.drone_battery.strip())
+
+            text = f"{battery_level}%"
+            instance.battery_canvas.itemconfig(
+                instance.battery_canvas.find_withtag("battery_text"), text=text
+            )
+            extent = (battery_level / 100) * 360
+            instance.battery_canvas.itemconfig(instance.battery_arc, extent=-extent)
+
+            if battery_level > 50:
+                instance.battery_canvas.itemconfig(instance.battery_arc, fill="green")
+            elif battery_level > 20:
+                instance.battery_canvas.itemconfig(instance.battery_arc, fill="orange")
+            else:
+                instance.battery_canvas.itemconfig(instance.battery_arc, fill="red")
+        except ValueError:
+            pass

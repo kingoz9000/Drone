@@ -4,7 +4,7 @@ import threading
 import time
 import math
 from collections import deque
-from GUI.ui import init_ui_components
+from GUI.ui import init_ui_components, update_battery_circle
 
 import customtkinter as ctk
 import cv2
@@ -103,27 +103,6 @@ class TelloCustomTkinterStream:
             time.sleep(1)
 
 
-    def update_battery_circle(self):
-        if self.drone_battery and isinstance(self.drone_battery, str):
-            try:
-                battery_level = int(self.drone_battery.strip())
-
-                text = f"{battery_level}%"
-                self.battery_canvas.itemconfig(
-                    self.battery_canvas.find_withtag("battery_text"), text=text
-                )
-                extent = (battery_level / 100) * 360
-                self.battery_canvas.itemconfig(self.battery_arc, extent=-extent)
-
-                if battery_level > 50:
-                    self.battery_canvas.itemconfig(self.battery_arc, fill="green")
-                elif battery_level > 20:
-                    self.battery_canvas.itemconfig(self.battery_arc, fill="orange")
-                else:
-                    self.battery_canvas.itemconfig(self.battery_arc, fill="red")
-            except ValueError:
-                pass
-
     def update_graph(self):
         self.ping_data.append(self.avg_ping_ms)
         self.line.set_ydata(self.ping_data)
@@ -151,7 +130,7 @@ class TelloCustomTkinterStream:
         self.drone_stats_box.insert("1.0", stats_text)
         self.drone_stats_box.configure(state="disabled")
 
-        self.update_battery_circle()
+        update_battery_circle(self)
         self.update_graph()
 
     def print_to_image(self, pos, text) -> None:
