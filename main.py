@@ -122,8 +122,8 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
-        self.run_in_thread(self.update_bandwidth)
-
+        self.run_in_thread(self.check_connection)
+        
         # Start video update loop
         self.update_video_frame()
 
@@ -170,7 +170,7 @@ class TelloCustomTkinterStream:
             print("Error: stats is not a dictionary")
             return
 
-        packet_loss = self.stun_handler.packet_loss if self.ARGS.stun else 0
+        self.packet_loss = self.stun_handler.packet_loss if self.ARGS.stun else 0
 
         stats_text = (
             f"Pitch: {stats.get('pitch', 0)}°\n"
@@ -179,7 +179,7 @@ class TelloCustomTkinterStream:
             f"Altitude: {stats.get('baro', 0)} m\n"
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
-            f"Packet loss: {packet_loss} %\n"
+            f"Packet loss: {self.packet_loss} %\n"
         )
 
         self.drone_stats_box.configure(state="normal")
@@ -296,7 +296,7 @@ class TelloCustomTkinterStream:
             self.drone_stats.configure(font=("Arial", int(15 * self.scale)))
             self.drone_stats.configure()
             self.drone_stats.delete("1.0", "end")
-
+            print(f"Ping: {self.avg_ping_ms} ms")
             if type(self.drone_battery) is str:
                 self.drone_stats.insert(
                     "1.0",
@@ -323,6 +323,12 @@ class TelloCustomTkinterStream:
             self.stun_handler.trigger_turn_mode()
             # change plot color to orange
             self.line.set_color("orange")
+    
+    def check_connection(self) -> None:
+        if self.avg_ping_ms > 300 and self.packet_loss > 5 and not self.stun_handler.turn_mode and self.ARGS.stun:
+            print("Connection unstable, triggering turn mode")
+            self.stun_handler.trigger_turn_mode()
+            time.sleep(1)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""

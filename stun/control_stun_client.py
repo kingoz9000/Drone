@@ -15,13 +15,7 @@ class ControlStunClient(StunClient):
         self.drone_stats = {}
         self.stats_lock = threading.Lock()
         self.packet_loss = 0
-        self.seq_numbers = [0 for _ in range(500)]
-        self.uplink_data_size = 0
-        self.downlink_data_size = 0
-        self.bandwidth_start_time = time.time()
-        
-        self.uplink_mbps = 0
-        self.downlink_mbps = 0
+        self.seq_numbers = [0 for _ in range(1000)]
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         if self.turn_mode:
@@ -102,8 +96,9 @@ class ControlStunClient(StunClient):
                         last_seq_num = ordered_seq
 
                         # Measure packet loss
-                        self.seq_numbers[last_seq_num % 500] = last_seq_num
-                        self.packet_loss = (max(self.seq_numbers) - min(self.seq_numbers) - 500)
+                        self.seq_numbers[last_seq_num % 1000] = last_seq_num
+                        self.packet_loss = ((max(self.seq_numbers) - min(self.seq_numbers) - 999) / 1000) * 100 
+                        self.packet_loss = self.packet_loss if self.packet_loss >= 0 else 0
                     continue
 
                 # Response
