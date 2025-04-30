@@ -108,6 +108,8 @@ class TelloCustomTkinterStream:
         self.line.set_ydata(self.ping_data)
         self.ax.set_xlim(0, len(self.ping_data))
         self.ax.set_ylim(0, max(max(self.ping_data), 150))
+        
+    
         # print(self.ax.get_facecolor())
         self.canvas.draw()
 
@@ -135,9 +137,9 @@ class TelloCustomTkinterStream:
 
     def print_to_image(self, pos, text) -> None:
         self.drone_stats = ctk.CTkTextbox(
-            self.root, height=int(50 * self.scale), width=int(300 * self.scale)
+            self.root, height=int(60 * self.scale), width=int(340 * self.scale)
         )
-        self.drone_stats.pack(pady=10)
+        self.drone_stats.pack(pady=0)
         self.drone_stats.insert(pos, text)
         self.drone_stats.configure(state="disabled")
 
@@ -253,6 +255,8 @@ class TelloCustomTkinterStream:
         print("Triggering turn mode...")
         if self.ARGS.stun:
             self.stun_handler.trigger_turn_mode()
+            #change plot color to orange
+            self.line.set_color("orange")
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""
