@@ -19,37 +19,6 @@ from GUI.ui import init_ui_components, update_battery_circle
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
 
-FFMPEG_COMMAND = [
-    "ffmpeg",
-    "-f",
-    "rawvideo",
-    "-pix_fmt",
-    "bgr24",
-    "-s",
-    "640x480",  # Match your OpenCV frame size
-    "-r",
-    "30",  # Match your frame rate
-    "-i",
-    "-",  # Read raw video from stdin
-    "-c:v",
-    "libx264",
-    "-preset",
-    "veryfast",
-    "-tune",
-    "zerolatency",
-    "-x264-params",
-    "keyint=30:min-keyint=30:scenecut=0",  # Necessary for streaming
-    "-b:v",
-    "800k",
-    "-maxrate",
-    "800k",
-    "-bufsize",
-    "1600k",
-    "-f",
-    "mpegts",
-    "udp://130.225.37.157:27463?pkt_size=1316",
-]
-
 
 class TelloCustomTkinterStream:
     def __init__(self, args):
@@ -94,14 +63,6 @@ class TelloCustomTkinterStream:
             self.WEBSERVER_IP = "130.225.37.157"
             self.WEBSERVER_PORT = 27463
             self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            if self.ARGS.stun and self.ARGS.webstream:
-                self.ffmpeg_process = subprocess.Popen(
-                    FFMPEG_COMMAND, stdin=subprocess.PIPE
-                )
-                self.frame_queue = queue.Queue(maxsize=10)
-                self.run_in_thread(self.ffmpeg_writer)
-            else:
-                self.ffmpeg_process = None
         else:
             drone_video_addr = ("0.0.0.0", 11111)
             drone_comm_addr = ("192.168.10.1", 8889)
@@ -125,21 +86,6 @@ class TelloCustomTkinterStream:
 
         # Start customTkinter event loop
         self.root.mainloop()
-
-    def ffmpeg_writer(self):
-        while True:
-            try:
-                frame = self.frame_queue.get()
-                if self.ffmpeg_process.poll() is not None:
-                    print("FFmpeg process exited.")
-                    break
-                self.ffmpeg_process.stdin.write(frame.tobytes())
-            except BrokenPipeError:
-                print("FFmpeg write error: broken pipe")
-                break
-            except Exception as e:
-                print(f"FFmpeg write error: {e}")
-                break
 
     def fetch_and_update_drone_stats(self):
         while True:
@@ -225,13 +171,6 @@ class TelloCustomTkinterStream:
                 imgtk = ImageTk.PhotoImage(image=img)
                 # Update the canvas using the main thread
                 self.root.after(0, self.update_canvas, imgtk)
-
-                if self.ARGS.stun and self.ARGS.webstream and self.webserver_socket:
-                    # Compress frame as JPEG
-                    resized = cv2.resize(frame, (640, 480))
-                    if self.ffmpeg_process:
-                        if hasattr(self, "frame_queue") and not self.frame_queue.full():
-                            self.frame_queue.put_nowait(resized)
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
