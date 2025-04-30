@@ -5,6 +5,7 @@ class ButtonMap:
     def __init__(self):
         self.joystick_handler = JoystickHandler()
 
+        #initializes control variables with default values.
         self.deadzone: int = 5
         self.weight: int = 0
         self.for_backward: int = 0
@@ -20,10 +21,13 @@ class ButtonMap:
 
         self.commands = []
 
+        #Gets joystick values
         x, y, z, buttons = self.joystick_handler.get_values()
 
+        #Calculates base weight
         self.weight = (-z + 1) * 50
 
+        #Calculates forward_backwards input
         self.for_backward = x * self.weight
         self.for_backward = (
             0
@@ -31,6 +35,7 @@ class ButtonMap:
             else self.for_backward
         )
 
+        #Calculates left_right input
         self.left_right = y * -1 * self.weight
         self.left_right = (
             0 if -self.deadzone < self.left_right < self.deadzone else self.left_right
@@ -39,6 +44,7 @@ class ButtonMap:
         self.up_down = 0
         self.yaw = 0
 
+        #Process through a list of mapped buttons
         for button_key, button_value in buttons.items():
             if not button_value:
                 continue
