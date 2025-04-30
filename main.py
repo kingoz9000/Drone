@@ -52,6 +52,8 @@ class TelloCustomTkinterStream:
         # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("<q>", lambda e: self.cleanup())
+        self.root.bind("<t>", lambda e: self.trigger_turnmode())
+        
 
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
@@ -244,6 +246,10 @@ class TelloCustomTkinterStream:
                     f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms",
                 )
             self.drone_stats.configure(state="disabled")
+    def trigger_turnmode(self) -> None:
+        """Trigger the turn mode for the drone."""
+        if self.ARGS.stun:
+            self.stun_handler.send_command_to_relay("REQUEST_TURN_MODE")
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""
