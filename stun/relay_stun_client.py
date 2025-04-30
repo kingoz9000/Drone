@@ -73,7 +73,8 @@ class RelayStunClient(StunClient):
                     print("Server disconnected.")
                     self.stun_socket.close()
                     self.running = False
-                    exit(1)
+                    print("Killing the Relay")
+                    raise Exception("KILL THE RELAY")
 
                 elif parts[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
