@@ -1,5 +1,9 @@
+import atexit  # New
 import os
+import shutil
+import signal  # New
 import subprocess
+import sys
 import threading
 
 from flask import Flask, render_template
@@ -43,6 +47,25 @@ def start_ffmpeg():
     ]
     print("📡 Starting FFmpeg to receive UDP and write HLS...")
     subprocess.run(cmd)
+
+
+# --- Cleanup on exit ---
+def cleanup():
+    print("🧹 Cleaning up HLS directory...")
+    shutil.rmtree(HLS_DIR, ignore_errors=True)
+
+
+# Register cleanup with atexit and signal
+atexit.register(cleanup)
+
+
+def signal_handler(sig, frame):
+    cleanup()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)  # Handle Ctrl+C
+signal.signal(signal.SIGTERM, signal_handler)  # Handle termination
 
 
 # --- Main ---
