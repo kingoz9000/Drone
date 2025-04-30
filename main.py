@@ -36,6 +36,9 @@ FFMPEG_COMMAND = [
     "-",  # input from stdin
     "-c:v",
     "libx264",
+    "-x264-params",
+    "keyint=30:min-keyint=30:scenecut=0",
+    "libx264",
     "-preset",
     "veryfast",
     "-tune",
