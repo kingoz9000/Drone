@@ -10,6 +10,7 @@ from collections import deque
 import customtkinter as ctk
 import cv2
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, ImageTk
 
@@ -21,31 +22,20 @@ from stun import ControlStunClient
 
 FFMPEG_COMMAND = [
     "ffmpeg",
-    "-y",
-    "-f",
-    "rawvideo",
-    "-vcodec",
-    "rawvideo",
-    "-pix_fmt",
-    "bgr24",
-    "-s",
-    "640x480",  # width x height of frames
-    "-r",
-    "30",
-    "-i",
-    "-",  # input from stdin
-    "-c:v",
-    "libx264",
-    "-x264-params",
-    "keyint=30:min-keyint=30:scenecut=0",
-    "libx264",
-    "-preset",
-    "veryfast",
-    "-tune",
-    "zerolatency",
-    "-f",
-    "mpegts",
-    "udp://130.225.37.157:27463",
+    "-f", "rawvideo",
+    "-pix_fmt", "bgr24",
+    "-s", "640x480",
+    "-r", "30",
+    "-i", "-",
+    "-c:v", "libx264",
+    "-preset", "veryfast",
+    "-tune", "zerolatency",
+    "-x264-params", "keyint=30:min-keyint=30:scenecut=0",
+    "-b:v", "800k",
+    "-maxrate", "800k",
+    "-bufsize", "1600k",
+    "-f", "mpegts",
+    "udp://130.225.37.157:27463?pkt_size=1316&fifo_size=1000000&overrun_nonfatal=1"
 ]
 
 
