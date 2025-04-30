@@ -1,5 +1,7 @@
 import argparse
+import math
 import socket
+import subprocess
 import threading
 import time
 import math
@@ -16,6 +18,32 @@ from GUI.drone_communication import DroneCommunication
 from GUI.drone_video_feed import DroneVideoFeed
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
+
+FFMPEG_COMMAND = [
+    "ffmpeg",
+    "-y",
+    "-f",
+    "rawvideo",
+    "-vcodec",
+    "rawvideo",
+    "-pix_fmt",
+    "bgr24",
+    "-s",
+    "640x480",  # width x height of frames
+    "-r",
+    "30",
+    "-i",
+    "-",  # input from stdin
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-tune",
+    "zerolatency",
+    "-f",
+    "mpegts",
+    "udp://130.225.37.157:27463",
+]
 
 
 class TelloCustomTkinterStream:
@@ -61,6 +89,12 @@ class TelloCustomTkinterStream:
             self.WEBSERVER_IP = "130.225.37.157"
             self.WEBSERVER_PORT = 27463
             self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            if self.ARGS.stun and self.ARGS.webstream:
+                self.ffmpeg_process = subprocess.Popen(
+                    FFMPEG_COMMAND, stdin=subprocess.PIPE
+                )
+            else:
+                self.ffmpeg_process = None
         else:
             drone_video_addr = ("0.0.0.0", 11111)
             drone_comm_addr = ("192.168.10.1", 8889)
@@ -173,17 +207,10 @@ class TelloCustomTkinterStream:
 
                 if self.ARGS.stun and self.ARGS.webstream and self.webserver_socket:
                     # Compress frame as JPEG
-                    encode_param = [
-                        int(cv2.IMWRITE_JPEG_QUALITY),
-                        80,
-                    ]  # 80% quality JPEG
-                    result, encimg = cv2.imencode(".jpg", frame, encode_param)
-
-                    if result:
-                        data = encimg.tobytes()
-                        self.webserver_socket.sendto(
-                            data, (self.WEBSERVER_IP, self.WEBSERVER_PORT)
-                        )
+                    resized = cv2.resize(frame, (640, 480))
+                    if self.ffmpeg_process:
+                        self.ffmpeg_process.stdin.write(resized.tobytes())
+                        self.ffmpeg_process.wait()
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
