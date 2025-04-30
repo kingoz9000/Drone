@@ -256,6 +256,34 @@ class StunServer:
                 else:
                     self.server_socket.sendto("INVALID_ID".encode(), addr)
                     self.logger.error(f"Invalid target ID: {target_id}")
+                        
+            elif data[1:6].decode() == "RELAY" and not self.stun_mode:
+                print("Message is from TURN mode")
+
+                # Extract the flag (first byte) and the actual message (after "RELAY ")
+                flag = data[0]  # The first byte is the flag
+                relay_message = bytearray([flag]) + data[6:]  # Keep the flag and strip "RELAY " (5 bytes)
+
+                # Determine the target client based on the sender
+                sender_id = self.get_client_id(addr)
+                if sender_id == 0:
+                    target_addr = self.clients[1][0]  # Send to Client 1
+                elif sender_id == 1:
+                    target_addr = self.clients[0][0]  # Send to Client 0
+                else:
+                    self.server_socket.sendto("INVALID_ID".encode(), addr)
+                    self.logger.error(f"Invalid sender ID: {sender_id}")
+                    return
+
+                # Forward the message to the target client
+                try:
+                    self.server_socket.sendto(relay_message, target_addr)
+                    self.logger.info(f"Relayed message from Client {sender_id} to {target_addr}")
+                except Exception as e:
+                    self.logger.error(f"Failed to relay message from Client {sender_id}: {e}")
+
+
+            
 
     def switch_turn_mode(self):
         self.logger.debug("TURN mode active: relaying messages")
