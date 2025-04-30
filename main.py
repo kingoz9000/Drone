@@ -21,31 +21,20 @@ from stun import ControlStunClient
 
 FFMPEG_COMMAND = [
     "ffmpeg",
-    "-y",
-    "-f",
-    "rawvideo",
-    "-vcodec",
-    "rawvideo",
-    "-pix_fmt",
-    "bgr24",
-    "-s",
-    "640x480",  # width x height of frames
-    "-r",
-    "30",
-    "-i",
-    "-",  # input from stdin
-    "-c:v",
-    "libx264",
-    "-x264-params",
-    "keyint=30:min-keyint=30:scenecut=0",
-    "libx264",
-    "-preset",
-    "veryfast",
-    "-tune",
-    "zerolatency",
-    "-f",
-    "mpegts",
-    "udp://130.225.37.157:27463",
+    "-f", "rawvideo",
+    "-pix_fmt", "bgr24",
+    "-s", "640x480",
+    "-r", "30",
+    "-i", "-",
+    "-c:v", "libx264",
+    "-preset", "veryfast",
+    "-tune", "zerolatency",
+    "-x264-params", "keyint=30:min-keyint=30:scenecut=0",
+    "-b:v", "800k",
+    "-maxrate", "800k",
+    "-bufsize", "1600k",
+    "-f", "mpegts",
+    "udp://130.225.37.157:27463?pkt_size=1316&fifo_size=1000000&overrun_nonfatal=1"
 ]
 
 
@@ -126,11 +115,18 @@ class TelloCustomTkinterStream:
 
     def ffmpeg_writer(self):
         while True:
-            frame = self.frame_queue.get()
             try:
+                frame = self.frame_queue.get()
+                if self.ffmpeg_process.poll() is not None:
+                    print("FFmpeg process exited.")
+                    break
                 self.ffmpeg_process.stdin.write(frame.tobytes())
+            except BrokenPipeError:
+                print("FFmpeg write error: broken pipe")
+                break
             except Exception as e:
                 print(f"FFmpeg write error: {e}")
+                break
 
     def fetch_and_update_drone_stats(self):
         while True:
