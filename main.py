@@ -126,11 +126,18 @@ class TelloCustomTkinterStream:
 
     def ffmpeg_writer(self):
         while True:
-            frame = self.frame_queue.get()
             try:
+                frame = self.frame_queue.get()
+                if self.ffmpeg_process.poll() is not None:
+                    print("FFmpeg process exited.")
+                    break
                 self.ffmpeg_process.stdin.write(frame.tobytes())
+            except BrokenPipeError:
+                print("FFmpeg write error: broken pipe")
+                break
             except Exception as e:
                 print(f"FFmpeg write error: {e}")
+                break
 
     def fetch_and_update_drone_stats(self):
         while True:
