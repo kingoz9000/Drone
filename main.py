@@ -21,20 +21,33 @@ from stun import ControlStunClient
 
 FFMPEG_COMMAND = [
     "ffmpeg",
-    "-f", "rawvideo",
-    "-pix_fmt", "bgr24",
-    "-s", "640x480",
-    "-r", "30",
-    "-i", "-",
-    "-c:v", "libx264",
-    "-preset", "veryfast",
-    "-tune", "zerolatency",
-    "-x264-params", "keyint=30:min-keyint=30:scenecut=0",
-    "-b:v", "800k",
-    "-maxrate", "800k",
-    "-bufsize", "1600k",
-    "-f", "mpegts",
-    "udp://130.225.37.157:27463?pkt_size=1316&fifo_size=1000000&overrun_nonfatal=1"
+    "-f",
+    "rawvideo",
+    "-pix_fmt",
+    "bgr24",
+    "-s",
+    "640x480",  # Match your OpenCV frame size
+    "-r",
+    "30",  # Match your frame rate
+    "-i",
+    "-",  # Read raw video from stdin
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-tune",
+    "zerolatency",
+    "-x264-params",
+    "keyint=30:min-keyint=30:scenecut=0",  # Necessary for streaming
+    "-b:v",
+    "800k",
+    "-maxrate",
+    "800k",
+    "-bufsize",
+    "1600k",
+    "-f",
+    "mpegts",
+    "udp://130.225.37.157:27463?pkt_size=1316",
 ]
 
 
