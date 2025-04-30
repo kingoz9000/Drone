@@ -34,6 +34,9 @@ class RelayStunClient(StunClient):
         shifted = bytearray([prefix]) + data
         if not self.sending_addr:
             return
+        if self.turn_mode:
+            shifted = f"RELAY {shifted}"
+
         self.stun_socket.sendto(shifted, self.sending_addr)
 
     def state_socket_handler(self):
@@ -42,6 +45,8 @@ class RelayStunClient(StunClient):
         self.state_socket.bind(state_addr)
         while self.running:
             state = self.state_socket.recv(4096)
+            if self.turn_mode:
+                state = f"RELAY {state}"
             self.send_data_to_operator(state, prefix=2)
             time.sleep(self.stats_refresh_rate)
 
