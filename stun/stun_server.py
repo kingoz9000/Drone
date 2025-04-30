@@ -87,6 +87,7 @@ class StunServer:
                         v[2] += 1
 
                 for k in clients_to_remove:
+                    self.stun_mode = False
                     del self.clients[k]
 
                 lasttime = curtime
@@ -122,7 +123,10 @@ class StunServer:
                 if auto_connect_mode and len(self.clients) == 2:
                     client_ids = list(self.clients.keys())
                     client1_id, client2_id = client_ids[0], client_ids[1]
-                    client1_addr, client2_addr = self.clients[client1_id][0], self.clients[client2_id][0]
+                    client1_addr, client2_addr = (
+                        self.clients[client1_id][0],
+                        self.clients[client2_id][0],
+                    )
 
                     try:
                         # Send connection details to both clients
@@ -139,24 +143,27 @@ class StunServer:
                         )
                     except Exception as e:
                         self.logger.error(f"Failed to auto-connect clients: {e}")
-    
+
             elif message.startswith("DISCONNECT"):
                 print("Received disconnect message")
                 for k in list(self.clients.keys()).copy():
                     self.logger.info(f"Client {self.get_client_id(k)} disconnected")
-                    self.server_socket.sendto(f"SERVER DISCONNECT".encode(), self.clients[k][0])
+                    self.server_socket.sendto(
+                        f"SERVER DISCONNECT".encode(), self.clients[k][0]
+                    )
                     self.clients.pop(k)
-            
-            elif message.startswith("REQUEST_TURN_MODE"):
-                self.logger.debug(f"Client {self.get_client_id(addr)} requested TURN mode")
-                
-                #check connection with other client
+                self.stun_mode = False
 
-                
-                #if connection is ok, send TURN mode request
+            elif message.startswith("REQUEST_TURN_MODE"):
+                self.logger.debug(
+                    f"Client {self.get_client_id(addr)} requested TURN mode"
+                )
+
+                # check connection with other client
+
+                # if connection is ok, send TURN mode request
                 self.switch_turn_mode()
                 pass
-                    
 
             elif message.startswith("ALIVE"):
                 self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
@@ -238,6 +245,7 @@ class StunServer:
                         )
             # TURN-specific behavior
             elif message.startswith("RELAY") and not self.stun_mode:
+                print("message is from TURN mode")
                 # if message is from client 1, send to client 2 and vice versa
 
                 if self.getclient_id(addr) == 0:
@@ -254,9 +262,7 @@ class StunServer:
         # send "TURN MODE activated" to all clients
         for k, v in self.clients.items():
             try:
-                self.server_socket.sendto(
-                    f"SERVER TURN_MODE".encode(), v[0]
-                )
+                self.server_socket.sendto(f"SERVER TURN_MODE".encode(), v[0])
                 self.logger.info(f"Sent TURN mode activation to Client {k}")
             except Exception as e:
                 self.logger.error(

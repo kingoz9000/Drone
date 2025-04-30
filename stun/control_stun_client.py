@@ -16,6 +16,9 @@ class ControlStunClient(StunClient):
         self.stats_lock = threading.Lock()
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
+        if self.turn_mode:
+            command = f"RELAY {command}"
+
         self.stun_socket.sendto(command.encode(), self.sending_addr)
 
     def get_peer_addr(self):
@@ -26,6 +29,9 @@ class ControlStunClient(StunClient):
         with self.stats_lock:
             stats = self.drone_stats.copy()
         return stats
+
+    def trigger_turn_mode(self):
+        self.stun_socket.sendto(b"REQUEST_TURN_MODE", self.STUN_SERVER_ADDR)
 
     def disconnect_from_stunserver(self):
         self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)
@@ -58,7 +64,7 @@ class ControlStunClient(StunClient):
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
                             writer.write(f"{seq_num}, ")
-                            
+
                     heapq.heappush(reorder_buffer, (seq_num, payload))
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:

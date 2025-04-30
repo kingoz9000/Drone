@@ -248,8 +248,9 @@ class TelloCustomTkinterStream:
             self.drone_stats.configure(state="disabled")
     def trigger_turnmode(self) -> None:
         """Trigger the turn mode for the drone."""
+        print("Triggering turn mode...")
         if self.ARGS.stun:
-            self.stun_handler.send_command_to_relay("REQUEST_TURN_MODE")
+            self.stun_handler.trigger_turn_mode()
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""
