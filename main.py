@@ -10,7 +10,6 @@ from collections import deque
 import customtkinter as ctk
 import cv2
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, ImageTk
 
