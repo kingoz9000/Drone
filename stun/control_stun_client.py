@@ -16,6 +16,7 @@ class ControlStunClient(StunClient):
         self.stats_lock = threading.Lock()
         self.packet_loss = 0
         self.seq_numbers = [0 for _ in range(500)]
+        
         self.uplink_data_size = 0
         self.downlink_data_size = 0
         self.bandwidth_start_time = time.time()

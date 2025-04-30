@@ -310,7 +310,7 @@ class TelloCustomTkinterStream:
                 )
             self.drone_stats.configure(state="disabled")
             
-    def update_bandwidth(self) -> None:
+    def get_bandwidth(self) -> None:
         while True:
             if self.ARGS.stun:
                 self.stun_handler.calculate_bandwidth()
