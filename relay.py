@@ -11,9 +11,15 @@ seq_num = 0
 
 while client.running:
     if client.hole_punched:
-        seq_byte = seq_num.to_bytes(2, 'big')
+        seq_byte = seq_num.to_bytes(2, "big")
 
-        msg = client.drone_video_socket.recv(4096)
+        try:
+            msg = client.drone_video_socket.recv(4096)
+        except KeyboardInterrupt:
+            print(" Exiting Relay, BYE!")
+            break
+        except Exception as e:
+            print(e)
+            exit(1)
         client.send_data_to_operator(seq_byte + msg)
-        #print(f"From relay: {seq_num}")
         seq_num = (seq_num + 1) % 65536
