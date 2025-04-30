@@ -16,12 +16,19 @@ class ControlStunClient(StunClient):
         self.stats_lock = threading.Lock()
         self.packet_loss = 0
         self.seq_numbers = [0 for _ in range(500)]
+        self.uplink_data_size = 0
+        self.downlink_data_size = 0
+        self.bandwidth_start_time = time.time()
+        
+        self.uplink_mbps = 0
+        self.downlink_mbps = 0
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         if self.turn_mode:
             command = f"RELAY {command}"
 
         self.stun_socket.sendto(command.encode(), self.sending_addr)
+        self.uplink_data_size += len(command.encode()) # track uplink data size
 
     def get_peer_addr(self):
         if self.peer_addr:
@@ -39,7 +46,16 @@ class ControlStunClient(StunClient):
         self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)
         self.stun_socket.close()
         self.running = False
-
+        
+    def calculate_bandwidth(self):
+        elapsed_time = time.time() - self.bandwidth_start_time
+        if elapsed_time > 0:  
+            # Calculate uplink and downlink bandwidth in bits per second
+            uplink_bps = (self.uplink_data_size * 8) / elapsed_time # bytes are converted to bits
+            downlink_bps = (self.downlink_data_size * 8) / elapsed_time
+            self.uplink_mbps = uplink_bps / 1024**2 # bits are converted to megabits
+            self.downlink_mbps = downlink_bps / 1024**2
+            
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
@@ -52,6 +68,7 @@ class ControlStunClient(StunClient):
 
         while self.running:
             data = self.stun_socket.recv(4096)
+            self.downlink_data_size += len(data) # track downlink data size
 
             if not self.relay and self.hole_punched:
                 # Loopback for the operator

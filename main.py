@@ -122,6 +122,7 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
+        self.run_in_thread(self.update_bandwidth)
 
         # Start video update loop
         self.update_video_frame()
@@ -308,7 +309,13 @@ class TelloCustomTkinterStream:
                     f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms",
                 )
             self.drone_stats.configure(state="disabled")
-
+            
+    def update_bandwidth(self) -> None:
+        while True:
+            if self.ARGS.stun:
+                self.stun_handler.calculate_bandwidth()
+            time.sleep(1)
+    
     def trigger_turnmode(self) -> None:
         """Trigger the turn mode for the drone."""
         print("Triggering turn mode...")
