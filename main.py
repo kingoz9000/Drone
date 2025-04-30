@@ -1,12 +1,11 @@
 import argparse
 import math
+import queue
 import socket
 import subprocess
 import threading
 import time
-import math
 from collections import deque
-from GUI.ui import init_ui_components, update_battery_circle
 
 import customtkinter as ctk
 import cv2
@@ -16,6 +15,7 @@ from PIL import Image, ImageTk
 
 from GUI.drone_communication import DroneCommunication
 from GUI.drone_video_feed import DroneVideoFeed
+from GUI.ui import init_ui_components, update_battery_circle
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
 
@@ -93,6 +93,8 @@ class TelloCustomTkinterStream:
                 self.ffmpeg_process = subprocess.Popen(
                     FFMPEG_COMMAND, stdin=subprocess.PIPE
                 )
+                self.frame_queue = queue.Queue(maxsize=10)
+                self.run_in_thread(self.ffmpeg_writer)
             else:
                 self.ffmpeg_process = None
         else:
@@ -100,9 +102,7 @@ class TelloCustomTkinterStream:
             drone_comm_addr = ("192.168.10.1", 8889)
             self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
             self.send_command = self.drone_communication.send_command
-            self.run_in_thread(
-                self.drone_communication.wifi_state_socket_handler
-            )
+            self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
 
         # Start video stream and communication with the drone
         self.video_stream = DroneVideoFeed(drone_video_addr)
@@ -120,7 +120,14 @@ class TelloCustomTkinterStream:
 
         # Start customTkinter event loop
         self.root.mainloop()
-        
+
+    def ffmpeg_writer(self):
+        while True:
+            frame = self.frame_queue.get()
+            try:
+                self.ffmpeg_process.stdin.write(frame.tobytes())
+            except Exception as e:
+                print(f"FFmpeg write error: {e}")
 
     def fetch_and_update_drone_stats(self):
         while True:
@@ -130,12 +137,11 @@ class TelloCustomTkinterStream:
                 else:
                     # get stats directly from drone
                     stats = self.drone_communication.get_direct_drone_stats()
-                
+
             except Exception as e:
                 print(f"Error fetching stats: {e}")
             self.update_drone_stats(stats)
             time.sleep(1)
-
 
     def update_graph(self):
         self.ping_data.append(self.avg_ping_ms)
@@ -199,7 +205,10 @@ class TelloCustomTkinterStream:
                 img = Image.fromarray(frame)
 
                 # Resize the image
-                img = img.resize((int(960 * self.scale), int(720 * self.scale)), Image.Resampling.LANCZOS)
+                img = img.resize(
+                    (int(960 * self.scale), int(720 * self.scale)),
+                    Image.Resampling.LANCZOS,
+                )
 
                 imgtk = ImageTk.PhotoImage(image=img)
                 # Update the canvas using the main thread
@@ -209,8 +218,8 @@ class TelloCustomTkinterStream:
                     # Compress frame as JPEG
                     resized = cv2.resize(frame, (640, 480))
                     if self.ffmpeg_process:
-                        self.ffmpeg_process.stdin.write(resized.tobytes())
-                        self.ffmpeg_process.wait()
+                        if hasattr(self, "frame_queue") and not self.frame_queue.full():
+                            self.frame_queue.put_nowait(resized)
 
             except Exception as e:
                 print(f"Error updating video frame: {e}")
