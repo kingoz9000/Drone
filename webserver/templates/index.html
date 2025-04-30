@@ -1,14 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Drone Video Feed</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="icon" href="{{ url_for('static', filename='resources/fav.ico') }}" type="image/x-icon">
-    <script src="/static/js/script.js"></script>
+  <meta charset="UTF-8" />
+  <title>Live Stream</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
-<body>
-    <img src="/video_feed", class="video_feed" width="1280" height="720" />
-    <script src="/static/js/script.js"></script>
+<body style="background:black; margin:0;">
+  <video id="video" width="640" height="480" controls autoplay muted></video>
+  <script>
+    const video = document.getElementById("video");
+    const videoSrc = "/static/hls/stream.m3u8";
+
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(videoSrc);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = videoSrc;
+      video.addEventListener("loadedmetadata", () => video.play());
+    }
+  </script>
 </body>
 </html>
+
