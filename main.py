@@ -86,7 +86,6 @@ class TelloCustomTkinterStream:
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("<q>", lambda e: self.cleanup())
         self.root.bind("<t>", lambda e: self.trigger_turnmode())
-        
 
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
@@ -161,8 +160,7 @@ class TelloCustomTkinterStream:
         self.line.set_ydata(self.ping_data)
         self.ax.set_xlim(0, len(self.ping_data))
         self.ax.set_ylim(0, max(max(self.ping_data), 150))
-        
-    
+
         # print(self.ax.get_facecolor())
         self.canvas.draw()
 
@@ -171,13 +169,16 @@ class TelloCustomTkinterStream:
             print("Error: stats is not a dictionary")
             return
 
+        packet_loss = self.stun_handler.packet_loss if self.ARGS.stun else 0
+
         stats_text = (
             f"Pitch: {stats.get('pitch', 0)}°\n"
             f"Roll: {stats.get('roll', 0)}°\n"
             f"Yaw: {stats.get('yaw', 0)}°\n"
             f"Altitude: {stats.get('baro', 0)} m\n"
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
-            f"Board temperature: {stats.get('temph', 0)} °C"
+            f"Board temperature: {stats.get('temph', 0)} °C\n"
+            f"Packet loss: {packet_loss} %\n"
         )
 
         self.drone_stats_box.configure(state="normal")
@@ -272,7 +273,6 @@ class TelloCustomTkinterStream:
         while True:
             start_time = time.perf_counter_ns()
 
-
             self.drone_battery = self.send_command("battery?", False, True)
 
             if self.ARGS.stun:
@@ -308,12 +308,13 @@ class TelloCustomTkinterStream:
                     f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms",
                 )
             self.drone_stats.configure(state="disabled")
+
     def trigger_turnmode(self) -> None:
         """Trigger the turn mode for the drone."""
         print("Triggering turn mode...")
         if self.ARGS.stun:
             self.stun_handler.trigger_turn_mode()
-            #change plot color to orange
+            # change plot color to orange
             self.line.set_color("orange")
 
     def cleanup(self) -> None:
