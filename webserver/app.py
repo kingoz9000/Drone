@@ -25,20 +25,17 @@ def index():
 def start_ffmpeg():
     cmd = [
         "ffmpeg",
-        "-fflags",
-        "+nobuffer",
-        "-i",
-        f"udp://0.0.0.0:{UDP_PORT}",
-        "-c:v",
-        "copy",
-        "-f",
-        "hls",
-        "-hls_time",
-        "1",
-        "-hls_list_size",
-        "5",
-        "-hls_flags",
-        "delete_segments+append_list",
+        "-fflags", "+nobuffer",
+        "-i", f"udp://0.0.0.0:{UDP_PORT}",
+        "-pix_fmt", "yuv420p",
+        "-vf", "format=yuv420p",  # force output to standard YUV
+        "-c:v", "libx264",         # re-encode with H.264
+        "-preset", "veryfast",
+        "-tune", "zerolatency",
+        "-f", "hls",
+        "-hls_time", "1",
+        "-hls_list_size", "5",
+        "-hls_flags", "delete_segments+append_list",
         HLS_PLAYLIST,
     ]
     print("📡 Starting FFmpeg to receive UDP and write HLS...")
