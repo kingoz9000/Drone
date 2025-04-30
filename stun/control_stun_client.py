@@ -14,6 +14,8 @@ class ControlStunClient(StunClient):
         self.log = log
         self.drone_stats = {}
         self.stats_lock = threading.Lock()
+        self.packet_loss = 0
+        self.seq_numbers = [0 for _ in range(500)]
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         self.stun_socket.sendto(command.encode(), self.sending_addr)
@@ -58,7 +60,7 @@ class ControlStunClient(StunClient):
                     if self.log:
                         with open("Data/" + file_name, "a") as writer:
                             writer.write(f"{seq_num}, ")
-                            
+
                     heapq.heappush(reorder_buffer, (seq_num, payload))
 
                     if len(reorder_buffer) >= MIN_BUFFER_SIZE:
@@ -71,6 +73,9 @@ class ControlStunClient(StunClient):
                         # video_file.write(ordered_data)
                         last_seq_num = ordered_seq
 
+                        # Measure packet loss
+                        self.seq_numbers[last_seq_num % 500] = last_seq_num
+                        self.packet_loss = (max(self.seq_numbers) - min(self.seq_numbers) - 500)
                     continue
 
                 # Response
