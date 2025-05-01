@@ -19,6 +19,39 @@ from GUI.ui import init_ui_components, update_battery_circle
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
 
+FFMPEG_COMMAND = [
+    "ffmpeg",
+    "-f",
+    "rawvideo",
+    "-pix_fmt",
+    "bgr24",
+    "-s",
+    "640x480",
+    "-r",
+    "30",
+    "-i",
+    "-",
+    "-vf",
+    "format=yuv420p",  # Convert for browser compatibility
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-tune",
+    "zerolatency",
+    "-x264-params",
+    "keyint=30:min-keyint=30:scenecut=0",
+    "-b:v",
+    "800k",
+    "-maxrate",
+    "800k",
+    "-bufsize",
+    "1600k",
+    "-f",
+    "mpegts",
+    "udp://130.225.37.157:27463?pkt_size=1316",
+]
+
 
 class TelloCustomTkinterStream:
     def __init__(self, args):
@@ -53,7 +86,6 @@ class TelloCustomTkinterStream:
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("<q>", lambda e: self.cleanup())
         self.root.bind("<t>", lambda e: self.trigger_turnmode())
-        
 
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
@@ -72,6 +104,14 @@ class TelloCustomTkinterStream:
             self.send_command = self.drone_communication.send_command
             self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
 
+        if self.ARGS.webstream:
+            self.ffmpeg_process = subprocess.Popen(
+                FFMPEG_COMMAND, stdin=subprocess.PIPE
+            )
+            self.frame_queue = queue.Queue(maxsize=5)
+            self.run_in_thread(self.ffmpeg_writer)
+        else:
+            self.ffmpeg_process = None
         # Start video stream and communication with the drone
         self.video_stream = DroneVideoFeed(drone_video_addr)
 
@@ -82,12 +122,25 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
-
+        self.run_in_thread(self.check_connection)
+        
         # Start video update loop
         self.update_video_frame()
 
         # Start customTkinter event loop
         self.root.mainloop()
+
+    def ffmpeg_writer(self):
+        while True:
+            try:
+                frame = self.frame_queue.get()
+                if self.ffmpeg_process.poll() is not None:
+                    print("FFmpeg process exited.")
+                    break
+                self.ffmpeg_process.stdin.write(frame.tobytes())
+            except Exception as e:
+                print(f"FFmpeg stream error: {e}")
+                break
 
     def fetch_and_update_drone_stats(self):
         while True:
@@ -108,8 +161,7 @@ class TelloCustomTkinterStream:
         self.line.set_ydata(self.ping_data)
         self.ax.set_xlim(0, len(self.ping_data))
         self.ax.set_ylim(0, max(max(self.ping_data), 150))
-        
-    
+
         # print(self.ax.get_facecolor())
         self.canvas.draw()
 
@@ -118,13 +170,16 @@ class TelloCustomTkinterStream:
             print("Error: stats is not a dictionary")
             return
 
+        self.packet_loss = self.stun_handler.packet_loss if self.ARGS.stun else 0
+
         stats_text = (
             f"Pitch: {stats.get('pitch', 0)}°\n"
             f"Roll: {stats.get('roll', 0)}°\n"
             f"Yaw: {stats.get('yaw', 0)}°\n"
             f"Altitude: {stats.get('baro', 0)} m\n"
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
-            f"Board temperature: {stats.get('temph', 0)} °C"
+            f"Board temperature: {stats.get('temph', 0)} °C\n"
+            f"Packet loss: {self.packet_loss} %\n"
         )
 
         self.drone_stats_box.configure(state="normal")
@@ -174,6 +229,11 @@ class TelloCustomTkinterStream:
 
                 imgtk = ImageTk.PhotoImage(image=img)
                 # Update the canvas using the main thread
+                if self.ARGS.webstream and self.ffmpeg_process:
+                    resized = cv2.resize(frame, (640, 480))
+                    if not self.frame_queue.full():
+                        self.frame_queue.put_nowait(resized)
+
                 self.root.after(0, self.update_canvas, imgtk)
 
             except Exception as e:
@@ -214,7 +274,6 @@ class TelloCustomTkinterStream:
         while True:
             start_time = time.perf_counter_ns()
 
-
             self.drone_battery = self.send_command("battery?", False, True)
 
             if self.ARGS.stun:
@@ -237,7 +296,7 @@ class TelloCustomTkinterStream:
             self.drone_stats.configure(font=("Arial", int(15 * self.scale)))
             self.drone_stats.configure()
             self.drone_stats.delete("1.0", "end")
-
+            print(f"Ping: {self.avg_ping_ms} ms")
             if type(self.drone_battery) is str:
                 self.drone_stats.insert(
                     "1.0",
@@ -250,13 +309,26 @@ class TelloCustomTkinterStream:
                     f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms",
                 )
             self.drone_stats.configure(state="disabled")
+            
+    def update_bandwidth(self) -> None:
+        while True:
+            if self.ARGS.stun:
+                self.stun_handler.calculate_bandwidth()
+            time.sleep(1)
+    
     def trigger_turnmode(self) -> None:
         """Trigger the turn mode for the drone."""
         print("Triggering turn mode...")
         if self.ARGS.stun:
             self.stun_handler.trigger_turn_mode()
-            #change plot color to orange
+            # change plot color to orange
             self.line.set_color("orange")
+    
+    def check_connection(self) -> None:
+        if self.avg_ping_ms > 300 and self.packet_loss > 5 and not self.stun_handler.turn_mode and self.ARGS.stun:
+            print("Connection unstable, triggering turn mode")
+            self.stun_handler.trigger_turn_mode()
+            time.sleep(1)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""

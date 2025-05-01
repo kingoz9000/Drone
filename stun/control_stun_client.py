@@ -14,6 +14,8 @@ class ControlStunClient(StunClient):
         self.log = log
         self.drone_stats = {}
         self.stats_lock = threading.Lock()
+        self.packet_loss = 0
+        self.seq_numbers = [0 for _ in range(1000)]
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         encoded = command.encode()
@@ -39,7 +41,7 @@ class ControlStunClient(StunClient):
         self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)
         self.stun_socket.close()
         self.running = False
-
+            
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
@@ -79,6 +81,10 @@ class ControlStunClient(StunClient):
                         # video_file.write(ordered_data)
                         last_seq_num = ordered_seq
 
+                        # Measure packet loss
+                        self.seq_numbers[last_seq_num % 1000] = last_seq_num
+                        self.packet_loss = ((max(self.seq_numbers) - min(self.seq_numbers) - 999) / 1000) * 100 
+                        self.packet_loss = self.packet_loss if self.packet_loss >= 0 else 0
                     continue
 
                 # Response

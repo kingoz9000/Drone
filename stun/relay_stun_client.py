@@ -22,7 +22,7 @@ class RelayStunClient(StunClient):
         self.drone_command_socket.sendto(
             bytes(command, "utf-8"), self.drone_command_addr
         )
-        if take_response:   
+        if take_response:
             self.drone_command_socket.settimeout(0.5)
             try:
                 response = self.drone_command_socket.recv(1024)
