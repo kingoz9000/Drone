@@ -296,7 +296,6 @@ class TelloCustomTkinterStream:
             self.drone_stats.configure(font=("Arial", int(15 * self.scale)))
             self.drone_stats.configure()
             self.drone_stats.delete("1.0", "end")
-            print(f"Ping: {self.avg_ping_ms} ms")
             if type(self.drone_battery) is str:
                 self.drone_stats.insert(
                     "1.0",

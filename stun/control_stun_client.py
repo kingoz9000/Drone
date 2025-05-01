@@ -46,7 +46,7 @@ class ControlStunClient(StunClient):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
         reorder_buffer: list[tuple] = []
-        MIN_BUFFER_SIZE = 6
+        MIN_BUFFER_SIZE = 10
         last_seq_num = 0
         # Open this once before your loop starts
 
