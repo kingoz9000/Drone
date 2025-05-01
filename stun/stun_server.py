@@ -16,6 +16,7 @@ class StunServer:
 
         self.client_timeout = 1
         self.next_client_id = 0
+        self.heartbeat_on = True
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -50,7 +51,7 @@ class StunServer:
 
     def heartbeat(self):
         lasttime = 0
-        while True:
+        while True and self.heartbeat_on:
             curtime = time.time()
             if curtime - lasttime > 3:
                 clients_to_remove = []
@@ -111,8 +112,8 @@ class StunServer:
 
                 # Forward the message to the target client
                 try:
-                    self.server_socket.sendto(message[1:], target_addr)
-                    self.logger.info(f"Relayed message from Client {sender_id} to {target_addr}")
+                    self.server_socket.sendto(data[1:], target_addr)
+                    #self.logger.info(f"Relayed message from Client {sender_id} to {target_addr}")
                 except Exception as e:
                     self.logger.error(f"Failed to relay message from Client {sender_id}: {e}")
                 continue
