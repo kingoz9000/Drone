@@ -16,10 +16,12 @@ class ControlStunClient(StunClient):
         self.stats_lock = threading.Lock()
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
+        encoded = command.encode()
         if self.turn_mode:
-            command = f"RELAY {command}"
+            encoded = bytearray([8]) + encoded
 
-        self.stun_socket.sendto(command.encode(), self.sending_addr)
+
+        self.stun_socket.sendto(encoded, self.sending_addr)
 
     def get_peer_addr(self):
         if self.peer_addr:

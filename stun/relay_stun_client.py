@@ -22,7 +22,7 @@ class RelayStunClient(StunClient):
         self.drone_command_socket.sendto(
             bytes(command, "utf-8"), self.drone_command_addr
         )
-        if take_response:
+        if take_response:   
             self.drone_command_socket.settimeout(0.5)
             try:
                 response = self.drone_command_socket.recv(1024)
@@ -31,10 +31,11 @@ class RelayStunClient(StunClient):
                 print(f"Command '{command}': No response received within 0.5 seconds")
 
     def send_data_to_operator(self, data, prefix=0):
-        if self.turn_mode:
-            data = f"RELAY {data}"
 
         shifted = bytearray([prefix]) + data
+        if self.turn_mode:
+            shifted = bytearray([8]) + shifted
+
         if not self.sending_addr:
             return
         self.stun_socket.sendto(shifted, self.sending_addr)
