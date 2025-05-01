@@ -1,4 +1,7 @@
+import queue
 import socket
+import subprocess
+
 
 class WebserverSender:
     def __init__(self):
@@ -38,6 +41,10 @@ class WebserverSender:
         self.WEBSERVER_IP = "130.225.37.157"
         self.WEBSERVER_PORT = 27463
         self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.frame_queue = queue.Queue(maxsize=5)
+        self.ffmpeg_process = self.ffmpeg_process = subprocess.Popen(
+            self.FFMPEG_CMD, stdin=subprocess.PIPE
+        )
 
     def ffmpeg_writer(self):
         while True:

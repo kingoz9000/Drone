@@ -1,8 +1,5 @@
 import argparse
 import math
-import queue
-import socket
-import subprocess
 import threading
 import time
 from collections import deque
@@ -25,78 +22,61 @@ class TelloCustomTkinterStream:
     def __init__(self, args):
         self.ARGS = args
 
-        # Initialize customTkinter window and Tello video stream.
-        ctk.set_appearance_mode("Dark")  # Options: "System", "Dark", "Light"
-        ctk.set_default_color_theme("blue")  # Options: "blue", "green", "dark-blue"
+        ctk.set_appearance_mode("Dark")
+        ctk.set_default_color_theme("blue")
         self.scale = self.ARGS.rasmus if self.ARGS.rasmus else 1.0
         self.root = ctk.CTk()
         self.root.title("Tello Video Stream")
         self.root.geometry(f"{int(1280*self.scale)}x{int(1000*self.scale)}")
         self.avg_ping_ms = 0
-
         self.root.call("tk", "scaling", self.scale)
-
-        # Create a canvas to display the video
         self.video_canvas = ctk.CTkCanvas(
             self.root, width=int(960 * self.scale), height=int(720 * self.scale)
         )
         self.video_canvas.pack(pady=20)
-
-        # Create a frame for the graph
         self.graph_frame = ctk.CTkFrame(
             self.root, width=int(200 * self.scale), height=int(500 * self.scale)
         )
         self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
-
-        init_ui_components(self, plt, FigureCanvasTkAgg)
-
-        # Bind cleanup to window close and q key
         self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.root.bind("<q>", lambda e: self.cleanup())
         self.root.bind("<t>", lambda e: self.trigger_turnmode())
 
+        init_ui_components(self, plt, FigureCanvasTkAgg)
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
-        if args.stun:
-            self.stun_handler = ControlStunClient(self.ARGS.log)
-            self.peer_addr = self.get_peer_address()
-            time.sleep(5)
-            drone_video_addr = ("0.0.0.0", 27463)
-            # Use the stun handler to send commands to the drone
-            self.send_command = self.stun_handler.send_command_to_relay
-        else:
-            drone_video_addr = ("0.0.0.0", 11111)
-            drone_comm_addr = ("192.168.10.1", 8889)
-            # Use the drone communication class to send commands to the drone
-            self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
-            self.send_command = self.drone_communication.send_command
-            self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
+        self.init_drone_com()
 
         if self.ARGS.webstream:
             self.webserver_sender = WebserverSender()
-            self.ffmpeg_process = subprocess.Popen(
-                self.webserver_sender.FFMPEG_CMD, stdin=subprocess.PIPE
-            )
-            self.frame_queue = queue.Queue(maxsize=5)
             self.run_in_thread(self.webserver_sender.ffmpeg_writer)
-        else:
-            self.ffmpeg_process = None
 
-        self.video_stream = DroneVideoFeed(drone_video_addr)
-        self.connect_to_drone()
-        self.drone_battery = None
-
-        # Threads for joystick controls, pinging, and graph updates
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
         self.run_in_thread(self.check_connection)
 
-        # Start video update loop
         self.update_video_frame()
 
-        # Start customTkinter event loop
         self.root.mainloop()
+
+    def init_drone_com(self):
+        if self.ARGS.stun:
+            self.stun_handler = ControlStunClient(self.ARGS.log)
+            self.peer_addr = self.get_peer_address()
+            time.sleep(5)
+            self.drone_video_addr = ("0.0.0.0", 27463)
+            self.send_command = self.stun_handler.send_command_to_relay
+        else:
+            self.drone_video_addr = ("0.0.0.0", 11111)
+            self.drone_comm_addr = ("192.168.10.1", 8889)
+            self.drone_communication = DroneCommunication(self.drone_comm_addr, 9000)
+            self.send_command = self.drone_communication.send_command
+            self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
+
+        self.video_stream = DroneVideoFeed(self.drone_video_addr)
+        self.connect_to_drone()
+        self.drone_battery = None
 
     def fetch_and_update_drone_stats(self):
         while True:
@@ -104,7 +84,6 @@ class TelloCustomTkinterStream:
                 if self.ARGS.stun:
                     stats = self.stun_handler.get_drone_stats()
                 else:
-                    # get stats directly from drone
                     stats = self.drone_communication.get_direct_drone_stats()
 
             except Exception as e:
@@ -184,10 +163,10 @@ class TelloCustomTkinterStream:
 
                 imgtk = ImageTk.PhotoImage(image=img)
                 # Update the canvas using the main thread
-                if self.ARGS.webstream and self.ffmpeg_process:
+                if self.ARGS.webstream and self.webserver_sender.ffmpeg_process:
                     resized = cv2.resize(frame, (640, 480))
-                    if not self.frame_queue.full():
-                        self.frame_queue.put_nowait(resized)
+                    if not self.webserver_sender.frame_queue.full():
+                        self.webserver_sender.frame_queue.put_nowait(resized)
 
                 self.root.after(0, self.update_canvas, imgtk)
 
