@@ -53,7 +53,7 @@ class RelayStunClient(StunClient):
         while self.running:
             data = self.stun_socket.recv(4096)
 
-            if not self.relay and self.handle_flgas(data):
+            if not self.relay and self.handle_flags(data):
                 continue
 
             message = data.decode()
@@ -77,7 +77,7 @@ class RelayStunClient(StunClient):
                     continue
 
                 if parts[1] == "DISCONNECT":
-                    print("Server disconnected.")
+                    print("Server disconnected")
                     self.stun_socket.close()
                     self.running = False
                     exit(0)
