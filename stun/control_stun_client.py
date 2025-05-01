@@ -61,8 +61,8 @@ class ControlStunClient(StunClient):
 
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
-                    seq_num = int.from_bytes(data[1:3], "big")
-                    payload = data[3:]
+                    seq_num = int.from_bytes(data[1:4], "big")
+                    payload = data[4:]
 
                     # print(f"From client: {seq_num}")
                     if self.log:

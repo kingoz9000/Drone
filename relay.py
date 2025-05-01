@@ -11,7 +11,7 @@ seq_num = 0
 
 while client.running:
     if client.hole_punched:
-        seq_byte = seq_num.to_bytes(2, "big")
+        seq_byte = seq_num.to_bytes(3, "big")
 
         try:
             msg = client.drone_video_socket.recv(4096)
@@ -22,4 +22,4 @@ while client.running:
             print(e)
             exit(1)
         client.send_data_to_operator(seq_byte + msg)
-        seq_num = (seq_num + 1) % 65536
+        seq_num = seq_num + 1
