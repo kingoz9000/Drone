@@ -1,4 +1,6 @@
-import socket, threading, time
+import socket
+import threading
+import time
 
 
 class StunClient:
@@ -37,7 +39,9 @@ class StunClient:
 
         peer_id = input("Enter peer ID: ")
         try:
-            self.stun_socket.sendto(f"REQUEST {peer_id}".encode(), self.STUN_SERVER_ADDR)
+            self.stun_socket.sendto(
+                f"REQUEST {peer_id}".encode(), self.STUN_SERVER_ADDR
+            )
         except Exception as e:
             print(f"Error sending REQUEST message: {e}")
 
@@ -48,6 +52,65 @@ class StunClient:
             except Exception as e:
                 print(f"Error sending HOLE punch message: {e}")
             time.sleep(0.1)
+
+    def listen(self):
+        while self.running:
+            data = self.stun_socket.recv(4096)
+
+            # Not confident it will find self.handle_flags, tho it is set
+            if not self.relay and self.handle_flags(data):
+                continue
+
+            message = data.decode()
+
+            if message.startswith("SERVER"):
+                parts = message.split()
+                if parts[1] == "CONNECT":
+                    _, _, peer_ip, peer_port = parts
+                    print(f"Received peer details: {peer_ip}:{peer_port}")
+                    self.peer_addr = (peer_ip, int(peer_port))
+                    self.sending_addr = self.peer_addr
+                    self.hole_punch()
+                    continue
+
+                if parts[1] == "INVALID_ID":
+                    print("Invalid target ID.")
+                    continue
+
+                if parts[1] == "HEARTBEAT":
+                    self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)
+                    continue
+
+                if parts[1] == "DISCONNECT":
+                    print("Server disconnected")
+                    self.stun_socket.close()
+                    self.running = False
+                    exit(0)
+
+                if parts[1] == "CLIENTS":
+                    print(f"Clients connected: {message}")
+                    continue
+
+                if parts[1] == "TURN_MODE":
+                    print("Turn mode activated.")
+                    self.sending_addr = self.STUN_SERVER_ADDR
+                    self.turn_mode = True
+                    self.min_buffer_size = 10
+                    continue
+
+            if message.startswith("HOLE") and not self.hole_punched:
+                self.hole_punched = True
+                print("Hole punched!")
+                self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
+                continue
+
+            if self.relay:
+                if message == "battery?":
+                    self.send_command_to_drone(message, take_response=True)
+                    continue
+                self.send_command_to_drone(message, take_response=False)
+            else:
+                print("Unhanled command/message:", message)
 
     @staticmethod
     def run_in_thread(func, *args) -> threading.Thread:
