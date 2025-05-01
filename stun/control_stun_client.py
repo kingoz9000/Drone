@@ -46,7 +46,7 @@ class ControlStunClient(StunClient):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
         reorder_buffer: list[tuple] = []
-        MIN_BUFFER_SIZE = 6
+        MIN_BUFFER_SIZE = 10
         last_seq_num = 0
         # Open this once before your loop starts
 
@@ -61,8 +61,8 @@ class ControlStunClient(StunClient):
 
                 # If 0 send to loopback (videofeed)
                 if flag == 0:
-                    seq_num = int.from_bytes(data[1:3], "big")
-                    payload = data[3:]
+                    seq_num = int.from_bytes(data[1:4], "big")
+                    payload = data[4:]
 
                     # print(f"From client: {seq_num}")
                     if self.log:
