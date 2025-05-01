@@ -313,8 +313,13 @@ class TelloCustomTkinterStream:
     def get_bandwidth(self) -> None:
         while True:
             if self.ARGS.stun:
+                time.sleep(1)
                 self.stun_handler.calculate_bandwidth()
-            time.sleep(1)
+            if self.ARGS.log:
+                with open("bandwidth.txt", "a") as file:
+                    file.write(
+                        f"{self.stun_handler.relay_uplink_mbps}, {self.stun_handler.control_downlink_mbps}\n"
+                    ) 
     
     def trigger_turnmode(self) -> None:
         """Trigger the turn mode for the drone."""
