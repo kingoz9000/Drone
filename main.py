@@ -26,24 +26,8 @@ class TelloCustomTkinterStream:
         ctk.set_default_color_theme("blue")
         self.scale = self.ARGS.rasmus if self.ARGS.rasmus else 1.0
         self.root = ctk.CTk()
-        self.root.title("Tello Video Stream")
-        self.root.geometry(f"{int(1280*self.scale)}x{int(1000*self.scale)}")
-        self.avg_ping_ms = 0
-        self.root.call("tk", "scaling", self.scale)
-        self.video_canvas = ctk.CTkCanvas(
-            self.root, width=int(960 * self.scale), height=int(720 * self.scale)
-        )
-        self.video_canvas.pack(pady=20)
-        self.graph_frame = ctk.CTkFrame(
-            self.root, width=int(200 * self.scale), height=int(500 * self.scale)
-        )
-        self.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")
-        self.root.protocol("WM_DELETE_WINDOW", self.cleanup)
-        self.root.bind("<q>", lambda e: self.cleanup())
-        self.root.bind("<t>", lambda e: self.trigger_turnmode())
-
+    
         init_ui_components(self, plt, FigureCanvasTkAgg)
-        self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
         self.init_drone_com()
 
@@ -125,13 +109,6 @@ class TelloCustomTkinterStream:
         update_battery_circle(self)
         self.update_graph()
 
-    def print_to_image(self, pos, text) -> None:
-        self.drone_stats = ctk.CTkTextbox(
-            self.root, height=int(60 * self.scale), width=int(340 * self.scale)
-        )
-        self.drone_stats.pack(pady=0)
-        self.drone_stats.insert(pos, text)
-        self.drone_stats.configure(state="disabled")
 
     def get_peer_address(self) -> tuple:
         self.stun_handler.main()

@@ -2,6 +2,29 @@ from collections import deque
 import customtkinter as ctk
 
 def init_ui_components(instance,plt,FigureCanvasTkAgg):
+
+
+    instance.root.title("Tello Video Stream")
+    instance.root.geometry(f"{int(1280*instance.scale)}x{int(1000*instance.scale)}")
+    instance.avg_ping_ms = 0
+    instance.root.call("tk", "scaling", instance.scale)
+
+    instance.root.protocol("WM_DELETE_WINDOW", instance.cleanup)
+    instance.root.bind("<q>", lambda e: instance.cleanup())
+    instance.root.bind("<t>", lambda e: instance.trigger_turnmode())
+
+    
+    instance.video_canvas = ctk.CTkCanvas(
+        instance.root, width=int(960 * instance.scale), height=int(720 * instance.scale)
+    )
+    instance.video_canvas.pack(pady=20)
+    instance.graph_frame = ctk.CTkFrame(
+        instance.root, width=int(200 * instance.scale), height=int(500 * instance.scale)
+    )
+    instance.graph_frame.pack(side="left", padx=0, pady=0, anchor="s")    
+    
+    
+    
     background_color = "#242424"
     
     # --- Graph ---
@@ -55,6 +78,13 @@ def init_ui_components(instance,plt,FigureCanvasTkAgg):
         fg_color=background_color,
         text_color="white"
     )
+
+    instance.drone_stats = ctk.CTkTextbox(
+        instance.root, height=int(60 * instance.scale), width=int(340 * instance.scale)
+    )
+    instance.drone_stats.pack(pady=0)
+    instance.drone_stats.insert("1.0", "Battery: xx% \nPing xx ms")
+    instance.drone_stats.configure(state="disabled")
 
 def update_battery_circle(instance):
     if instance.drone_battery and isinstance(instance.drone_battery, str):
