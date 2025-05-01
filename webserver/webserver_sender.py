@@ -1,5 +1,7 @@
+import socket
+
 class WebserverSender:
-    def __init__(self, url):
+    def __init__(self):
         self.FFMPEG_CMD = [
             "ffmpeg",
             "-f",

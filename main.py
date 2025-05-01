@@ -75,7 +75,7 @@ class TelloCustomTkinterStream:
         if self.ARGS.webstream:
             self.webserver_sender = WebserverSender()
             self.ffmpeg_process = subprocess.Popen(
-                self.webserver_sender.FFMPEG_COMMAND, stdin=subprocess.PIPE
+                self.webserver_sender.FFMPEG_CMD, stdin=subprocess.PIPE
             )
             self.frame_queue = queue.Queue(maxsize=5)
             self.run_in_thread(self.webserver_sender.ffmpeg_writer)
