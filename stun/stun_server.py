@@ -54,7 +54,6 @@ class StunServer:
         while True and self.heartbeat_on:
             curtime = time.time()
             if curtime - lasttime > 3:
-                print("Heartbeat check")
                 clients_to_remove = []
                 for k, v in self.clients.items():
                     if v[2] >= self.client_timeout:
@@ -269,6 +268,7 @@ class StunServer:
     def switch_turn_mode(self):
         self.logger.debug("TURN mode active: relaying messages")
         # send "TURN MODE activated" to all clients
+
         for k, v in self.clients.items():
             try:
                 self.server_socket.sendto("SERVER TURN_MODE".encode(), v[0])
@@ -277,7 +277,7 @@ class StunServer:
                 self.logger.error(
                     f"Failed to send TURN mode activation to Client {k}: {e}"
                 )
-
+        self.heartbeat_on = False
         self.stun_mode = False
         pass
 
