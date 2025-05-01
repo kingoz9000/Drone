@@ -53,6 +53,9 @@ class RelayStunClient(StunClient):
         while self.running:
             data = self.stun_socket.recv(4096)
 
+            if not self.relay and self.handle_flgas(data):
+                continue
+
             message = data.decode()
 
             if message.startswith("SERVER"):
@@ -65,40 +68,42 @@ class RelayStunClient(StunClient):
                     self.hole_punch()
                     continue
 
-                elif parts[1] == "HEARTBEAT":
-                    self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)
-                    continue
-
-                elif parts[1] == "INVALID_ID":
+                if parts[1] == "INVALID_ID":
                     print("Invalid target ID.")
                     continue
 
-                elif parts[1] == "DISCONNECT":
+                if parts[1] == "HEARTBEAT":
+                    self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)
+                    continue
+
+                if parts[1] == "DISCONNECT":
                     print("Server disconnected.")
                     self.stun_socket.close()
                     self.running = False
-                    print("Killing the Relay")
-                    raise Exception("KILL THE RELAY")
+                    exit(0)
 
-                elif parts[1] == "CLIENTS":
+                if parts[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
                     continue
-                elif parts[1] == "TURN_MODE":
+
+                if parts[1] == "TURN_MODE":
                     print("Turn mode activated.")
                     self.sending_addr = self.STUN_SERVER_ADDR
-
                     self.turn_mode = True
+                    self.min_buffer_size = 10
                     continue
 
-            elif message.startswith("HOLE") and not self.hole_punched:
+            if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
                 self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
                 continue
 
-            elif message == "battery?":
+            if message == "battery?":
                 self.send_command_to_drone(message, take_response=True)
                 continue
 
-            # This is command forwarding (from operator to drone)
-            self.send_command_to_drone(message, take_response=False)
+            if self.relay:
+                self.send_command_to_drone(message, take_response=False)
+            else:
+                print("Unhanled command/message:", message)

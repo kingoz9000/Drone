@@ -1,7 +1,6 @@
 import heapq
 import threading
 import time
-import socket
 from queue import Queue
 
 from .stun_client import StunClient
@@ -22,7 +21,6 @@ class ControlStunClient(StunClient):
         if self.turn_mode:
             encoded = bytearray([8]) + encoded
 
-
         self.stun_socket.sendto(encoded, self.sending_addr)
 
     def get_peer_addr(self):
@@ -41,122 +39,134 @@ class ControlStunClient(StunClient):
         self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)
         self.stun_socket.close()
         self.running = False
-            
-    def listen(self):
+
+    def handle_flags(self, data):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
         reorder_buffer: list[tuple] = []
-        min_buffer_size = 6
+        self.min_buffer_size = 6
         last_seq_num = 0
-        # Open this once before your loop starts
 
-        # video_file = open("output_stream.h264", "ab")  # append in binary mode
+        if not self.relay and self.hole_punched:
+            # Loopback for the operator
+            flag = data[0]
 
+            # If 0 send to loopback (videofeed)
+            if flag == 0:
+                seq_num = int.from_bytes(data[1:4], "big")
+                payload = data[4:]
+
+                # print(f"From client: {seq_num}")
+                if self.log:
+                    with open("Data/" + file_name, "a") as writer:
+                        writer.write(f"{seq_num}, ")
+
+                heapq.heappush(reorder_buffer, (seq_num, payload))
+
+                if len(reorder_buffer) >= self.min_buffer_size:
+                    ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
+
+                    if ordered_seq != last_seq_num + 1:
+                        print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
+
+                    self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
+                    # video_file.write(ordered_data)
+                    last_seq_num = ordered_seq
+
+                    # Measure packet loss
+                    self.seq_numbers[last_seq_num % 1000] = last_seq_num
+                    self.packet_loss = (
+                        (max(self.seq_numbers) - min(self.seq_numbers) - 999) / 1000
+                    ) * 100
+                    self.packet_loss = self.packet_loss if self.packet_loss >= 0 else 0
+                return True
+
+            # Response
+            elif flag == 1:
+                # Skal sendes til TKinter
+                self.response.put(data[1:])
+                return True
+
+            # State
+            elif flag == 2:
+                drone_data = data[1:]
+                try:
+                    drone_data = drone_data.decode().strip().strip(";").split(";")
+                    for part in drone_data:
+                        key, value = part.split(":")
+                        if "," in value:
+                            with self.stats_lock:
+                                self.drone_stats[key] = tuple(
+                                    map(float, value.split(","))
+                                )
+                        else:
+                            try:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = (
+                                        float(value) if "." in value else int(value)
+                                    )
+                            except ValueError:
+                                with self.stats_lock:
+                                    self.drone_stats[key] = value
+                except Exception as e:
+                    print(f"Error in decoding: {e}")
+                return True
+
+    def listen(self):
         while self.running:
             data = self.stun_socket.recv(4096)
 
-            if not self.relay and self.hole_punched:
-                # Loopback for the operator
-                flag = data[0]
-
-                # If 0 send to loopback (videofeed)
-                if flag == 0:
-                    seq_num = int.from_bytes(data[1:4], "big")
-                    payload = data[4:]
-
-                    # print(f"From client: {seq_num}")
-                    if self.log:
-                        with open("Data/" + file_name, "a") as writer:
-                            writer.write(f"{seq_num}, ")
-
-                    heapq.heappush(reorder_buffer, (seq_num, payload))
-
-                    if len(reorder_buffer) >= min_buffer_size:
-                        ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
-
-                        if ordered_seq != last_seq_num + 1:
-                            print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
-
-                        self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
-                        # video_file.write(ordered_data)
-                        last_seq_num = ordered_seq
-
-                        # Measure packet loss
-                        self.seq_numbers[last_seq_num % 1000] = last_seq_num
-                        self.packet_loss = ((max(self.seq_numbers) - min(self.seq_numbers) - 999) / 1000) * 100 
-                        self.packet_loss = self.packet_loss if self.packet_loss >= 0 else 0
-                    continue
-
-                # Response
-                elif flag == 1:
-                    # Skal sendes til TKinter
-                    self.response.put(data[1:])
-                    continue
-
-                # State
-                elif flag == 2:
-                    drone_data = data[1:]
-                    try:
-                        drone_data = drone_data.decode().strip().strip(";").split(";")
-                        for part in drone_data:
-                            key, value = part.split(":")
-                            if "," in value:
-                                with self.stats_lock:
-                                    self.drone_stats[key] = tuple(
-                                        map(float, value.split(","))
-                                    )
-                            else:
-                                try:
-                                    with self.stats_lock:
-                                        self.drone_stats[key] = (
-                                            float(value) if "." in value else int(value)
-                                        )
-                                except ValueError:
-                                    with self.stats_lock:
-                                        self.drone_stats[key] = value
-                    except Exception as e:
-                        print(f"Error in decoding: {e}")
-
-                    continue
+            if not self.relay and self.handle_flags(data):
+                continue
 
             message = data.decode()
 
             if message.startswith("SERVER"):
-                if message.split()[1] == "CONNECT":
+                parts = message.split()
+                if parts[1] == "CONNECT":
                     _, _, peer_ip, peer_port = message.split()
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
                     self.sending_addr = self.peer_addr
                     self.hole_punch()
-                    self.is_connected = True
+                    continue
 
-                if message.split()[1] == "INVALID_ID":
+                if parts[1] == "INVALID_ID":
                     print("Invalid target ID.")
+                    continue
 
-                if message.split()[1] == "HEARTBEAT":
+                if parts[1] == "HEARTBEAT":
                     self.stun_socket.sendto(b"ALIVE", self.STUN_SERVER_ADDR)
+                    continue
 
-                if message.split()[1] == "DISCONNECT":
+                if parts[1] == "DISCONNECT":
                     print("Server disconnected due to other client disconnection")
                     self.stun_socket.close()
                     self.running = False
+                    exit(0)
 
-                if message.split()[1] == "CLIENTS":
+                if parts[1] == "CLIENTS":
                     print(f"Clients connected: {message}")
-                    self.request_peer()
-                if message.split()[1] == "TURN_MODE":
+                    continue
+
+                if parts[1] == "TURN_MODE":
                     print("Turn mode activated.")
                     self.sending_addr = self.STUN_SERVER_ADDR
                     self.turn_mode = True
-                    min_buffer_size = 10
+                    self.min_buffer_size = 10
                     continue
 
             if message.startswith("HOLE") and not self.hole_punched:
                 self.hole_punched = True
                 print("Hole punched!")
                 self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
+                continue
 
             if message.startswith("PEER"):
-                # intended for the relay
+                # intended for the relay | ok, men den er ikke i relay
                 continue
-            print(f"Received message: {message}")
+
+            if self.relay:
+                self.send_command_to_drone(message, take_response=False)
+            else:
+                print("Unhanled command/message:", message)
