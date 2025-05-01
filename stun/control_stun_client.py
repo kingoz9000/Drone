@@ -124,7 +124,7 @@ class ControlStunClient(StunClient):
             if message.startswith("SERVER"):
                 parts = message.split()
                 if parts[1] == "CONNECT":
-                    _, _, peer_ip, peer_port = message.split()
+                    _, _, peer_ip, peer_port = parts
                     print(f"Received peer details: {peer_ip}:{peer_port}")
                     self.peer_addr = (peer_ip, int(peer_port))
                     self.sending_addr = self.peer_addr
@@ -140,7 +140,7 @@ class ControlStunClient(StunClient):
                     continue
 
                 if parts[1] == "DISCONNECT":
-                    print("Server disconnected due to other client disconnection")
+                    print("Server disconnected")
                     self.stun_socket.close()
                     self.running = False
                     exit(0)
