@@ -21,6 +21,7 @@ class ControlStunClient(StunClient):
         self.downlink_data_size = 0
         self.bandwidth_start_time = time.time()
         
+        self.data_lock = threading.Lock()
         self.uplink_mbps = 0
         self.downlink_mbps = 0
 
@@ -29,7 +30,8 @@ class ControlStunClient(StunClient):
             command = f"RELAY {command}"
 
         self.stun_socket.sendto(command.encode(), self.sending_addr)
-        self.uplink_data_size += len(command.encode()) # track uplink data size
+        with self.data_lock:
+            self.uplink_data_size += len(command.encode()) # track uplink data size
 
     def get_peer_addr(self):
         if self.peer_addr:
@@ -52,15 +54,16 @@ class ControlStunClient(StunClient):
         elapsed_time = time.time() - self.bandwidth_start_time
         if elapsed_time > 0:  
             # Calculate uplink and downlink bandwidth in bits per second
-            uplink_bps = (self.uplink_data_size * 8) / elapsed_time # bytes are converted to bits
-            downlink_bps = (self.downlink_data_size * 8) / elapsed_time
-            self.uplink_mbps = uplink_bps / 1_000_000 # bits are converted to megabits
-            self.downlink_mbps = downlink_bps / 1_000_000
-            
-            # reset the counters
-            self.uplink_data_size = 0
-            self.downlink_data_size = 0
-            self.bandwidth_start_time = time.time()  # reset the start time
+            with self.data_lock:
+                uplink_bps = (self.uplink_data_size * 8) / elapsed_time # bytes are converted to bits
+                downlink_bps = (self.downlink_data_size * 8) / elapsed_time
+                self.uplink_mbps = uplink_bps / 1_000_000 # bits are converted to megabits
+                self.downlink_mbps = downlink_bps / 1_000_000
+                
+                # reset the counters
+                self.uplink_data_size = 0
+                self.downlink_data_size = 0
+                self.bandwidth_start_time = time.time()  # reset the start time
             
     def listen(self):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
@@ -74,7 +77,8 @@ class ControlStunClient(StunClient):
 
         while self.running:
             data = self.stun_socket.recv(4096)
-            self.downlink_data_size += len(data) # track downlink data size
+            with self.data_lock:
+                self.downlink_data_size += len(data) # track downlink data size
 
             if not self.relay and self.hole_punched:
                 # Loopback for the operator
