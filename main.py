@@ -18,39 +18,7 @@ from GUI.drone_video_feed import DroneVideoFeed
 from GUI.ui import init_ui_components, update_battery_circle
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
-
-FFMPEG_COMMAND = [
-    "ffmpeg",
-    "-f",
-    "rawvideo",
-    "-pix_fmt",
-    "bgr24",
-    "-s",
-    "640x480",
-    "-r",
-    "30",
-    "-i",
-    "-",
-    "-vf",
-    "format=yuv420p",  # Convert for browser compatibility
-    "-c:v",
-    "libx264",
-    "-preset",
-    "veryfast",
-    "-tune",
-    "zerolatency",
-    "-x264-params",
-    "keyint=30:min-keyint=30:scenecut=0",
-    "-b:v",
-    "800k",
-    "-maxrate",
-    "800k",
-    "-bufsize",
-    "1600k",
-    "-f",
-    "mpegts",
-    "udp://130.225.37.157:27463?pkt_size=1316",
-]
+from webserver.webserver_sender import WebserverSender
 
 
 class TelloCustomTkinterStream:
@@ -90,31 +58,31 @@ class TelloCustomTkinterStream:
         self.print_to_image("1.0", "Battery: xx% \nPing xx ms")
 
         if args.stun:
+            self.stun_handler = ControlStunClient(self.ARGS.log)
             self.peer_addr = self.get_peer_address()
             time.sleep(5)
             drone_video_addr = ("0.0.0.0", 27463)
+            # Use the stun handler to send commands to the drone
             self.send_command = self.stun_handler.send_command_to_relay
-            self.WEBSERVER_IP = "130.225.37.157"
-            self.WEBSERVER_PORT = 27463
-            self.webserver_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
             drone_video_addr = ("0.0.0.0", 11111)
             drone_comm_addr = ("192.168.10.1", 8889)
+            # Use the drone communication class to send commands to the drone
             self.drone_communication = DroneCommunication(drone_comm_addr, 9000)
             self.send_command = self.drone_communication.send_command
             self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
 
         if self.ARGS.webstream:
+            self.webserver_sender = WebserverSender()
             self.ffmpeg_process = subprocess.Popen(
-                FFMPEG_COMMAND, stdin=subprocess.PIPE
+                self.webserver_sender.FFMPEG_COMMAND, stdin=subprocess.PIPE
             )
             self.frame_queue = queue.Queue(maxsize=5)
-            self.run_in_thread(self.ffmpeg_writer)
+            self.run_in_thread(self.webserver_sender.ffmpeg_writer)
         else:
             self.ffmpeg_process = None
-        # Start video stream and communication with the drone
-        self.video_stream = DroneVideoFeed(drone_video_addr)
 
+        self.video_stream = DroneVideoFeed(drone_video_addr)
         self.connect_to_drone()
         self.drone_battery = None
 
@@ -123,24 +91,12 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
         self.run_in_thread(self.check_connection)
-        
+
         # Start video update loop
         self.update_video_frame()
 
         # Start customTkinter event loop
         self.root.mainloop()
-
-    def ffmpeg_writer(self):
-        while True:
-            try:
-                frame = self.frame_queue.get()
-                if self.ffmpeg_process.poll() is not None:
-                    print("FFmpeg process exited.")
-                    break
-                self.ffmpeg_process.stdin.write(frame.tobytes())
-            except Exception as e:
-                print(f"FFmpeg stream error: {e}")
-                break
 
     def fetch_and_update_drone_stats(self):
         while True:
@@ -199,7 +155,6 @@ class TelloCustomTkinterStream:
         self.drone_stats.configure(state="disabled")
 
     def get_peer_address(self) -> tuple:
-        self.stun_handler = ControlStunClient(self.ARGS.log)
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
@@ -308,13 +263,13 @@ class TelloCustomTkinterStream:
                     f"Bad connection! Lost packages\nPing: {self.avg_ping_ms:03d}+ ms",
                 )
             self.drone_stats.configure(state="disabled")
-            
+
     def update_bandwidth(self) -> None:
         while True:
             if self.ARGS.stun:
                 self.stun_handler.calculate_bandwidth()
             time.sleep(1)
-    
+
     def trigger_turnmode(self) -> None:
         """Trigger the turn mode for the drone."""
         print("Triggering turn mode...")
@@ -322,9 +277,14 @@ class TelloCustomTkinterStream:
             self.stun_handler.trigger_turn_mode()
             # change plot color to orange
             self.line.set_color("orange")
-    
+
     def check_connection(self) -> None:
-        if self.avg_ping_ms > 300 and self.packet_loss > 5 and not self.stun_handler.turn_mode and self.ARGS.stun:
+        if (
+            self.avg_ping_ms > 300
+            and self.packet_loss > 5
+            and not self.stun_handler.turn_mode
+            and self.ARGS.stun
+        ):
             print("Connection unstable, triggering turn mode")
             self.stun_handler.trigger_turn_mode()
             time.sleep(1)
