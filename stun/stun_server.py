@@ -64,7 +64,7 @@ class StunServer:
                             if v2[1] == k:
                                 try:
                                     self.server_socket.sendto(
-                                        f"SERVER DISCONNECT".encode(), v2[0]
+                                        "SERVER DISCONNECT".encode(), v2[0]
                                     )
                                     self.logger.info(
                                         f"Notified Client {k2} about disconnection of Client {k}"
@@ -78,9 +78,7 @@ class StunServer:
                         clients_to_remove.append(k)
                     else:
                         try:
-                            self.server_socket.sendto(
-                                f"SERVER HEARTBEAT".encode(), v[0]
-                            )
+                            self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
                             self.logger.debug(f"Sent heartbeat to Client {k}")
                         except Exception as e:
                             self.logger.error(
@@ -114,9 +112,11 @@ class StunServer:
                 # Forward the message to the target client
                 try:
                     self.server_socket.sendto(data[1:], target_addr)
-                    #self.logger.info(f"Relayed message from Client {sender_id} to {target_addr}")
+                    # self.logger.info(f"Relayed message from Client {sender_id} to {target_addr}")
                 except Exception as e:
-                    self.logger.error(f"Failed to relay message from Client {sender_id}: {e}")
+                    self.logger.error(
+                        f"Failed to relay message from Client {sender_id}: {e}"
+                    )
                 continue
 
             message = data.decode().strip()
@@ -171,7 +171,7 @@ class StunServer:
                 for k in list(self.clients.keys()).copy():
                     self.logger.info(f"Client {self.get_client_id(k)} disconnected")
                     self.server_socket.sendto(
-                        f"SERVER DISCONNECT".encode(), self.clients[k][0]
+                        "SERVER DISCONNECT".encode(), self.clients[k][0]
                     )
                     self.clients.pop(k)
                 self.stun_mode = False
@@ -266,15 +266,12 @@ class StunServer:
                             f"Failed to send NOT_FOUND message to {addr}: {e}"
                         )
 
-
-            
-
     def switch_turn_mode(self):
         self.logger.debug("TURN mode active: relaying messages")
         # send "TURN MODE activated" to all clients
         for k, v in self.clients.items():
             try:
-                self.server_socket.sendto(f"SERVER TURN_MODE".encode(), v[0])
+                self.server_socket.sendto("SERVER TURN_MODE".encode(), v[0])
                 self.logger.info(f"Sent TURN mode activation to Client {k}")
             except Exception as e:
                 self.logger.error(
