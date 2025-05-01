@@ -54,6 +54,7 @@ class StunServer:
         while True and self.heartbeat_on:
             curtime = time.time()
             if curtime - lasttime > 3:
+                print("Heartbeat check")
                 clients_to_remove = []
                 for k, v in self.clients.items():
                     if v[2] >= self.client_timeout:
