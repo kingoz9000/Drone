@@ -94,7 +94,7 @@ class StunServer:
     def exchange(self):
         auto_connect_mode = True  # Set this to False for manual connection mode
         while True:
-            data, addr = self.server_socket.recvfrom(1024)
+            data, addr = self.server_socket.recvfrom(4096)
 
             # TURN-specific behavior
             if len(data) > 0 and data[0] == 8 and not self.stun_mode:

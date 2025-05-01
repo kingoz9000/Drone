@@ -46,7 +46,7 @@ class ControlStunClient(StunClient):
         file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
 
         reorder_buffer: list[tuple] = []
-        MIN_BUFFER_SIZE = 10
+        min_buffer_size = 6
         last_seq_num = 0
         # Open this once before your loop starts
 
@@ -71,7 +71,7 @@ class ControlStunClient(StunClient):
 
                     heapq.heappush(reorder_buffer, (seq_num, payload))
 
-                    if len(reorder_buffer) >= MIN_BUFFER_SIZE:
+                    if len(reorder_buffer) >= min_buffer_size:
                         ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
 
                         if ordered_seq != last_seq_num + 1:
@@ -148,6 +148,7 @@ class ControlStunClient(StunClient):
                     print("Turn mode activated.")
                     self.sending_addr = self.STUN_SERVER_ADDR
                     self.turn_mode = True
+                    min_buffer_size = 10
                     continue
 
             if message.startswith("HOLE") and not self.hole_punched:
