@@ -8,15 +8,15 @@ class RelayStunClient(StunClient):
     def __init__(self):
         super().__init__()
         self.drone_command_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.drone_command_addr = ("192.168.10.1", 8889)
+        self.drone_command_addr: tuple[str, int] = ("192.168.10.1", 8889)
 
         self.drone_video_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.drone_video_socket.bind(("0.0.0.0", 11111))
 
-        self.state = None
-        self.response = None
+        self.state: bool = None
+        self.response: bool = None
 
-        self.stats_refresh_rate = 0.5  # seconds
+        self.stats_refresh_rate: float = 0.5  # seconds
 
     def send_command_to_drone(self, command, take_response=False):
         self.drone_command_socket.sendto(

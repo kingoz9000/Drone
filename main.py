@@ -253,7 +253,7 @@ class TelloCustomTkinterStream:
         self.send_command("motoroff")
 
         if self.ARGS.stun:
-            self.stun_handler.disconnect_from_stunserver()
+            self.stun_handler.disconnect_from_stun_server()
 
         self.root.quit()
         self.root.destroy()

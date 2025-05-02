@@ -9,14 +9,16 @@ from .stun_client import StunClient
 class ControlStunClient(StunClient):
     def __init__(self, log):
         super().__init__()
-        self.response = Queue()
-        self.log = log
-        self.drone_stats = {}
+        self.response: list[str] = Queue()
+        self.log: list[str] = log
+        self.drone_stats: dict[str] = {}
         self.stats_lock = threading.Lock()
-        self.packet_loss = 0
-        self.seq_numbers = [0 for _ in range(1000)]
+        self.packet_loss: int = 0
+        self.seq_numbers: list[int] = [0 for _ in range(1000)]
 
-        self.file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
+        self.file_name = (
+            f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
+        )
         self.reorder_buffer: list[tuple] = []
         self.min_buffer_size = 6
         self.last_seq_num = -1
@@ -40,7 +42,7 @@ class ControlStunClient(StunClient):
     def trigger_turn_mode(self):
         self.stun_socket.sendto(b"REQUEST_TURN_MODE", self.STUN_SERVER_ADDR)
 
-    def disconnect_from_stunserver(self):
+    def disconnect_from_stun_server(self):
         self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)
         self.stun_socket.close()
         self.running = False
