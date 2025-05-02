@@ -52,45 +52,44 @@ class StunServer:
 
     def heartbeat(self):
         lasttime = 0
-        while True and self.heartbeat_on:
+        while self.heartbeat_on:
             curtime = time.time()
-            if curtime - lasttime > 3:
-                clients_to_remove = []
-                for k, v in self.clients.items():
-                    if v[2] >= self.client_timeout:
-                        self.logger.info(f"Client {k} has disconnected")
-                        # send to the client which has k as a target
-                        for k2, v2 in self.clients.items():
-                            if v2[1] == k:
-                                try:
-                                    self.server_socket.sendto(
-                                        "SERVER DISCONNECT".encode(), v2[0]
-                                    )
-                                    self.logger.info(
-                                        f"Notified Client {k2} about disconnection of Client {k}"
-                                    )
-                                except Exception as e:
-                                    self.logger.error(
-                                        f"Failed to send disconnect message to Client {k2}: {e}"
-                                    )
-                                self.clients[k2][1] = None
+            if curtime - lasttime <= 3:
+                continue
 
-                        clients_to_remove.append(k)
-                    else:
-                        try:
-                            self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
-                            self.logger.debug(f"Sent heartbeat to Client {k}")
-                        except Exception as e:
-                            self.logger.error(
-                                f"Failed to send heartbeat to Client {k}: {e}"
-                            )
-                        v[2] += 1
+            clients_to_remove = []
+            for k, v in self.clients.items():
+                if v[2] < self.client_timeout:
+                    try:
+                        self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
+                        self.logger.debug(f"Sent heartbeat to Client {k}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to send heartbeat to Client {k}: {e}")
+                    v[2] += 1
+                    continue
 
-                for k in clients_to_remove:
-                    self.stun_mode = False
-                    del self.clients[k]
+                self.logger.info(f"Client {k} has disconnected")
+                for k2, v2 in self.clients.items():
+                    if v2[1] != k:
+                        continue
+                    try:
+                        self.server_socket.sendto("SERVER DISCONNECT".encode(), v2[0])
+                        self.logger.info(
+                            f"Notified Client {k2} about disconnection of Client {k}"
+                        )
+                    except Exception as e:
+                        self.logger.error(
+                            f"Failed to send disconnect message to Client {k2}: {e}"
+                        )
+                    self.clients[k2][1] = None
 
-                lasttime = curtime
+                clients_to_remove.append(k)
+
+            for k in clients_to_remove:
+                self.stun_mode = False
+                del self.clients[k]
+
+            lasttime = curtime
 
     def exchange(self):
         while True:
@@ -98,32 +97,32 @@ class StunServer:
 
             # TURN-specific behavior
             if len(data) > 0 and data[0] == 8 and not self.stun_mode:
-                self._handle_turn_data(data, addr)
+                self.handle_turn_data(data, addr)
                 continue
             
             message = data.decode().strip()
             if message.startswith("REGISTER"):
-                self._handle_register(addr, self.auto_connect_mode)
+                self.handle_register(addr, self.auto_connect_mode)
 
             elif message.startswith("DISCONNECT"):
-                self._handle_disconnect(addr)
+                self.handle_disconnect(addr)
 
             elif message.startswith("REQUEST_TURN_MODE"):
-                self._handle_turn_request(addr)
+                self.handle_turn_request(addr)
 
             elif message.startswith("ALIVE"):
-                self._handle_alive_message(addr)
+                self.handle_alive_message(addr)
 
             elif message.startswith("HOLE PUNCHED"):
                 self.logger.info(f"Hole punched with Client {self.get_client_id(addr)}")
 
             elif message.startswith("CHECK"):
-                self._handle_check_message(addr)
+                self.handle_check_message(addr)
 
             elif message.startswith("REQUEST"):
-                self._handle_request_message(addr, message)
+                self.handle_request_message(addr, message)
 
-    def _handle_turn_data(self, data, addr):
+    def handle_turn_data(self, data, addr):
         sender_id = self.get_client_id(addr)
         if sender_id == 0:
             target_addr = self.clients[1][0]  # Send to Client 1
@@ -142,7 +141,7 @@ class StunServer:
             )
 
 
-    def _handle_register(self, addr, auto_connect_mode):
+    def handle_register(self, addr, auto_connect_mode):
         with self.clients_lock:
             client_id = 0
             clients_copy = sorted(self.clients.keys())
@@ -188,7 +187,7 @@ class StunServer:
             except Exception as e:
                 self.logger.error(f"Failed to auto-connect clients: {e}")
 
-    def _handle_disconnect(self, addr):
+    def handle_disconnect(self, addr):
         print("Received disconnect message")
         for k in list(self.clients.keys()).copy():
             self.logger.info(f"Client {self.get_client_id(k)} disconnected")
@@ -198,7 +197,7 @@ class StunServer:
             self.clients.pop(k)
         self.stun_mode = False
 
-    def _handle_turn_request(self, addr):
+    def handle_turn_request(self, addr):
         self.logger.debug(
             f"Client {self.get_client_id(addr)} requested TURN mode"
         )
@@ -208,14 +207,14 @@ class StunServer:
         # if connection is ok, send TURN mode request
         self.switch_turn_mode()
 
-    def _handle_alive_message(self, addr):
+    def handle_alive_message(self, addr):
         self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
         client_id = self.get_client_id(addr)
         self.logger.debug(f"Client {client_id} is alive")
         if client_id is not None:
             self.clients[client_id][2] = 0
 
-    def _handle_check_message(self, addr):
+    def handle_check_message(self, addr):
         # send list of clients except the one who requested
         client_id = self.get_client_id(addr)
         clients_to_send = []
@@ -238,7 +237,7 @@ class StunServer:
         except Exception as e:
             self.logger.error(f"Failed to send client list to {addr}: {e}")
 
-    def _handle_request_message(self, addr, message):
+    def handle_request_message(self, addr, message):
         self.logger.debug(f"Received request from {addr}")
         _, target_id = message.split()
         if target_id.isdigit():
