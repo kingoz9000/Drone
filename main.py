@@ -96,6 +96,8 @@ class TelloCustomTkinterStream:
 
         self.packet_loss = self.stun_handler.packet_loss if self.ARGS.stun else 0
 
+        
+
         stats_text = (
             f"Pitch: {stats.get('pitch', 0)}°\n"
             f"Roll: {stats.get('roll', 0)}°\n"
@@ -103,7 +105,7 @@ class TelloCustomTkinterStream:
             f"Altitude: {stats.get('baro', 0)} m\n"
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
-            f"Packet loss: {self.packet_loss:02d} %\n"
+            f"Packet loss: {round(self.packet_loss,2)} %\n"
         )
 
         self.drone_stats_box.configure(state="normal")
