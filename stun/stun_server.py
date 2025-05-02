@@ -17,7 +17,7 @@ class StunServer:
         self.client_timeout = 1
         self.next_client_id = 0
         self.heartbeat_on = True
-        self.auto_connect_mode = True  # Set this to False for manual connection mode
+        self.auto_connect_mode = True # Set this to False for manual connection mode
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -49,13 +49,6 @@ class StunServer:
                 if v[0] == addr:
                     return k
             return None
-        
-    def _send_to_client(self, message, addr):
-        try:
-            self.server_socket.sendto(message.encode(), addr)
-        except Exception as e:
-            self.logger.error(f"Failed to send message to Client at {addr}: {e}")
-
 
     def heartbeat(self):
         lasttime = 0
@@ -65,12 +58,14 @@ class StunServer:
                 clients_to_remove = []
                 for k, v in self.clients.items():
                     if v[2] >= self.client_timeout:
-                        self.logger.info(f"Heartbeat: Client {k} disconnected")
+                        self.logger.info(f"Client {k} has disconnected")
                         # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
                                 try:
-                                    self._send_to_client("SERVER DISCONNECT", v2[0])
+                                    self.server_socket.sendto(
+                                        "SERVER DISCONNECT".encode(), v2[0]
+                                    )
                                     self.logger.info(
                                         f"Notified Client {k2} about disconnection of Client {k}"
                                     )
@@ -83,7 +78,7 @@ class StunServer:
                         clients_to_remove.append(k)
                     else:
                         try:
-                            self._send_to_client("SERVER HEARTBEAT", v[0])
+                            self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
                             self.logger.debug(f"Sent heartbeat to Client {k}")
                         except Exception as e:
                             self.logger.error(
@@ -105,7 +100,7 @@ class StunServer:
             if len(data) > 0 and data[0] == 8 and not self.stun_mode:
                 self._handle_turn_data(data, addr)
                 continue
-
+            
             message = data.decode().strip()
             if message.startswith("REGISTER"):
                 self._handle_register(addr, self.auto_connect_mode)
@@ -139,7 +134,13 @@ class StunServer:
             return
 
         # Forward the message to the target client
-        self._send_to_client(data[1:], target_addr)
+        try:
+            self.server_socket.sendto(data[1:], target_addr)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to relay message from Client {sender_id}: {e}"
+            )
+
 
     def _handle_register(self, addr, auto_connect_mode):
         with self.clients_lock:
@@ -155,8 +156,8 @@ class StunServer:
             self.clients[client_id] = [addr, None, 0]
 
         try:
-            message = f"REGISTERED {client_id}"
-            self._send_to_client(message, addr)
+            self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
+            self.logger.info(f"Client {client_id} registered from {addr}")
         except Exception as e:
             self.logger.error(
                 f"Failed to send registration confirmation to {addr}: {e}"
@@ -173,12 +174,14 @@ class StunServer:
 
             try:
                 # Send connection details to both clients
-                self._send_to_client(
-                    f"SERVER CLIENTS {client_ids}", client1_addr
-                )  # Send client list to Client 1
-                self._send_to_client(
-                    f"SERVER CLIENTS {client_ids}", client2_addr
-                )  # Send client list to Client 2
+                self.server_socket.sendto(
+                    f"SERVER CONNECT {client2_addr[0]} {client2_addr[1]}".encode(),
+                    client1_addr,
+                )
+                self.server_socket.sendto(
+                    f"SERVER CONNECT {client1_addr[0]} {client1_addr[1]}".encode(),
+                    client2_addr,
+                )
                 self.logger.info(
                     f"Automatically connected Client {client1_id} and Client {client2_id}"
                 )
@@ -189,12 +192,16 @@ class StunServer:
         print("Received disconnect message")
         for k in list(self.clients.keys()).copy():
             self.logger.info(f"Client {self.get_client_id(k)} disconnected")
-            self._send_to_client("SERVER DISCONNECT", self.clients[k][0])
+            self.server_socket.sendto(
+                "SERVER DISCONNECT".encode(), self.clients[k][0]
+            )
             self.clients.pop(k)
         self.stun_mode = False
 
     def _handle_turn_request(self, addr):
-        self.logger.debug(f"Client {self.get_client_id(addr)} requested TURN mode")
+        self.logger.debug(
+            f"Client {self.get_client_id(addr)} requested TURN mode"
+        )
 
         # check connection with other client
 
@@ -219,12 +226,15 @@ class StunServer:
                 )  # Append client ID, IP, and port
         try:
             if clients_to_send and not self.auto_connect_mode:
-                self.logger.info(f"Sending list of clients to Client {client_id}")
-                self._send_to_client(
-                    f"SERVER CLIENTS {clients_to_send}", addr)
+                self.logger.info(
+                    f"Sending list of clients to Client {client_id}"
+                )
+                self.server_socket.sendto(
+                    f"SERVER CLIENTS {clients_to_send}".encode(), addr
+                )
             else:
                 self.logger.info(f"No clients to send to Client {client_id}")
-                self._send_to_client("SERVER CLIENTS 0", addr)
+                self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
         except Exception as e:
             self.logger.error(f"Failed to send client list to {addr}: {e}")
 
@@ -236,7 +246,7 @@ class StunServer:
             current_client_id = self.get_client_id(addr)
         else:
             self.logger.error(f"Invalid target ID: {target_id}")
-            self._send_to_client(f"SERVER INVALID_ID {target_id}", addr)
+            self.server_socket.sendto("SERVER INVALID_ID".encode(), addr)
             return
 
         if target_id in self.clients:
@@ -246,12 +256,14 @@ class StunServer:
             try:
                 if self.clients[target_id][1] == current_client_id:
                     # Send both clients each other's public IP and port
-                    self._send_to_client(f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(), addr)
-
-                    self._send_to_client(
-                        f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr
+                    self.server_socket.sendto(
+                        f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(),
+                        addr,
                     )
-
+                    self.server_socket.sendto(
+                        f"SERVER CONNECT {addr[0]} {addr[1]}".encode(),
+                        target_addr,
+                    )
                     self.logger.info(
                         f"Exchanged details between Client {current_client_id} and Client {target_id}"
                     )
@@ -263,12 +275,14 @@ class StunServer:
                 self.logger.error(f"Failed to send connection details: {e}")
         else:
             try:
-                self._send_to_client("NOT_FOUND".encode(), addr)
+                self.server_socket.sendto("NOT_FOUND".encode(), addr)
                 self.logger.info(
                     f"Client {current_client_id} requested Client {target_id}, but target not found."
                 )
             except Exception as e:
-                self.logger.error(f"Failed to send NOT_FOUND message to {addr}: {e}")
+                self.logger.error(
+                    f"Failed to send NOT_FOUND message to {addr}: {e}"
+                )
 
     def switch_turn_mode(self):
         self.logger.debug("TURN mode active: relaying messages")
@@ -276,7 +290,7 @@ class StunServer:
 
         for k, v in self.clients.items():
             try:
-                self._send_to_client("Server TURN_MODE", v[0])
+                self.server_socket.sendto("SERVER TURN_MODE".encode(), v[0])
                 self.logger.info(f"Sent TURN mode activation to Client {k}")
             except Exception as e:
                 self.logger.error(
