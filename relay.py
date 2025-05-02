@@ -21,4 +21,5 @@ while client.running:
             print(e)
             exit(1)
         client.send_data_to_operator(seq_byte + msg)
-        seq_num = seq_num + 1
+
+        seq_num += 1

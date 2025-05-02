@@ -16,6 +16,11 @@ class ControlStunClient(StunClient):
         self.packet_loss = 0
         self.seq_numbers = [0 for _ in range(1000)]
 
+        self.file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
+        self.reorder_buffer: list[tuple] = []
+        self.min_buffer_size = 6
+        self.last_seq_num = 0
+
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         encoded = command.encode()
         if self.turn_mode:
@@ -41,12 +46,6 @@ class ControlStunClient(StunClient):
         self.running = False
 
     def handle_flags(self, data):
-        file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
-
-        reorder_buffer: list[tuple] = []
-        self.min_buffer_size = 6
-        last_seq_num = 0
-
         if not self.relay and self.hole_punched:
             # Loopback for the operator
             flag = data[0]
@@ -58,23 +57,23 @@ class ControlStunClient(StunClient):
 
                 # print(f"From client: {seq_num}")
                 if self.log:
-                    with open("Data/" + file_name, "a") as writer:
+                    with open("Data/" + self.file_name, "a") as writer:
                         writer.write(f"{seq_num}, ")
 
-                heapq.heappush(reorder_buffer, (seq_num, payload))
+                heapq.heappush(self.reorder_buffer, (seq_num, payload))
 
-                if len(reorder_buffer) >= self.min_buffer_size:
-                    ordered_seq, ordered_data = heapq.heappop(reorder_buffer)
+                if len(self.reorder_buffer) >= self.min_buffer_size:
+                    ordered_seq, ordered_data = heapq.heappop(self.reorder_buffer)
 
-                    if ordered_seq != last_seq_num + 1:
-                        print(f"Expected: {last_seq_num + 1}, Got: {ordered_seq}")
+                    if ordered_seq != self.last_seq_num + 1:
+                        print(f"Expected: {self.last_seq_num + 1}, Got: {ordered_seq}")
 
                     self.stun_socket.sendto(ordered_data, ("127.0.0.1", 27463))
                     # video_file.write(ordered_data)
-                    last_seq_num = ordered_seq
+                    self.last_seq_num = ordered_seq
 
                     # Measure packet loss
-                    self.seq_numbers[last_seq_num % 1000] = last_seq_num
+                    self.seq_numbers[self.last_seq_num % 1000] = self.last_seq_num
                     self.packet_loss = (
                         (max(self.seq_numbers) - min(self.seq_numbers) - 999) / 1000
                     ) * 100
