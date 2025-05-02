@@ -122,7 +122,7 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
-        self.run_in_thread(self.update_bandwidth)
+        self.run_in_thread(self.get_bandwidth)
 
         # Start video update loop
         self.update_video_frame()
