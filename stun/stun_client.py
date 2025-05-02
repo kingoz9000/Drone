@@ -8,18 +8,18 @@ class StunClient:
         self.stun_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.stun_socket.bind(("", 0))
 
-        self.client_id = None
-        self.peer_addr = None
-        self.sending_addr = None
+        self.client_id: int = None
+        self.peer_addr: str = None
+        self.sending_addr: tuple = None
 
-        self.STUN_SERVER_ADDR = ("130.225.37.157", 12345)
+        self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.37.157", 12345)
 
-        self.HOLE_PUNCH_TRIES = 5
-        self.hole_punched = False
+        self.HOLE_PUNCH_TRIES: int = 5
+        self.hole_punched: bool = False
 
-        self.running = True
-        self.relay = False
-        self.turn_mode = False
+        self.running: bool = True
+        self.relay: bool = False
+        self.turn_mode: bool = False
 
     def register(self):
         try:
@@ -113,7 +113,7 @@ class StunClient:
                 print("Unhanled command/message:", message)
 
     @staticmethod
-    def run_in_thread(func, *args) -> threading.Thread:
+    def _run_in_thread(func, *args) -> threading.Thread:
         """General worker function to run a function in a thread"""
         thread = threading.Thread(target=func, args=args, daemon=True)
         thread.start()
@@ -121,4 +121,4 @@ class StunClient:
 
     def main(self):
         self.register()
-        self.run_in_thread(self.listen)
+        self._run_in_thread(self.listen)
