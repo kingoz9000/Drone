@@ -201,10 +201,6 @@ class StunServer:
         self.logger.debug(
             f"Client {self.get_client_id(addr)} requested TURN mode"
         )
-
-        # check connection with other client
-
-        # if connection is ok, send TURN mode request
         self.switch_turn_mode()
 
     def handle_alive_message(self, addr):

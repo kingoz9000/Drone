@@ -96,8 +96,6 @@ class TelloCustomTkinterStream:
 
         self.packet_loss = self.stun_handler.packet_loss if self.ARGS.stun else 0
 
-        
-
         stats_text = (
             f"Pitch: {stats.get('pitch', 0)}°\n"
             f"Roll: {stats.get('roll', 0)}°\n"
