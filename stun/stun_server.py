@@ -65,7 +65,7 @@ class StunServer:
                 clients_to_remove = []
                 for k, v in self.clients.items():
                     if v[2] >= self.client_timeout:
-                        self.logger.info(f"Client {k} has disconnected")
+                        self.logger.info(f"Heartbeat: Client {k} disconnected")
                         # send to the client which has k as a target
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
