@@ -2,7 +2,7 @@ from collections import deque
 import customtkinter as ctk
 
 
-def init_ui_components(instance, plt, FigureCanvasTkAgg):
+def init_ui_components(instance, plt, FigureCanvasTkAgg) -> None:
 
     instance.root.title("Tello Video Stream")
     instance.root.geometry(f"{int(1280*instance.scale)}x{int(1000*instance.scale)}")
@@ -101,7 +101,7 @@ def init_ui_components(instance, plt, FigureCanvasTkAgg):
     instance.drone_stats.configure(state="disabled")
 
 
-def update_battery_circle(instance):
+def update_battery_circle(instance) -> None:
     if instance.drone_battery and isinstance(instance.drone_battery, str):
         try:
             battery_level = int(instance.drone_battery.strip())

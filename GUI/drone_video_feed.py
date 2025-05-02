@@ -2,7 +2,7 @@ import queue, threading, av, time, numpy as np
 
 
 class DroneVideoFeed:
-    def __init__(self, video_addr):
+    def __init__(self, video_addr) -> None:
         # Video stream recieving
         self.VIDEO_ADDRESS: str = f"udp://@{video_addr[0]}:{str(video_addr[1])}"
 

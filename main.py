@@ -19,14 +19,15 @@ from webserver.webserver_sender import WebserverSender
 
 
 class TelloCustomTkinterStream:
-    def __init__(self, args):
+    def __init__(self, args) -> None:
+        """Starts GUI, drone communication, video stream & threads needed for stats and control."""
         self.ARGS = args
 
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
         self.scale = self.ARGS.rasmus if self.ARGS.rasmus else 1.0
         self.root = ctk.CTk()
-    
+
         init_ui_components(self, plt, FigureCanvasTkAgg)
 
         self.init_drone_com()
@@ -44,7 +45,8 @@ class TelloCustomTkinterStream:
 
         self.root.mainloop()
 
-    def init_drone_com(self):
+    def init_drone_com(self) -> None:
+        """Initialize drone communication and video stream."""
         if self.ARGS.stun:
             self.stun_handler = ControlStunClient(self.ARGS.log)
             self.peer_addr = self.get_peer_address()
@@ -59,10 +61,11 @@ class TelloCustomTkinterStream:
             self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
 
         self.video_stream = DroneVideoFeed(self.drone_video_addr)
-        self.connect_to_drone()
+        self.startup_drone()
         self.drone_battery = None
 
-    def fetch_and_update_drone_stats(self):
+    def fetch_and_update_drone_stats(self) -> None:
+        """Fetch and update drone stats in a loop."""
         while True:
             try:
                 if self.ARGS.stun:
@@ -75,7 +78,8 @@ class TelloCustomTkinterStream:
             self.update_drone_stats(stats)
             time.sleep(1)
 
-    def update_graph(self):
+    def update_graph(self) -> None:
+        """Update the graph with the latest ping data."""
         self.ping_data.append(self.avg_ping_ms)
         self.line.set_ydata(self.ping_data)
         self.ax.set_xlim(0, len(self.ping_data))
@@ -84,7 +88,8 @@ class TelloCustomTkinterStream:
         # print(self.ax.get_facecolor())
         self.canvas.draw()
 
-    def update_drone_stats(self, stats):
+    def update_drone_stats(self, stats) -> None:
+        """Update the drone stats in the GUI."""
         if not isinstance(stats, dict):
             print("Error: stats is not a dictionary")
             return
@@ -109,8 +114,8 @@ class TelloCustomTkinterStream:
         update_battery_circle(self)
         self.update_graph()
 
-
     def get_peer_address(self) -> tuple:
+        """Get the peer address when using stun argument."""
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
@@ -120,7 +125,8 @@ class TelloCustomTkinterStream:
 
         raise Exception("Failed to establish peer-to-peer connection")
 
-    def connect_to_drone(self) -> None:
+    def startup_drone(self) -> None:
+        """Sends startup commands to the drone."""
         self.send_command("command")
         self.send_command("streamon")
         self.send_command("motoron")
@@ -152,7 +158,7 @@ class TelloCustomTkinterStream:
 
         self.root.after(10, self.update_video_frame)
 
-    def update_canvas(self, imgtk):
+    def update_canvas(self, imgtk) -> None:
         """Update Canvas with the new video frame."""
         self.video_canvas.create_image(0, 0, anchor="nw", image=imgtk)
         self.video_canvas.imgtk = imgtk  # Prevent garbage collection
@@ -207,7 +213,7 @@ class TelloCustomTkinterStream:
             self.drone_stats.configure(font=("Arial", int(15 * self.scale)))
             self.drone_stats.configure()
             self.drone_stats.delete("1.0", "end")
-            if type(self.drone_battery) is str:
+            if not self.drone_battery == "ERROR":
                 self.drone_stats.insert(
                     "1.0",
                     f"Battery: {self.drone_battery.strip()}% \nPing: {self.avg_ping_ms:03d} ms",
@@ -220,14 +226,7 @@ class TelloCustomTkinterStream:
                 )
             self.drone_stats.configure(state="disabled")
 
-    def update_bandwidth(self) -> None:
-        while True:
-            if self.ARGS.stun:
-                self.stun_handler.calculate_bandwidth()
-            time.sleep(1)
-
     def trigger_turnmode(self) -> None:
-        """Trigger the turn mode for the drone."""
         print("Triggering turn mode...")
         if self.ARGS.stun:
             self.stun_handler.trigger_turn_mode()
@@ -235,6 +234,7 @@ class TelloCustomTkinterStream:
             self.line.set_color("orange")
 
     def check_connection(self) -> None:
+        """Check the connection status and trigger turn mode if necessary."""
         if (
             self.avg_ping_ms > 300
             and self.packet_loss > 5
@@ -250,9 +250,10 @@ class TelloCustomTkinterStream:
         print("Shutting down...")
 
         self.send_command("streamoff")
+        self.send_command("motoroff")
 
         if self.ARGS.stun:
-            self.stun_handler.disconnect_from_stunserver()
+            self.stun_handler.disconnect_from_stun_server()
 
         self.root.quit()
         self.root.destroy()

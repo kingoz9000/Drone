@@ -4,7 +4,7 @@ client = RelayStunClient()
 client.relay = True
 client.drone_command_socket.bind(("0.0.0.0", 9000))
 client.main()
-client.run_in_thread(client.state_socket_handler)
+client._run_in_thread(client.state_socket_handler)
 
 seq_num = 0
 
@@ -21,4 +21,5 @@ while client.running:
             print(e)
             exit(1)
         client.send_data_to_operator(seq_byte + msg)
-        seq_num = seq_num + 1
+
+        seq_num += 1
