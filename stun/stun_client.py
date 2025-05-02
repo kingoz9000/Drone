@@ -6,7 +6,6 @@ import time
 class StunClient:
     def __init__(self):
         self.stun_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.stun_socket.bind(("", 0))
 
         self.client_id: int = None
         self.peer_addr: str = None

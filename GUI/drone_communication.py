@@ -4,7 +4,7 @@ import threading
 
 
 class DroneCommunication:
-    def __init__(self, command_addr, command_returnport):
+    def __init__(self, command_addr, command_returnport) -> None:
         # Addresses and ports for sending commands / Recieving response
         self.COMMAND_ADDR: tuple = command_addr
         self.COMMAND_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -14,8 +14,8 @@ class DroneCommunication:
         self.STATE_IP: tuple = ("0.0.0.0", 8890)
         self.STATE_SOCKET: socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.STATE_SOCKET.bind(self.STATE_IP)
-        self.STATE_REFRESH_RATE = 1
-        self.stats = {}
+        self.STATE_REFRESH_RATE: int = 1
+        self.stats: dict = {}
         self.stats_lock = threading.Lock()
 
     def send_command(
@@ -35,15 +35,15 @@ class DroneCommunication:
         elif print_command:
             print(f"Command sent '{command} IP: {self.COMMAND_ADDR}'")
 
-    def get_direct_drone_stats(self):
+    def get_direct_drone_stats(self) -> dict:
         with self.stats_lock:
-            stats = self.stats.copy()
+            stats: dict = self.stats.copy()
         return stats
     
     
-    def wifi_state_socket_handler(self):
+    def wifi_state_socket_handler(self) -> None:
         while True:
-            self.drone_stats = self.STATE_SOCKET.recv(4096).decode().strip().strip(";").split(";")
+            self.drone_stats: list[str] = self.STATE_SOCKET.recv(4096).decode().strip().strip(";").split(";")
 
             for part in self.drone_stats:
                 key, value = part.split(":")

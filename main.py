@@ -19,7 +19,7 @@ from webserver.webserver_sender import WebserverSender
 
 
 class TelloCustomTkinterStream:
-    def __init__(self, args):
+    def __init__(self, args) -> None:
         """Starts GUI, drone communication, video stream & threads needed for stats and control."""
         self.ARGS = args
 
@@ -45,7 +45,7 @@ class TelloCustomTkinterStream:
 
         self.root.mainloop()
 
-    def init_drone_com(self):
+    def init_drone_com(self) -> None:
         """Initialize drone communication and video stream."""
         if self.ARGS.stun:
             self.stun_handler = ControlStunClient(self.ARGS.log)
@@ -64,7 +64,7 @@ class TelloCustomTkinterStream:
         self.startup_drone()
         self.drone_battery = None
 
-    def fetch_and_update_drone_stats(self):
+    def fetch_and_update_drone_stats(self) -> None:
         """Fetch and update drone stats in a loop."""
         while True:
             try:
@@ -78,7 +78,7 @@ class TelloCustomTkinterStream:
             self.update_drone_stats(stats)
             time.sleep(1)
 
-    def update_graph(self):
+    def update_graph(self) -> None:
         """Update the graph with the latest ping data."""
         self.ping_data.append(self.avg_ping_ms)
         self.line.set_ydata(self.ping_data)
@@ -88,7 +88,7 @@ class TelloCustomTkinterStream:
         # print(self.ax.get_facecolor())
         self.canvas.draw()
 
-    def update_drone_stats(self, stats):
+    def update_drone_stats(self, stats) -> None:
         """Update the drone stats in the GUI."""
         if not isinstance(stats, dict):
             print("Error: stats is not a dictionary")
@@ -158,7 +158,7 @@ class TelloCustomTkinterStream:
 
         self.root.after(10, self.update_video_frame)
 
-    def update_canvas(self, imgtk):
+    def update_canvas(self, imgtk) -> None:
         """Update Canvas with the new video frame."""
         self.video_canvas.create_image(0, 0, anchor="nw", image=imgtk)
         self.video_canvas.imgtk = imgtk  # Prevent garbage collection

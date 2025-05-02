@@ -19,7 +19,7 @@ class ControlStunClient(StunClient):
         self.file_name = f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
         self.reorder_buffer: list[tuple] = []
         self.min_buffer_size = 6
-        self.last_seq_num = 0
+        self.last_seq_num = -1
 
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         encoded = command.encode()
