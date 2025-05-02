@@ -17,6 +17,7 @@ class StunServer:
         self.client_timeout = 1
         self.next_client_id = 0
         self.heartbeat_on = True
+        self.auto_connect_mode = True  # Set this to False for manual connection mode
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -48,6 +49,13 @@ class StunServer:
                 if v[0] == addr:
                     return k
             return None
+        
+    def _send_to_client(self, message, addr):
+        try:
+            self.server_socket.sendto(message.encode(), addr)
+        except Exception as e:
+            self.logger.error(f"Failed to send message to Client at {addr}: {e}")
+
 
     def heartbeat(self):
         lasttime = 0
@@ -62,9 +70,7 @@ class StunServer:
                         for k2, v2 in self.clients.items():
                             if v2[1] == k:
                                 try:
-                                    self.server_socket.sendto(
-                                        "SERVER DISCONNECT".encode(), v2[0]
-                                    )
+                                    self._send_to_client("SERVER DISCONNECT", v2[0])
                                     self.logger.info(
                                         f"Notified Client {k2} about disconnection of Client {k}"
                                     )
@@ -77,7 +83,7 @@ class StunServer:
                         clients_to_remove.append(k)
                     else:
                         try:
-                            self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
+                            self._send_to_client("SERVER HEARTBEAT", v[0])
                             self.logger.debug(f"Sent heartbeat to Client {k}")
                         except Exception as e:
                             self.logger.error(
@@ -92,178 +98,177 @@ class StunServer:
                 lasttime = curtime
 
     def exchange(self):
-        auto_connect_mode = True  # Set this to False for manual connection mode
         while True:
             data, addr = self.server_socket.recvfrom(4096)
 
             # TURN-specific behavior
             if len(data) > 0 and data[0] == 8 and not self.stun_mode:
-
-                sender_id = self.get_client_id(addr)
-                if sender_id == 0:
-                    target_addr = self.clients[1][0]  # Send to Client 1
-                elif sender_id == 1:
-                    target_addr = self.clients[0][0]  # Send to Client 0
-                else:
-                    self.logger.error(f"Invalid sender ID: {sender_id}")
-                    return
-
-                # Forward the message to the target client
-                try:
-                    self.server_socket.sendto(data[1:], target_addr)
-                    # self.logger.info(f"Relayed message from Client {sender_id} to {target_addr}")
-                except Exception as e:
-                    self.logger.error(
-                        f"Failed to relay message from Client {sender_id}: {e}"
-                    )
+                self._handle_turn_data(data, addr)
                 continue
 
             message = data.decode().strip()
             if message.startswith("REGISTER"):
-                with self.clients_lock:
-                    client_id = 0
-                    clients_copy = sorted(self.clients.keys())
-                    for idx, num in enumerate(clients_copy):
-                        if idx == num:
-                            continue
-                        client_id = idx
-                        break
-                    else:
-                        client_id = len(self.clients)
-                    self.clients[client_id] = [addr, None, 0]
-
-                try:
-                    self.server_socket.sendto(f"REGISTERED {client_id}".encode(), addr)
-                    self.logger.info(f"Client {client_id} registered from {addr}")
-                except Exception as e:
-                    self.logger.error(
-                        f"Failed to send registration confirmation to {addr}: {e}"
-                    )
-
-                # Auto-connect logic
-                if auto_connect_mode and len(self.clients) == 2:
-                    client_ids = list(self.clients.keys())
-                    client1_id, client2_id = client_ids[0], client_ids[1]
-                    client1_addr, client2_addr = (
-                        self.clients[client1_id][0],
-                        self.clients[client2_id][0],
-                    )
-
-                    try:
-                        # Send connection details to both clients
-                        self.server_socket.sendto(
-                            f"SERVER CONNECT {client2_addr[0]} {client2_addr[1]}".encode(),
-                            client1_addr,
-                        )
-                        self.server_socket.sendto(
-                            f"SERVER CONNECT {client1_addr[0]} {client1_addr[1]}".encode(),
-                            client2_addr,
-                        )
-                        self.logger.info(
-                            f"Automatically connected Client {client1_id} and Client {client2_id}"
-                        )
-                    except Exception as e:
-                        self.logger.error(f"Failed to auto-connect clients: {e}")
+                self._handle_register(addr, self.auto_connect_mode)
 
             elif message.startswith("DISCONNECT"):
-                print("Received disconnect message")
-                for k in list(self.clients.keys()).copy():
-                    self.logger.info(f"Client {self.get_client_id(k)} disconnected")
-                    self.server_socket.sendto(
-                        "SERVER DISCONNECT".encode(), self.clients[k][0]
-                    )
-                    self.clients.pop(k)
-                self.stun_mode = False
+                self._handle_disconnect(addr)
 
             elif message.startswith("REQUEST_TURN_MODE"):
-                self.logger.debug(
-                    f"Client {self.get_client_id(addr)} requested TURN mode"
-                )
-
-                # check connection with other client
-
-                # if connection is ok, send TURN mode request
-                self.switch_turn_mode()
-                pass
+                self._handle_turn_request(addr)
 
             elif message.startswith("ALIVE"):
-                self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
-                client_id = self.get_client_id(addr)
-                self.logger.debug(f"Client {client_id} is alive")
-                if client_id is not None:
-                    self.clients[client_id][2] = 0
+                self._handle_alive_message(addr)
 
             elif message.startswith("HOLE PUNCHED"):
                 self.logger.info(f"Hole punched with Client {self.get_client_id(addr)}")
 
             elif message.startswith("CHECK"):
-                # send list of clients except the one who requested
-                client_id = self.get_client_id(addr)
-                clients_to_send = []
-                for k, v in self.clients.items():
-                    if k != client_id:
-                        clients_to_send.append(
-                            (k, v[0][0], v[0][1])
-                        )  # Append client ID, IP, and port
-                try:
-                    if clients_to_send and not auto_connect_mode:
-                        self.logger.info(
-                            f"Sending list of clients to Client {client_id}"
-                        )
-                        self.server_socket.sendto(
-                            f"SERVER CLIENTS {clients_to_send}".encode(), addr
-                        )
-                    else:
-                        self.logger.info(f"No clients to send to Client {client_id}")
-                        self.server_socket.sendto("SERVER CLIENTS 0".encode(), addr)
-                except Exception as e:
-                    self.logger.error(f"Failed to send client list to {addr}: {e}")
+                self._handle_check_message(addr)
 
             elif message.startswith("REQUEST"):
-                self.logger.debug(f"Received request from {addr}")
-                _, target_id = message.split()
-                if target_id.isdigit():
-                    target_id = int(target_id)
-                    current_client_id = self.get_client_id(addr)
-                else:
-                    self.logger.error(f"Invalid target ID: {target_id}")
-                    self.server_socket.sendto("SERVER INVALID_ID".encode(), addr)
+                self._handle_request_message(addr, message)
+
+    def _handle_turn_data(self, data, addr):
+        sender_id = self.get_client_id(addr)
+        if sender_id == 0:
+            target_addr = self.clients[1][0]  # Send to Client 1
+        elif sender_id == 1:
+            target_addr = self.clients[0][0]  # Send to Client 0
+        else:
+            self.logger.error(f"Invalid sender ID: {sender_id}")
+            return
+
+        # Forward the message to the target client
+        self._send_to_client(data[1:], target_addr)
+
+    def _handle_register(self, addr, auto_connect_mode):
+        with self.clients_lock:
+            client_id = 0
+            clients_copy = sorted(self.clients.keys())
+            for idx, num in enumerate(clients_copy):
+                if idx == num:
                     continue
+                client_id = idx
+                break
+            else:
+                client_id = len(self.clients)
+            self.clients[client_id] = [addr, None, 0]
 
-                if target_id in self.clients:
-                    self.clients[current_client_id][1] = target_id
-                    target_addr = self.clients[target_id][0]
+        try:
+            message = f"REGISTERED {client_id}"
+            self._send_to_client(message, addr)
+        except Exception as e:
+            self.logger.error(
+                f"Failed to send registration confirmation to {addr}: {e}"
+            )
 
-                    try:
-                        if self.clients[target_id][1] == current_client_id:
-                            # Send both clients each other's public IP and port
-                            self.server_socket.sendto(
-                                f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(),
-                                addr,
-                            )
-                            self.server_socket.sendto(
-                                f"SERVER CONNECT {addr[0]} {addr[1]}".encode(),
-                                target_addr,
-                            )
-                            self.logger.info(
-                                f"Exchanged details between Client {current_client_id} and Client {target_id}"
-                            )
-                        else:
-                            self.logger.info(
-                                f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally."
-                            )
-                    except Exception as e:
-                        self.logger.error(f"Failed to send connection details: {e}")
+        # Auto-connect logic
+        if auto_connect_mode and len(self.clients) == 2:
+            client_ids = list(self.clients.keys())
+            client1_id, client2_id = client_ids[0], client_ids[1]
+            client1_addr, client2_addr = (
+                self.clients[client1_id][0],
+                self.clients[client2_id][0],
+            )
+
+            try:
+                # Send connection details to both clients
+                self._send_to_client(
+                    f"SERVER CLIENTS {client_ids}", client1_addr
+                )  # Send client list to Client 1
+                self._send_to_client(
+                    f"SERVER CLIENTS {client_ids}", client2_addr
+                )  # Send client list to Client 2
+                self.logger.info(
+                    f"Automatically connected Client {client1_id} and Client {client2_id}"
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to auto-connect clients: {e}")
+
+    def _handle_disconnect(self, addr):
+        print("Received disconnect message")
+        for k in list(self.clients.keys()).copy():
+            self.logger.info(f"Client {self.get_client_id(k)} disconnected")
+            self._send_to_client("SERVER DISCONNECT", self.clients[k][0])
+            self.clients.pop(k)
+        self.stun_mode = False
+
+    def _handle_turn_request(self, addr):
+        self.logger.debug(f"Client {self.get_client_id(addr)} requested TURN mode")
+
+        # check connection with other client
+
+        # if connection is ok, send TURN mode request
+        self.switch_turn_mode()
+
+    def _handle_alive_message(self, addr):
+        self.logger.debug(f"Client {self.get_client_id(addr)} is alive")
+        client_id = self.get_client_id(addr)
+        self.logger.debug(f"Client {client_id} is alive")
+        if client_id is not None:
+            self.clients[client_id][2] = 0
+
+    def _handle_check_message(self, addr):
+        # send list of clients except the one who requested
+        client_id = self.get_client_id(addr)
+        clients_to_send = []
+        for k, v in self.clients.items():
+            if k != client_id:
+                clients_to_send.append(
+                    (k, v[0][0], v[0][1])
+                )  # Append client ID, IP, and port
+        try:
+            if clients_to_send and not self.auto_connect_mode:
+                self.logger.info(f"Sending list of clients to Client {client_id}")
+                self._send_to_client(
+                    f"SERVER CLIENTS {clients_to_send}", addr)
+            else:
+                self.logger.info(f"No clients to send to Client {client_id}")
+                self._send_to_client("SERVER CLIENTS 0", addr)
+        except Exception as e:
+            self.logger.error(f"Failed to send client list to {addr}: {e}")
+
+    def _handle_request_message(self, addr, message):
+        self.logger.debug(f"Received request from {addr}")
+        _, target_id = message.split()
+        if target_id.isdigit():
+            target_id = int(target_id)
+            current_client_id = self.get_client_id(addr)
+        else:
+            self.logger.error(f"Invalid target ID: {target_id}")
+            self._send_to_client(f"SERVER INVALID_ID {target_id}", addr)
+            return
+
+        if target_id in self.clients:
+            self.clients[current_client_id][1] = target_id
+            target_addr = self.clients[target_id][0]
+
+            try:
+                if self.clients[target_id][1] == current_client_id:
+                    # Send both clients each other's public IP and port
+                    self._send_to_client(f"SERVER CONNECT {target_addr[0]} {target_addr[1]}".encode(), addr)
+
+                    self._send_to_client(
+                        f"SERVER CONNECT {addr[0]} {addr[1]}".encode(), target_addr
+                    )
+
+                    self.logger.info(
+                        f"Exchanged details between Client {current_client_id} and Client {target_id}"
+                    )
                 else:
-                    try:
-                        self.server_socket.sendto("NOT_FOUND".encode(), addr)
-                        self.logger.info(
-                            f"Client {current_client_id} requested Client {target_id}, but target not found."
-                        )
-                    except Exception as e:
-                        self.logger.error(
-                            f"Failed to send NOT_FOUND message to {addr}: {e}"
-                        )
+                    self.logger.info(
+                        f"Client {current_client_id} requested Client {target_id}, but target not set reciprocally."
+                    )
+            except Exception as e:
+                self.logger.error(f"Failed to send connection details: {e}")
+        else:
+            try:
+                self._send_to_client("NOT_FOUND".encode(), addr)
+                self.logger.info(
+                    f"Client {current_client_id} requested Client {target_id}, but target not found."
+                )
+            except Exception as e:
+                self.logger.error(f"Failed to send NOT_FOUND message to {addr}: {e}")
 
     def switch_turn_mode(self):
         self.logger.debug("TURN mode active: relaying messages")
@@ -271,7 +276,7 @@ class StunServer:
 
         for k, v in self.clients.items():
             try:
-                self.server_socket.sendto("SERVER TURN_MODE".encode(), v[0])
+                self._send_to_client("Server TURN_MODE", v[0])
                 self.logger.info(f"Sent TURN mode activation to Client {k}")
             except Exception as e:
                 self.logger.error(
