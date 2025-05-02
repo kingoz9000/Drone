@@ -27,6 +27,8 @@ class TelloCustomTkinterStream:
         ctk.set_default_color_theme("blue")
         self.scale = self.ARGS.rasmus if self.ARGS.rasmus else 1.0
         self.root = ctk.CTk()
+        self.altitude_calibrated = False
+        self.altitude_offset = 0
 
         init_ui_components(self, plt, FigureCanvasTkAgg)
 
@@ -100,7 +102,7 @@ class TelloCustomTkinterStream:
             f"Pitch: {stats.get('pitch', 0)}°\n"
             f"Roll: {stats.get('roll', 0)}°\n"
             f"Yaw: {stats.get('yaw', 0)}°\n"
-            f"Altitude: {stats.get('baro', 0)} m\n"
+            f"Altitude: {stats.get('h', 0)} m\n" 
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
             f"Packet loss: {round(self.packet_loss,2)} %\n"
