@@ -103,7 +103,7 @@ class TelloCustomTkinterStream:
             f"Altitude: {stats.get('baro', 0)} m\n"
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
-            f"Packet loss: {self.packet_loss} %\n"
+            f"Packet loss: {self.packet_loss:02d} %\n"
         )
 
         self.drone_stats_box.configure(state="normal")
