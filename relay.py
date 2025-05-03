@@ -1,25 +1,32 @@
 from stun.relay_stun_client import RelayStunClient
 
-client = RelayStunClient()
-client.relay = True
-client.drone_command_socket.bind(("0.0.0.0", 9000))
-client.main()
-client._run_in_thread(client.state_socket_handler)
 
-seq_num = 0
+class Relay:
+    def __init__(self) -> None:
+        self.client = RelayStunClient()
+        self.client.relay = True
+        self.client.drone_command_socket.bind(("0.0.0.0", 9000))
+        self.client.main()
+        self.client._run_in_thread(self.client.state_socket_handler)
 
-while client.running:
-    if client.hole_punched:
-        seq_byte = seq_num.to_bytes(3, "big")
+        self.seq_num = 0
 
-        try:
-            msg = client.drone_video_socket.recv(4096)
-        except KeyboardInterrupt:
-            print(" Exiting Relay, BYE!")
-            break
-        except Exception as e:
-            print(e)
-            exit(1)
-        client.send_data_to_operator(seq_byte + msg)
+    def main(self) -> None:
+        while self.client.running:
+            seq_byte = self.seq_num.to_bytes(3, "big")
 
-        seq_num += 1
+            try:
+                msg = self.client.drone_video_socket.recv(4096)
+            except KeyboardInterrupt:
+                print(" Exiting Relay, BYE!")
+                break
+            except Exception as e:
+                print(e)
+                exit(1)
+            self.client.send_data_to_operator(seq_byte + msg)
+            self.seq_num += 1
+
+
+if __name__ == "__main__":
+    relay = Relay()
+    relay.main()
