@@ -113,7 +113,7 @@ class TelloCustomTkinterStream:
         self.drone_stats_box.insert("1.0", stats_text)
         self.drone_stats_box.configure(state="disabled")
 
-        self.ui.update_battery_circle(self)
+        self.ui.update_battery_circle()
         self.update_graph()
 
     def get_peer_address(self) -> tuple:
