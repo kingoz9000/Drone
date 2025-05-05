@@ -14,7 +14,7 @@ class ControlStunClient(StunClient):
         self.drone_stats: dict[str] = {}
         self.stats_lock = threading.Lock()
         self.packet_loss: int = 0
-        self.seq_numbers: list[int] = [0 for _ in range(1000)]
+        self.received_seq_set = set()
 
         self.file_name = (
             f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
@@ -74,12 +74,23 @@ class ControlStunClient(StunClient):
                     # video_file.write(ordered_data)
                     self.last_seq_num = ordered_seq
 
-                    # Measure packet loss
-                    self.seq_numbers[self.last_seq_num % 1000] = self.last_seq_num
-                    self.packet_loss = (
-                        (max(self.seq_numbers) - min(self.seq_numbers) - 999) / 1000
-                    ) * 100
-                    self.packet_loss = self.packet_loss if self.packet_loss >= 0 else 0
+                    # Add current sequence number
+                    self.received_seq_set.add(ordered_seq)
+
+                    # Limit size to last 1000 entries (to simulate sliding window)
+                    if len(self.received_seq_set) > 1000:
+                        # Remove the oldest value
+                        self.received_seq_set.remove(min(self.received_seq_set))
+
+                    # Calculate packet loss
+                    if len(self.received_seq_set) >= 2:  # Make sure we have a meaningful sample
+                        expected_range = max(self.received_seq_set) - min(self.received_seq_set) + 1
+                        received_count = len(self.received_seq_set)
+                        lost_count = expected_range - received_count
+                        self.packet_loss = (lost_count / expected_range) * 100
+                    else:
+                        self.packet_loss = 0.0
+
                 return True
 
             # Response
