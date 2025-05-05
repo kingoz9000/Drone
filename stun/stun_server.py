@@ -134,10 +134,8 @@ class StunServer:
 
         # Forward the message to the target client
         try:
-            if data[1:2] == 0:
+            if data[1] == 0:
                 print(f"Received video data: {data[2:5]}")
-            else:
-                print(data[0:6])
 
             self.server_socket.sendto(data[1:], target_addr)
         except Exception as e:  
