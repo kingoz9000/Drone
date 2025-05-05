@@ -238,8 +238,8 @@ class TelloCustomTkinterStream:
     def check_connection(self) -> None:
         """Check the connection status and trigger turn mode if necessary."""
         if (
-            self.avg_ping_ms > 300
-            and self.packet_loss > 5
+            (self.avg_ping_ms > 300
+            or self.packet_loss > 5)
             and not self.stun_handler.turn_mode
             and self.ARGS.stun
         ):
