@@ -120,7 +120,7 @@ class UserInterface:
         self.instance.drone_stats.configure(state="disabled")
 
     def update_battery_circle(self) -> None:
-        if self.instance.drone_batte and isinstance(self.instance.drone_battery, str):
+        if self.instance.drone_battery and isinstance(self.instance.drone_battery, str):
             try:
                 battery_level = int(self.instance.drone_battery.strip())
 
