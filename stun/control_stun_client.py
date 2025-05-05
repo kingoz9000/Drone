@@ -74,16 +74,14 @@ class ControlStunClient(StunClient):
                     # video_file.write(ordered_data)
                     self.last_seq_num = ordered_seq
 
-                    # Add current sequence number
                     self.received_seq_set.add(ordered_seq)
 
-                    # Limit size to last 1000 entries (to simulate sliding window)
-                    if len(self.received_seq_set) > 1000:
-                        # Remove the oldest value
+                    # Limit size to last 250 entries (close to 4 seconds according to requrements)
+                    if len(self.received_seq_set) > 250:
                         self.received_seq_set.remove(min(self.received_seq_set))
 
                     # Calculate packet loss
-                    if len(self.received_seq_set) >= 2:  # Make sure we have a meaningful sample
+                    if len(self.received_seq_set) >= 2:
                         expected_range = max(self.received_seq_set) - min(self.received_seq_set) + 1
                         received_count = len(self.received_seq_set)
                         lost_count = expected_range - received_count
