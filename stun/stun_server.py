@@ -8,7 +8,7 @@ class StunServer:
 
     def __init__(self):
         self.SERVER_IP = "0.0.0.0"
-        self.SERVER_PORT = 3478
+        self.SERVER_PORT = 61234
         self.clients = {}
         self.clients_lock = threading.Lock()
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
