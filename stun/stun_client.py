@@ -11,7 +11,7 @@ class StunClient:
         self.peer_addr: str = None
         self.sending_addr: tuple = None
 
-        self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.37.157", 12345)
+        self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.74.242", 12345)
 
         self.HOLE_PUNCH_TRIES: int = 5
         self.hole_punched: bool = False
