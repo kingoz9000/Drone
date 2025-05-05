@@ -41,7 +41,7 @@ class TelloCustomTkinterStream:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.fetch_and_update_drone_stats)
-        self.run_in_thread(self.check_connection)
+        self.check_connection_thread = self.run_in_thread(self.check_connection)
 
         self.update_video_frame()
 
@@ -245,7 +245,10 @@ class TelloCustomTkinterStream:
         ):
             print("Connection unstable, triggering turn mode")
             self.stun_handler.trigger_turn_mode()
-            time.sleep(1)
+            self.line.set_color("orange")
+            self.check_connection_thread.join()
+
+        time.sleep(1)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""
