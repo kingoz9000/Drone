@@ -15,7 +15,7 @@ class StunClient:
         #self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.37.157", 61234)
 
         # Lyngby
-        self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.74.242", 61234)
+        self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.74.242", 12345)
 
         self.HOLE_PUNCH_TRIES: int = 5
         self.hole_punched: bool = False
