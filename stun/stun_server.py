@@ -134,11 +134,8 @@ class StunServer:
 
         # Forward the message to the target client
         try:
-            if data[1] == 0:
-                print(f"Received video data: {data[2:5]}")
-
             self.server_socket.sendto(data[1:], target_addr)
-        except Exception as e:  
+        except Exception as e:
             self.logger.error(
                 f"Failed to relay message from Client {sender_id}: {e}"
             )
