@@ -12,7 +12,7 @@ class StunClient:
         self.sending_addr: tuple = None
 
         # Aalborg strato
-        #self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.37.157", 61234)
+        #self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.37.157", 12345)
 
         # Lyngby
         self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.74.242", 12345)
