@@ -7,12 +7,11 @@ from collections import deque
 import customtkinter as ctk
 import cv2
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, ImageTk
 
 from GUI.drone_communication import DroneCommunication
 from GUI.drone_video_feed import DroneVideoFeed
-from GUI.ui import init_ui_components, update_battery_circle
+from GUI.ui import UserInterface
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
 from webserver.webserver_sender import WebserverSender
@@ -30,7 +29,8 @@ class TelloCustomTkinterStream:
         self.altitude_calibrated = False
         self.altitude_offset = 0
 
-        init_ui_components(self, plt, FigureCanvasTkAgg)
+        self.ui = UserInterface(self)
+        self.ui.init_ui_components(plt)
 
         self.init_drone_com()
 
@@ -102,7 +102,7 @@ class TelloCustomTkinterStream:
             f"Pitch: {stats.get('pitch', 0)}°\n"
             f"Roll: {stats.get('roll', 0)}°\n"
             f"Yaw: {stats.get('yaw', 0)}°\n"
-            f"Altitude: {stats.get('h', 0)} m\n" 
+            f"Altitude: {stats.get('h', 0)} m\n"
             f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
             f"Packet loss: {round(self.packet_loss,2)} %\n"
@@ -113,7 +113,7 @@ class TelloCustomTkinterStream:
         self.drone_stats_box.insert("1.0", stats_text)
         self.drone_stats_box.configure(state="disabled")
 
-        update_battery_circle(self)
+        self.ui.update_battery_circle(self)
         self.update_graph()
 
     def get_peer_address(self) -> tuple:
