@@ -13,18 +13,19 @@ class Relay:
 
     def main(self) -> None:
         while self.client.running:
-            seq_byte = self.seq_num.to_bytes(3, "big")
+            if self.client.hole_punched:
+                seq_byte = self.seq_num.to_bytes(3, "big")
 
-            try:
-                msg = self.client.drone_video_socket.recv(4096)
-            except KeyboardInterrupt:
-                print(" Exiting Relay, BYE!")
-                break
-            except Exception as e:
-                print(e)
-                exit(1)
-            self.client.send_data_to_operator(seq_byte + msg)
-            self.seq_num += 1
+                try:
+                    msg = self.client.drone_video_socket.recv(4096)
+                except KeyboardInterrupt:
+                    print(" Exiting Relay, BYE!")
+                    break
+                except Exception as e:
+                    print(e)
+                    exit(1)
+                self.client.send_data_to_operator(seq_byte + msg)
+                self.seq_num += 1
 
 
 if __name__ == "__main__":
