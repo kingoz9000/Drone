@@ -106,12 +106,12 @@ namespace GUI{
     }
     class UserInterface {
         instance
-        __init__
+        __init__()
         None init_ui_components()
         None update_battery_circle()
     }
 }
-note for WebserverSender "Its own process. Runs on the strato server."
+note for WebserverApp "Its own process. Runs on the strato server."
 namespace Webserver {
     class WebserverSender {
         List[String] FFMPEG_CMD
@@ -122,6 +122,14 @@ namespace Webserver {
         Popen ffmpeg_process
         ffmpeg_writer()
     }
+    class WebserverApp{
+        str index()
+        None start_ffmpeg()
+        None cleanup()
+        None signal_handeler()
+        Flask app
+        signal signal
+    }
 }
 
 App --o ControlStunClient: Uses
@@ -130,4 +138,41 @@ App --o DroneCommunication : Uses
 App --o DroneVideoFeed : Uses
 App --o WebserverSender : Uses
 App --o UserInterface : Uses
+class App{
+    __init__()
+    None init_drone_com()
+    None fetch_and_update_drone_stats()
+    None update_graph()
+    None update_drone_stats()
+    tuple get_peer_address()
+    None startup_drone()
+    None update_video_frame()
+    None update_canvas()
+    None control_drone()
+    None get_ping()
+    None trigger_turnmode()
+    None check_connection()
+    None cleanup()
+    threading.Thread run_in_thread()
+    dict ARGS
+    CTk root
+    UserInterface ui
+    WebserverSender webserver_sender
+    ControlStunClient stun_handler
+    tuple peer_addr
+    tuple drone_video_addr
+    function send_command
+    tuple drone_comm_addr
+    DroneCommunication drone_communication
+    DroneVideoFeed video_stream
+    list ping_data
+    int packet_loss
+}
+Relay --o RelayStunClient : Uses
+class Relay {
+    __init__()
+    None main()
+    RelayStunClient client
+    int seq_num
+}
 ```
