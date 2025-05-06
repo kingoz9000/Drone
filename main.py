@@ -17,7 +17,7 @@ from stun import ControlStunClient
 from webserver.webserver_sender import WebserverSender
 
 
-class TelloCustomTkinterStream:
+class Main:
     def __init__(self, args) -> None:
         """Starts GUI, drone communication, video stream & threads needed for stats and control."""
         self.ARGS = args
@@ -238,8 +238,7 @@ class TelloCustomTkinterStream:
     def check_connection(self) -> None:
         """Check the connection status and trigger turn mode if necessary."""
         if (
-            (self.avg_ping_ms > 300
-            or self.packet_loss > 5)
+            (self.avg_ping_ms > 300 or self.packet_loss > 5)
             and not self.stun_handler.turn_mode
             and self.ARGS.stun
         ):
@@ -284,4 +283,4 @@ if __name__ == "__main__":
     parser.add_argument("-w", "--webstream", help="Use webstream", action="store_true")
     args = parser.parse_args()
 
-    TelloCustomTkinterStream(args)
+    Main(args)
