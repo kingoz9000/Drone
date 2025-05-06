@@ -125,7 +125,9 @@ class TelloCustomTkinterStream:
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
 
-        raise Exception("Failed to establish peer-to-peer connection")
+        self.stun_handler.trigger_turn_mode()
+        self.line.set_color("orange")
+
 
     def startup_drone(self) -> None:
         """Sends startup commands to the drone."""
