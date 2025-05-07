@@ -29,7 +29,6 @@ class RelayStunClient(StunClient):
                 self.send_data_to_operator(response, prefix=1)
             except socket.timeout:
                 print(f"Command '{command}': No response received within 0.5 seconds")
-                self.send_data_to_operator(b"ERROR", prefix=1)
 
     def send_data_to_operator(self, data, prefix=0):
 

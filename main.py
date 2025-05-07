@@ -2,6 +2,7 @@ import argparse
 import math
 import threading
 import time
+import queue
 from collections import deque
 
 import customtkinter as ctk
@@ -196,10 +197,10 @@ class Main:
             self.drone_battery = self.send_command("battery?", False, True)
 
             if self.ARGS.stun:
-                while self.stun_handler.response.qsize() == prev_length:
-                    time.sleep(0.01)
-                self.drone_battery = self.stun_handler.response.get().decode()
-                prev_length = self.stun_handler.response.qsize()
+                try:
+                    self.drone_battery = self.stun_handler.response.get(timeout=1).decode()
+                except queue.Empty:
+                    print("Timeout waiting for STUN response.")
 
             end_time = time.perf_counter_ns()
             ping_ms = (end_time - start_time) // 1_000_000
