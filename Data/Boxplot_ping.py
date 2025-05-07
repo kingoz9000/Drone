@@ -6,8 +6,8 @@ def load_ping_data(filepath):
         data = f.read().split(", ")
         return [int(num) for num in data]
 
-data1 = load_ping_data("Data/Cellular_test_1/2025-04-24_12-23-01ping.txt")
-data2 = load_ping_data("Data/Turn_test_1/2025-05-01_10-16-49ping.txt")  # Replace with your second file
+data1 = load_ping_data("Data/2025-05-07_13-56-38ping.txt")
+data2 = load_ping_data("Data/2025-05-07_14-03-08ping.txt")  # Replace with your second file
 
 # Optional stats
 print("File 1 - Min:", min(data1), "Max:", max(data1), "Mean:", sum(data1)/len(data1))
