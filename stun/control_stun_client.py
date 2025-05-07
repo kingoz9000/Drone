@@ -94,7 +94,9 @@ class ControlStunClient(StunClient):
             # Response
             elif flag == 1:
                 # Skal sendes til TKinter
-                self.response.put(data[1:])
+                data = data[1:].decode()
+                if data:
+                    self.response.put(data[1:])
                 return True
 
             # State

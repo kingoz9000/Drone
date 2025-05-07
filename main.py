@@ -198,7 +198,7 @@ class Main:
 
             if self.ARGS.stun:
                 try:
-                    self.drone_battery = self.stun_handler.response.get(timeout=1).decode()
+                    self.drone_battery = self.stun_handler.response.get(timeout=1)
                 except queue.Empty:
                     print("Timeout waiting for STUN response.")
 
@@ -216,7 +216,8 @@ class Main:
             self.drone_stats.configure(font=("Arial", int(15 * self.scale)))
             self.drone_stats.configure()
             self.drone_stats.delete("1.0", "end")
-            if not self.drone_battery == "ERROR":
+
+            if self.drone_battery:
                 self.drone_stats.insert(
                     "1.0",
                     f"Battery: {self.drone_battery.strip()}% \nPing: {self.avg_ping_ms:03d} ms",
