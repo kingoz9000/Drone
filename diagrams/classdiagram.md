@@ -16,12 +16,13 @@ namespace stun{
         bool running
         bool relay
         bool turn_mode
-        register()
-        request_peer()
-        hole_punch()
-        _run_in_thread()
-        listen()
-        main()
+        __init__()
+        None register()
+        None request_peer()
+        None hole_punch()
+        threading.Thread _run_in_thread()
+        None listen()
+        None main()
     }
 
     class RelayStunClient{
@@ -31,9 +32,10 @@ namespace stun{
         bool state
         bool response
         float stats_refresh_rate
-        send_command_to_drone()
-        send_data_to_operator()
-        state_socket_handler()
+        __init__()
+        None send_command_to_drone()
+        None send_data_to_operator()
+        None state_socket_handler()
     }
 
     class ControlStunClient{
@@ -47,12 +49,13 @@ namespace stun{
         list[tuple] reorder_buffer
         int min_buffer_size
         int last_seq_num
-        send_command_to_relay()
-        get_peer_addr()
-        get_drone_stats()
-        trigger_turn_mode()
-        disconnect_from_stun_server()
-        handle_flags()
+        __init__()
+        None send_command_to_relay()
+        tuple get_peer_addr()
+        dict get_drone_stats()
+        None trigger_turn_mode()
+        None disconnect_from_stun_server()
+        bool handle_flags()
     }
 }
 ButtonMap --o JoystickHandler : Uses
@@ -65,20 +68,20 @@ namespace joystick {
         int left_right
         int up_down
         int yaw
-        List[String] commands
-        List[String] get_joystick_values()
+        list[str] commands
+        list[str] get_joystick_values()
     }
 
     class JoystickHandler {
         Any joystick
-        Dict[int, bool] buttons
+        dict[int, bool] buttons
         __init__()
         bool connect_joystick()
         None start_reading()
         None on_joybutton_press()
         None on_joybutton_release()
-        Tuple get_values()
-        static Thread run_in_thread()
+        tuple get_values()
+        threading.Thread run_in_thread()
     }
 }
 namespace GUI{
@@ -120,7 +123,8 @@ namespace Webserver {
         Socket webserver_socket
         Queue[Frame] frame_queue
         Popen ffmpeg_process
-        ffmpeg_writer()
+        __init__()
+        None ffmpeg_writer()
     }
     class WebserverApp{
         str index()
