@@ -119,10 +119,15 @@ class Main:
 
     def get_peer_address(self) -> tuple:
         """Get the peer address when using stun argument."""
+        start_time = time.perf_counter_ns()
+
         self.stun_handler.main()
         for _ in range(10):
             if self.stun_handler.hole_punched:
                 print("Peer to Peer connection established")
+                end_time = time.perf_counter_ns()
+                elapsed_time = (end_time - start_time) // 1_000_000
+                print(f"Elapsed time: {elapsed_time} ms")
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
 
