@@ -8,7 +8,7 @@ class Relay:
         self.client.drone_command_socket.bind(("0.0.0.0", 9000))
         self.client.main()
         self.client._run_in_thread(self.client.state_socket_handler)
-        self.client._run_in_thread(self.client.bandwidth_tester(1024, 1))
+        # self.client._run_in_thread(self.client.bandwidth_tester(1024, 1))
 
         self.seq_num = 0
 

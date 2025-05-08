@@ -82,7 +82,9 @@ class ControlStunClient(StunClient):
 
                     # Calculate packet loss
                     if len(self.received_seq_set) >= 2:
-                        expected_range = max(self.received_seq_set) - min(self.received_seq_set) + 1
+                        expected_range = (
+                            max(self.received_seq_set) - min(self.received_seq_set) + 1
+                        )
                         received_count = len(self.received_seq_set)
                         lost_count = expected_range - received_count
                         self.packet_loss = (lost_count / expected_range) * 100
@@ -123,8 +125,9 @@ class ControlStunClient(StunClient):
                 except Exception as e:
                     print(f"Error in decoding: {e}")
                 return True
+
+            # Bandwidth test
             elif flag == 3:
-                # Bandwidth test
                 payload = data[1:]
                 if not hasattr(self, "bandwidth_start_time"):
                     self.bandwidth_start_time = time.time()
@@ -134,9 +137,11 @@ class ControlStunClient(StunClient):
 
                 elapsed_time = time.time() - self.bandwidth_start_time
                 if elapsed_time >= 1.0:  # every second
-                    bandwidth = self.received_bandwidth_data / elapsed_time  # Bytes per second
+                    bandwidth = (
+                        self.received_bandwidth_data / elapsed_time
+                    )  # Bytes per second
                     bandwidth_kb = bandwidth / 1024  # Convert to KB/s
                     print(f"Bandwidth: {bandwidth_kb:.2f} KB/sec")
                     self.bandwidth_start_time = time.time()
                     self.received_bandwidth_data = 0
-
+                return True
