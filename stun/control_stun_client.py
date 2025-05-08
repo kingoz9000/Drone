@@ -96,7 +96,7 @@ class ControlStunClient(StunClient):
                 # Skal sendes til TKinter
                 data = data[1:].decode()
                 if data:
-                    self.response.put(data[1:])
+                    self.response.put(data)
                 return True
 
             # State
