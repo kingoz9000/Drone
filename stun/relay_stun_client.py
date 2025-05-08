@@ -48,3 +48,13 @@ class RelayStunClient(StunClient):
             state = self.state_socket.recv(4096)
             self.send_data_to_operator(state, prefix=2)
             time.sleep(self.stats_refresh_rate)
+
+    def bandwidth_tester(self,size=1024,interval=0.1):
+        # interval 0.1 = 10 packets per second
+        while self.running:
+            data = bytearray([0] * size)
+            self.send_data_to_operator(data, prefix=3)
+            time.sleep(interval)
+
+            
+            

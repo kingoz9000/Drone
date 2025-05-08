@@ -123,3 +123,20 @@ class ControlStunClient(StunClient):
                 except Exception as e:
                     print(f"Error in decoding: {e}")
                 return True
+            elif flag == 3:
+                # Bandwidth test
+                payload = data[1:]
+                if not hasattr(self, "bandwidth_start_time"):
+                    self.bandwidth_start_time = time.time()
+                    self.received_bandwidth_data = 0
+
+                self.received_bandwidth_data += len(payload)
+
+                elapsed_time = time.time() - self.bandwidth_start_time
+                if elapsed_time >= 1.0:  # every second
+                    bandwidth = self.received_bandwidth_data / elapsed_time  # Bytes per second
+                    bandwidth_kb = bandwidth / 1024  # Convert to KB/s
+                    print(f"Bandwidth: {bandwidth_kb:.2f} KB/sec")
+                    self.bandwidth_start_time = time.time()
+                    self.received_bandwidth_data = 0
+
