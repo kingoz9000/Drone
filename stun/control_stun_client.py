@@ -88,6 +88,8 @@ class ControlStunClient(StunClient):
                         received_count = len(self.received_seq_set)
                         lost_count = expected_range - received_count
                         self.packet_loss = (lost_count / expected_range) * 100
+                        with open("Data" + self.file_name, "a") as writer:
+                            writer.write(f"{self.packet_loss:.2f}, ")
                     else:
                         self.packet_loss = 0.0
 
