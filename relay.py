@@ -1,3 +1,4 @@
+import time  # Add this import for timing
 from stun.relay_stun_client import RelayStunClient
 
 
@@ -13,6 +14,9 @@ class Relay:
         self.seq_num = 0
 
     def main(self) -> None:
+        start_time = time.time()  # Record the start time
+        packet_count = 0  # Initialize packet counter
+
         while self.client.running:
             if self.client.hole_punched:
                 seq_byte = self.seq_num.to_bytes(3, "big")
@@ -25,8 +29,17 @@ class Relay:
                 except Exception as e:
                     print(e)
                     exit(1)
+
                 self.client.send_data_to_operator(seq_byte + msg)
                 self.seq_num += 1
+                packet_count += 1  # Increment packet counter
+
+                # Calculate elapsed time
+                elapsed_time = time.time() - start_time
+                if elapsed_time >= 1.0:  # If one second has passed
+                    print(f"Packets received in the last second: {packet_count}")
+                    packet_count = 0  # Reset packet counter
+                    start_time = time.time()  # Reset start time
 
 
 if __name__ == "__main__":
