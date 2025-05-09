@@ -217,7 +217,7 @@ class Main:
 
             self.avg_ping_ms = sum(ping_data) // len(ping_data)
 
-            with open("Data" + self.file_name, "a") as writer:
+            with open(f"Data{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt", "a") as writer:
                 writer.write(f"{self.avg_ping_ms}, ")
 
             self.drone_stats.configure(state="normal")
