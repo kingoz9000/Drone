@@ -130,8 +130,16 @@ class Main:
                 print(f"Elapsed time: {elapsed_time} ms")
                 return self.stun_handler.get_peer_addr()
             time.sleep(1)
+        print("Failed to establish Peer-to-Peer connection. Switching to TURN mode.")
+        self.trigger_turnmode()
 
-        raise Exception("Failed to establish peer-to-peer connection")
+        for _ in range(4):
+            if self.stun_handler.turn_mode:
+                print("TURN mode activated.")
+                return None
+            time.sleep(1)
+        print("Failed to activate TURN mode.")
+        return None
 
     def startup_drone(self) -> None:
         """Sends startup commands to the drone."""

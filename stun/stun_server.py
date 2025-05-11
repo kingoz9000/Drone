@@ -284,13 +284,14 @@ class StunServer:
         # send "TURN MODE activated" to all clients
 
         for k, v in self.clients.items():
-            try:
-                self.server_socket.sendto("SERVER TURN_MODE".encode(), v[0])
-                self.logger.info(f"Sent TURN mode activation to Client {k}")
-            except Exception as e:
-                self.logger.error(
-                    f"Failed to send TURN mode activation to Client {k}: {e}"
-                )
+            for _ in range(3):
+                try:
+                    self.server_socket.sendto("SERVER TURN_MODE".encode(), v[0])
+                    self.logger.info(f"Sent TURN mode activation to Client {k}")
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed to send TURN mode activation to Client {k}: {e}"
+                    )
         self.heartbeat_on = False
         self.stun_mode = False
         pass
