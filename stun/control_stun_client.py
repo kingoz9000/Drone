@@ -149,7 +149,9 @@ class ControlStunClient(StunClient):
     def listen(self):
         while self.running:
             data = self.stun_socket.recv(4096)
-            self.handle_flags(data)
+            if self.handle_flags(data):
+                continue
+
             message = data.decode()
 
             if message.startswith("SERVER"):
