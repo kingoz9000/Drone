@@ -81,3 +81,7 @@ class RelayStunClient(StunClient):
                 self.send_command_to_drone(message, take_response=False)
             else:
                 print("Unhanled command/message:", message)
+
+    def main(self):
+        self.register()
+        self._run_in_thread(self.listen)
