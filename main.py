@@ -211,7 +211,7 @@ class Main:
 
             if self.ARGS.stun:
                 try:
-                    self.drone_battery = self.stun_handler.response.get(timeout=1)
+                    self.drone_battery = self.stun_handler.response.get(timeout=0.5)
                 except queue.Empty:
                     print("Timeout waiting for STUN response.")
 
