@@ -31,7 +31,6 @@ class RelayStunClient(StunClient):
                 print(f"Command '{command}': No response received within 0.5 seconds")
 
     def send_data_to_operator(self, data, prefix=0):
-
         shifted = bytearray([prefix]) + data
         if self.turn_mode:
             shifted = bytearray([8]) + shifted
@@ -49,12 +48,9 @@ class RelayStunClient(StunClient):
             self.send_data_to_operator(state, prefix=2)
             time.sleep(self.stats_refresh_rate)
 
-    def bandwidth_tester(self,size=1024,interval=0.1):
+    def bandwidth_tester(self, size=1024, interval=0.1):
         # interval 0.1 = 10 packets per second
         while self.running:
             data = bytearray([0] * size)
             self.send_data_to_operator(data, prefix=3)
             time.sleep(interval)
-
-            
-            

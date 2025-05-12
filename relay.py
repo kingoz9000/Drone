@@ -14,9 +14,6 @@ class Relay:
         self.seq_num = 0
 
     def main(self) -> None:
-        start_time = time.time()  # Record the start time
-        packet_count = 0  # Initialize packet counter
-
         while self.client.running:
             if self.client.hole_punched:
                 seq_byte = self.seq_num.to_bytes(3, "big")
@@ -32,7 +29,6 @@ class Relay:
 
                 self.client.send_data_to_operator(seq_byte + msg)
                 self.seq_num += 1
-                packet_count += 1  # Increment packet counter
 
 
 if __name__ == "__main__":
