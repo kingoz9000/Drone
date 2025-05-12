@@ -39,11 +39,12 @@ class DroneCommunication:
         with self.stats_lock:
             stats: dict = self.stats.copy()
         return stats
-    
-    
+
     def wifi_state_socket_handler(self) -> None:
         while True:
-            self.drone_stats: list[str] = self.STATE_SOCKET.recv(4096).decode().strip().strip(";").split(";")
+            self.drone_stats: list[str] = (
+                self.STATE_SOCKET.recv(4096).decode().strip().strip(";").split(";")
+            )
 
             for part in self.drone_stats:
                 key, value = part.split(":")
@@ -53,11 +54,13 @@ class DroneCommunication:
                 else:
                     try:
                         with self.stats_lock:
-                            self.stats[key] = float(value) if "." in value else int(value)
+                            self.stats[key] = (
+                                float(value) if "." in value else int(value)
+                            )
                     except ValueError:
                         with self.stats_lock:
                             self.stats[key] = value
-            time.sleep(self.STATE_REFRESH_RATE )
+            time.sleep(self.STATE_REFRESH_RATE)
 
 
 if __name__ == "__main__":

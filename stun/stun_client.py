@@ -18,7 +18,6 @@ class StunClient:
         # self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.74.242", 12345)
 
         # Server in Stockholm
-
         # self.STUN_SERVER_ADDR: tuple[str, int] = ("34.51.168.81", 12345)
 
         # Server in Tokyo
@@ -121,7 +120,7 @@ class StunClient:
                     continue
                 self.send_command_to_drone(message, take_response=False)
             else:
-                print("Unhanled command/message:", message)
+                print("Unhandled command/message:", message)
 
     @staticmethod
     def _run_in_thread(func, *args) -> threading.Thread:

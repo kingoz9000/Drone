@@ -38,7 +38,7 @@ class RelayStunClient(StunClient):
 
         if not self.sending_addr:
             return
-        
+
         self.stun_socket.sendto(shifted, self.sending_addr)
 
     def state_socket_handler(self):

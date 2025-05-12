@@ -17,7 +17,7 @@ class StunServer:
         self.client_timeout = 1
         self.next_client_id = 0
         self.heartbeat_on = True
-        self.auto_connect_mode = True # Set this to False for manual connection mode
+        self.auto_connect_mode = True  # Set this to False for manual connection mode
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -64,7 +64,9 @@ class StunServer:
                         self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
                         self.logger.debug(f"Sent heartbeat to Client {k}")
                     except Exception as e:
-                        self.logger.error(f"Failed to send heartbeat to Client {k}: {e}")
+                        self.logger.error(
+                            f"Failed to send heartbeat to Client {k}: {e}"
+                        )
                     v[2] += 1
                     continue
 
@@ -99,7 +101,7 @@ class StunServer:
             if len(data) > 0 and data[0] >= 16 and not self.stun_mode:
                 self.handle_turn_data(data, addr)
                 continue
-            
+
             message = data.decode().strip()
             if message.startswith("REGISTER"):
                 self.handle_register(addr, self.auto_connect_mode)
@@ -141,10 +143,7 @@ class StunServer:
                 self.server_socket.sendto(data[1:], target_addr)
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to relay message from Client {sender_id}: {e}"
-            )
-
+            self.logger.error(f"Failed to relay message from Client {sender_id}: {e}")
 
     def handle_register(self, addr, auto_connect_mode):
         with self.clients_lock:
@@ -196,16 +195,12 @@ class StunServer:
         print("Received disconnect message")
         for k in list(self.clients.keys()).copy():
             self.logger.info(f"Client {self.get_client_id(k)} disconnected")
-            self.server_socket.sendto(
-                "SERVER DISCONNECT".encode(), self.clients[k][0]
-            )
+            self.server_socket.sendto("SERVER DISCONNECT".encode(), self.clients[k][0])
             self.clients.pop(k)
         self.stun_mode = False
 
     def handle_turn_request(self, addr):
-        self.logger.debug(
-            f"Client {self.get_client_id(addr)} requested TURN mode"
-        )
+        self.logger.debug(f"Client {self.get_client_id(addr)} requested TURN mode")
         self.switch_turn_mode()
 
     def handle_alive_message(self, addr):
@@ -226,9 +221,7 @@ class StunServer:
                 )  # Append client ID, IP, and port
         try:
             if clients_to_send and not self.auto_connect_mode:
-                self.logger.info(
-                    f"Sending list of clients to Client {client_id}"
-                )
+                self.logger.info(f"Sending list of clients to Client {client_id}")
                 self.server_socket.sendto(
                     f"SERVER CLIENTS {clients_to_send}".encode(), addr
                 )
@@ -280,9 +273,7 @@ class StunServer:
                     f"Client {current_client_id} requested Client {target_id}, but target not found."
                 )
             except Exception as e:
-                self.logger.error(
-                    f"Failed to send NOT_FOUND message to {addr}: {e}"
-                )
+                self.logger.error(f"Failed to send NOT_FOUND message to {addr}: {e}")
 
     def switch_turn_mode(self):
         self.logger.debug("TURN mode active: relaying messages")
