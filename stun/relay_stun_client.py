@@ -56,3 +56,28 @@ class RelayStunClient(StunClient):
             data = bytearray([0] * size)
             self.send_data_to_operator(data, prefix=4)
             time.sleep(interval)
+
+    def listen(self):
+        while self.running:
+            data = self.stun_socket.recv(4096)
+
+            # Not confident it will find self.handle_flags, tho it is set
+            message = data.decode()
+
+            if message.startswith("SERVER"):
+                self.handle_server_messages(message)
+                continue
+
+            if message.startswith("HOLE") and not self.hole_punched:
+                self.hole_punched = True
+                print("Hole punched!")
+                self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
+                continue
+
+            if self.relay:
+                if message == "battery?":
+                    self.send_command_to_drone(message, take_response=True)
+                    continue
+                self.send_command_to_drone(message, take_response=False)
+            else:
+                print("Unhanled command/message:", message)
