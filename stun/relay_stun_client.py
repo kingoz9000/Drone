@@ -26,17 +26,17 @@ class RelayStunClient(StunClient):
             self.drone_command_socket.settimeout(0.5)
             try:
                 response = self.drone_command_socket.recv(1024)
-                self.send_data_to_operator(response, prefix=1)
+                self.send_data_to_operator(response, prefix=2)
             except socket.timeout:
                 print(f"Command '{command}': No response received within 0.5 seconds")
 
     def send_data_to_operator(self, data, prefix=0):
-        shifted = bytearray([prefix]) + data
         if self.turn_mode:
-            shifted = bytearray([8]) + shifted
+            shifted = bytearray([16 + prefix]) + shifted
 
         if not self.sending_addr:
             return
+        shifted = bytearray([prefix]) + data
         self.stun_socket.sendto(shifted, self.sending_addr)
 
     def state_socket_handler(self):
@@ -45,12 +45,12 @@ class RelayStunClient(StunClient):
         self.state_socket.bind(state_addr)
         while self.running:
             state = self.state_socket.recv(4096)
-            self.send_data_to_operator(state, prefix=2)
+            self.send_data_to_operator(state, prefix=3)
             time.sleep(self.stats_refresh_rate)
 
     def bandwidth_tester(self, size=1024, interval=0.1):
         # interval 0.1 = 10 packets per second
         while self.running:
             data = bytearray([0] * size)
-            self.send_data_to_operator(data, prefix=3)
+            self.send_data_to_operator(data, prefix=4)
             time.sleep(interval)

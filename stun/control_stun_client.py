@@ -26,7 +26,7 @@ class ControlStunClient(StunClient):
     def send_command_to_relay(self, command, print_command=False, take_response=False):
         encoded = command.encode()
         if self.turn_mode:
-            encoded = bytearray([8]) + encoded
+            encoded = bytearray([16]) + encoded
 
         self.stun_socket.sendto(encoded, self.sending_addr)
 
@@ -53,7 +53,7 @@ class ControlStunClient(StunClient):
             flag = data[0]
 
             # If 0 send to loopback (videofeed)
-            if flag == 0:
+            if flag == 1:
                 seq_num = int.from_bytes(data[1:4], "big")
                 payload = data[4:]
 
@@ -94,7 +94,7 @@ class ControlStunClient(StunClient):
                 return True
 
             # Response
-            elif flag == 1:
+            elif flag == 2:
                 # Skal sendes til TKinter
                 data = data[1:].decode()
                 if data:
@@ -102,7 +102,7 @@ class ControlStunClient(StunClient):
                 return True
 
             # State
-            elif flag == 2:
+            elif flag == 3:
                 drone_data = data[1:]
                 try:
                     drone_data = drone_data.decode().strip().strip(";").split(";")
@@ -127,7 +127,7 @@ class ControlStunClient(StunClient):
                 return True
 
             # Bandwidth test
-            elif flag == 3:
+            elif flag == 4:
                 payload = data[1:]
                 if not hasattr(self, "bandwidth_start_time"):
                     self.bandwidth_start_time = time.time()

@@ -96,7 +96,7 @@ class StunServer:
             data, addr = self.server_socket.recvfrom(4096)
 
             # TURN-specific behavior
-            if len(data) > 0 and data[0] == 8 and not self.stun_mode:
+            if len(data) > 0 and data[0] >= 16 and not self.stun_mode:
                 self.handle_turn_data(data, addr)
                 continue
             
@@ -134,7 +134,12 @@ class StunServer:
 
         # Forward the message to the target client
         try:
-            self.server_socket.sendto(data[1:], target_addr)
+            flag = data[0] - 16
+            if flag > 0:
+                self.server_socket.sendto(bytearray([flag]) + data[1:], target_addr)
+            else:
+                self.server_socket.sendto(data[1:], target_addr)
+
         except Exception as e:
             self.logger.error(
                 f"Failed to relay message from Client {sender_id}: {e}"

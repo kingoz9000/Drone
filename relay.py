@@ -27,7 +27,7 @@ class Relay:
                     print(e)
                     exit(1)
 
-                self.client.send_data_to_operator(seq_byte + msg)
+                self.client.send_data_to_operator(seq_byte + msg, prefix=1)
                 self.seq_num += 1
 
 
