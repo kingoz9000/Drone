@@ -32,6 +32,8 @@ def start_ffmpeg():
         "-fflags",
         "+nobuffer",
         "-i",
+        "-vf",
+        "format=yuv420p",
         f"udp://0.0.0.0:{UDP_PORT}",
         "-c:v",
         "copy",
