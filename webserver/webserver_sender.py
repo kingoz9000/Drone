@@ -2,6 +2,8 @@ import queue
 import socket
 import subprocess
 
+import cv2
+
 
 class WebserverSender:
     def __init__(self):
@@ -50,10 +52,11 @@ class WebserverSender:
         while True:
             try:
                 frame = self.frame_queue.get()
+                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 if self.ffmpeg_process.poll() is not None:
                     print("FFmpeg process exited.")
                     break
-                self.ffmpeg_process.stdin.write(frame.tobytes())
+                self.ffmpeg_process.stdin.write(frame_rgb.tobytes())
             except Exception as e:
                 print(f"FFmpeg stream error: {e}")
                 break
