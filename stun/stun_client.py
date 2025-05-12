@@ -105,6 +105,7 @@ class StunClient:
                     self.sending_addr = self.STUN_SERVER_ADDR
                     self.turn_mode = True
                     self.min_buffer_size = 10
+                    self.hole_punched = True
                     continue
 
             if message.startswith("HOLE") and not self.hole_punched:
