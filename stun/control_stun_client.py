@@ -149,7 +149,7 @@ class ControlStunClient(StunClient):
     def listen(self):
         while self.running:
             data = self.stun_socket.recv(4096)
-            self.handle_flags(data):
+            self.handle_flags(data)
             message = data.decode()
 
             if message.startswith("SERVER"):
@@ -160,7 +160,6 @@ class ControlStunClient(StunClient):
                 continue
 
             print("Unhanled command/message:", message)
-
 
     def main(self):
         self.register()
