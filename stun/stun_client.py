@@ -7,9 +7,9 @@ class StunClient:
     def __init__(self):
         self.stun_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        self.client_id: int = None
-        self.peer_addr: str = None
-        self.sending_addr: tuple = None
+        self.client_id: int | None = None
+        self.peer_addr: tuple[str, int] | None = None
+        self.sending_addr: tuple[str, int] | None = None
 
         # Aalborg strato
         self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.37.157", 12345)
@@ -30,16 +30,16 @@ class StunClient:
         self.relay: bool = False
         self.turn_mode: bool = False
 
-    def register(self):
+    def register(self) -> None:
         try:
             self.stun_socket.sendto(b"REGISTER", self.STUN_SERVER_ADDR)
             response, _ = self.stun_socket.recvfrom(4096)
-            self.client_id = response.decode().split()[1]
+            self.client_id = int(response.decode().split()[1])
             print(f"Registered with ID: {self.client_id}")
         except Exception as e:
             print(f"Error during registration: {e}")
 
-    def request_peer(self):
+    def request_peer(self) -> None:
         try:
             self.stun_socket.sendto(b"CHECK", self.STUN_SERVER_ADDR)
         except Exception as e:
@@ -54,15 +54,17 @@ class StunClient:
         except Exception as e:
             print(f"Error sending REQUEST message: {e}")
 
-    def hole_punch(self):
+    def hole_punch(self) -> None:
         for _ in range(self.HOLE_PUNCH_TRIES):
             try:
+                if not self.peer_addr:
+                    continue
                 self.stun_socket.sendto(b"HOLE", self.peer_addr)
             except Exception as e:
                 print(f"Error sending HOLE punch message: {e}")
             time.sleep(0.1)
 
-    def handle_server_messages(self, message):
+    def handle_server_messages(self, message) -> None:
         parts = message.split()
 
         if parts[1] == "CONNECT":
@@ -94,7 +96,7 @@ class StunClient:
             self.min_buffer_size = 10
             self.hole_punched = True
 
-    def handle_hole_punch_message(self):
+    def handle_hole_punch_message(self) -> None:
         self.hole_punched = True
         print("Hole punched!")
         self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)

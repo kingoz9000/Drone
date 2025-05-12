@@ -6,9 +6,9 @@ StunClient <|-- ControlStunClient : Inherits
 
 namespace stun{
     class StunClient {
-        stun.socket obj
+        socket socket
         int client_id
-        str peer_addr
+        tuple[str, int] peer_addr
         tuple[str, int] sending_addr
         tuple[str, int] STUN_SERVER_ADDR
         int HOLE_PUNCH_TRIES
@@ -16,32 +16,33 @@ namespace stun{
         bool running
         bool relay
         bool turn_mode
-        __init__()
         None register()
         None request_peer()
         None hole_punch()
         threading.Thread _run_in_thread()
-        None listen()
-        None main()
+        None handle_server_messages()
+        None handle_hole_punch_message()
     }
 
     class RelayStunClient{
-        obj drone_command_socket
+        socket drone_command_socket
         tuple[str, int] drone_command_addr
-        obj drone_video_socket
-        bool state
-        bool response
+        socket drone_video_socket
+        str state
+        bytes response
         float stats_refresh_rate
-        __init__()
         None send_command_to_drone()
         None send_data_to_operator()
         None state_socket_handler()
+        None bandwidth_tester()
+        None listen()
+        None main()
     }
 
     class ControlStunClient{
         queue[str] response
         list[str] log
-        dict[str]: drone_stats
+        dict drone_stats
         obj stats_lock
         int packet_loss
         list[int] seq_number
@@ -49,13 +50,17 @@ namespace stun{
         list[tuple] reorder_buffer
         int min_buffer_size
         int last_seq_num
-        __init__()
         None send_command_to_relay()
-        tuple get_peer_addr()
+        tuple[str,int] get_peer_addr()
         dict get_drone_stats()
         None trigger_turn_mode()
         None disconnect_from_stun_server()
-        bool handle_flags()
+        None send_videofeed()
+        None respond()
+        None state()
+        None bandwidth_test()
+        None listen()
+        None main()
     }
 }
 ButtonMap --o JoystickHandler : Uses
@@ -68,20 +73,20 @@ namespace joystick {
         int left_right
         int up_down
         int yaw
-        list[str] commands
-        list[str] get_joystick_values()
+        List[String] commands
+        List[String] get_joystick_values()
     }
 
     class JoystickHandler {
         Any joystick
-        dict[int, bool] buttons
+        Dict[int, bool] buttons
         __init__()
         bool connect_joystick()
         None start_reading()
         None on_joybutton_press()
         None on_joybutton_release()
-        tuple get_values()
-        threading.Thread run_in_thread()
+        Tuple get_values()
+        static Thread run_in_thread()
     }
 }
 namespace GUI{
@@ -123,8 +128,7 @@ namespace Webserver {
         Socket webserver_socket
         Queue[Frame] frame_queue
         Popen ffmpeg_process
-        __init__()
-        None ffmpeg_writer()
+        ffmpeg_writer()
     }
     class WebserverApp{
         str index()

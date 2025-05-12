@@ -13,12 +13,12 @@ class RelayStunClient(StunClient):
         self.drone_video_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.drone_video_socket.bind(("0.0.0.0", 11111))
 
-        self.state: bool = None
-        self.response: bool = None
+        self.state: str | None = None
+        self.response: bytes | None = None
 
         self.stats_refresh_rate: float = 0.5  # seconds
 
-    def send_command_to_drone(self, command, take_response=False):
+    def send_command_to_drone(self, command, take_response=False) -> None:
         self.drone_command_socket.sendto(
             bytes(command, "utf-8"), self.drone_command_addr
         )
@@ -30,7 +30,7 @@ class RelayStunClient(StunClient):
             except socket.timeout:
                 print(f"Command '{command}': No response received within 0.5 seconds")
 
-    def send_data_to_operator(self, data, prefix=0):
+    def send_data_to_operator(self, data, prefix=0) -> None:
         if self.turn_mode:
             shifted = bytearray([16 + prefix]) + data
         else:
@@ -41,7 +41,7 @@ class RelayStunClient(StunClient):
 
         self.stun_socket.sendto(shifted, self.sending_addr)
 
-    def state_socket_handler(self):
+    def state_socket_handler(self) -> None:
         state_addr = ("0.0.0.0", 8890)
         self.state_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.state_socket.bind(state_addr)
@@ -50,14 +50,14 @@ class RelayStunClient(StunClient):
             self.send_data_to_operator(state, prefix=3)
             time.sleep(self.stats_refresh_rate)
 
-    def bandwidth_tester(self, size=1024, interval=0.1):
+    def bandwidth_tester(self, size=1024, interval=0.1) -> None:
         # interval 0.1 = 10 packets per second
         while self.running:
             data = bytearray([0] * size)
             self.send_data_to_operator(data, prefix=4)
             time.sleep(interval)
 
-    def listen(self):
+    def listen(self) -> None:
         while self.running:
             data = self.stun_socket.recv(4096)
 
@@ -77,6 +77,6 @@ class RelayStunClient(StunClient):
                 continue
             self.send_command_to_drone(message, take_response=False)
 
-    def main(self):
+    def main(self) -> None:
         self.register()
         self._run_in_thread(self.listen)

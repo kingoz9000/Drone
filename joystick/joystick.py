@@ -12,7 +12,7 @@ class JoystickHandler:
 
         self.run_in_thread(self.start_reading)
 
-    def start_reading(self):
+    def start_reading(self) -> None:
         if not self.joystick:
             return
         # Run Pyglet event loop
