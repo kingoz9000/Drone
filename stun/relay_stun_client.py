@@ -32,11 +32,13 @@ class RelayStunClient(StunClient):
 
     def send_data_to_operator(self, data, prefix=0):
         if self.turn_mode:
-            shifted = bytearray([16 + prefix]) + shifted
+            shifted = bytearray([16 + prefix]) + data
+        else:
+            shifted = bytearray([prefix]) + data
 
         if not self.sending_addr:
             return
-        shifted = bytearray([prefix]) + data
+        
         self.stun_socket.sendto(shifted, self.sending_addr)
 
     def state_socket_handler(self):
