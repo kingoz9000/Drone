@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Live Stream</title>
+  <title>Drone Live Stream</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body style="background:black; margin:0;">
-  <video id="video" width="640" height="480" controls autoplay muted></video>
+  <video id="video" class="stream-player" width="640" height="480" controls autoplay muted></video>
   <script>
     const video = document.getElementById("video");
     const videoSrc = "/static/hls/stream.m3u8";
