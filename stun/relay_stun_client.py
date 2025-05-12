@@ -69,18 +69,13 @@ class RelayStunClient(StunClient):
                 continue
 
             if message.startswith("HOLE") and not self.hole_punched:
-                self.hole_punched = True
-                print("Hole punched!")
-                self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
+                self.handle_hole_punch_message()
                 continue
 
-            if self.relay:
-                if message == "battery?":
-                    self.send_command_to_drone(message, take_response=True)
-                    continue
-                self.send_command_to_drone(message, take_response=False)
-            else:
-                print("Unhanled command/message:", message)
+            if message == "battery?":
+                self.send_command_to_drone(message, take_response=True)
+                continue
+            self.send_command_to_drone(message, take_response=False)
 
     def main(self):
         self.register()

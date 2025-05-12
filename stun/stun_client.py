@@ -94,6 +94,11 @@ class StunClient:
             self.min_buffer_size = 10
             self.hole_punched = True
 
+    def handle_hole_punch_message(self):
+        self.hole_punched = True
+        print("Hole punched!")
+        self.stun_socket.sendto(b"HOLE PUNCHED", self.STUN_SERVER_ADDR)
+
     @staticmethod
     def _run_in_thread(func, *args) -> threading.Thread:
         """General worker function to run a function in a thread"""
