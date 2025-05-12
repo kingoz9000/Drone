@@ -34,13 +34,6 @@ class Relay:
                 self.seq_num += 1
                 packet_count += 1  # Increment packet counter
 
-                # Calculate elapsed time
-                elapsed_time = time.time() - start_time
-                if elapsed_time >= 1.0:  # If one second has passed
-                    print(f"Packets received in the last second: {packet_count}")
-                    packet_count = 0  # Reset packet counter
-                    start_time = time.time()  # Reset start time
-
 
 if __name__ == "__main__":
     relay = Relay()
