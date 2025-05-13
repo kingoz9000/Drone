@@ -42,7 +42,7 @@ class ControlStunClient(StunClient):
             return self.drone_stats.copy()
 
     def trigger_turn_mode(self) -> None:
-        self.stun_socket.sendto(b"REQUEST_TURN_MODE", self.STUN_SERVER_ADDR)
+        self.stun_socket.sendto(b"SWITCH TURN MODE", self.STUN_SERVER_ADDR)
 
     def disconnect_from_stun_server(self) -> None:
         self.stun_socket.sendto(b"DISCONNECT", self.STUN_SERVER_ADDR)

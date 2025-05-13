@@ -109,7 +109,7 @@ class StunServer:
             elif message.startswith("DISCONNECT"):
                 self.handle_disconnect(addr)
 
-            elif message.startswith("REQUEST_TURN_MODE"):
+            elif message.startswith("SWITCH TURN MODE"):
                 self.handle_turn_request(addr)
 
             elif message.startswith("ALIVE"):
