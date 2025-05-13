@@ -53,13 +53,13 @@ def start_ffmpeg():
         "delete_segments+append_list",
         HLS_PLAYLIST,
     ]
-    print("📡 Starting FFmpeg to receive UDP and write HLS...")
+    print("Starting FFmpeg to receive UDP and write HLS...")
     subprocess.run(cmd)
 
 
 # --- Cleanup on exit ---
 def cleanup():
-    print("🧹 Cleaning up HLS directory...")
+    print("Cleaning up HLS directory...")
     shutil.rmtree(HLS_DIR, ignore_errors=True)
 
 
@@ -81,5 +81,5 @@ if __name__ == "__main__":
     # Start FFmpeg before the web server
     threading.Thread(target=start_ffmpeg, daemon=True).start()
 
-    print("🌐 Starting Flask at http://0.0.0.0:5000")
+    print("Starting Flask at http://0.0.0.0:5000")
     app.run(host="0.0.0.0", port=5000, debug=False)
