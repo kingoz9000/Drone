@@ -41,7 +41,7 @@ class Main:
 
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
-        self.run_in_thread(self.fetch_and_update_drone_stats)
+        self.run_in_thread(self.refresh_drone_stats)
         self.check_connection_thread = self.run_in_thread(self.check_connection)
 
         self.update_video_frame()
@@ -67,7 +67,7 @@ class Main:
         self.startup_drone()
         self.drone_battery = None
 
-    def fetch_and_update_drone_stats(self) -> None:
+    def refresh_drone_stats(self) -> None:
         """Fetch and update drone stats in a loop."""
         while True:
             try:
