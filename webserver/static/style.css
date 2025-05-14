@@ -11,5 +11,5 @@ html, body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  object-fit: cover; /* Or use 'contain' if you prefer full frame visibility */
+  object-fit: cover;
 }
