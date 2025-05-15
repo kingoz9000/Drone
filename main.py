@@ -42,6 +42,8 @@ class Main:
         self.run_in_thread(self.control_drone)
         self.run_in_thread(self.get_ping)
         self.run_in_thread(self.refresh_drone_stats)
+
+        self.counter = 0
         self.check_connection_thread = self.run_in_thread(self.check_connection)
 
         self.update_video_frame()
@@ -104,7 +106,7 @@ class Main:
             f"Roll: {stats.get('roll', 0)}°\n"
             f"Yaw: {stats.get('yaw', 0)}°\n"
             f"Altitude: {stats.get('h', 0)} m\n"
-            f"Speed: {math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2)} m/s\n"
+            f"Speed: {round(math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2), 2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
             f"Packet loss: {round(self.packet_loss,2)} %\n"
         )
@@ -253,14 +255,18 @@ class Main:
     def check_connection(self) -> None:
         """Check the connection status and trigger turn mode if necessary."""
         if (
-            (self.avg_ping_ms > 300 or self.packet_loss > 5)
+            (self.avg_ping_ms > 200 or self.packet_loss > 4)
             and not self.stun_handler.turn_mode
             and self.ARGS.stun
         ):
-            print("Connection unstable, triggering turn mode")
-            self.stun_handler.trigger_turn_mode()
-            self.line.set_color("orange")
-            self.check_connection_thread.join()
+            self.counter += 1
+            if self.counter >= 5:
+                print("Connection unstable, triggering turn mode")
+                self.stun_handler.trigger_turn_mode()
+                self.line.set_color("orange")
+                self.check_connection_thread.join()
+        else:
+            self.counter = 0
 
         time.sleep(1)
 
