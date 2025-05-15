@@ -254,21 +254,23 @@ class Main:
 
     def check_connection(self) -> None:
         """Check the connection status and trigger turn mode if necessary."""
-        if (
-            (self.avg_ping_ms > 200 or self.packet_loss > 4)
-            and not self.stun_handler.turn_mode
-            and self.ARGS.stun
-        ):
-            self.counter += 1
-            if self.counter >= 5:
-                print("Connection unstable, triggering turn mode")
-                self.stun_handler.trigger_turn_mode()
-                self.line.set_color("orange")
-                self.check_connection_thread.join()
-        else:
-            self.counter = 0
 
-        time.sleep(1)
+        while True:
+            if (
+                (self.avg_ping_ms > 200 or self.packet_loss > 4)
+                and not self.stun_handler.turn_mode
+                and self.ARGS.stun
+            ):
+                self.counter += 1
+                if self.counter >= 5:
+                    print("Connection unstable, triggering turn mode")
+                    self.stun_handler.trigger_turn_mode()
+                    self.line.set_color("ora    nge")
+                    break
+            else:
+                self.counter = 0
+
+            time.sleep(1)
 
     def cleanup(self) -> None:
         """Safely clean up resources and close the customTkinter window."""
