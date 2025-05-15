@@ -265,7 +265,7 @@ class Main:
                 if self.counter >= 5:
                     print("Connection unstable, triggering turn mode")
                     self.stun_handler.trigger_turn_mode()
-                    self.line.set_color("ora    nge")
+                    self.line.set_color("orange")
                     break
             else:
                 self.counter = 0
