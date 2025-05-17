@@ -41,23 +41,3 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
-
-
-def check_connection(self) -> None:
-    """Check the connection status and trigger turn mode if necessary."""
-    if (
-        (self.avg_ping_ms > 200 or self.packet_loss > 4)
-        and not self.stun_handler.turn_mode
-        and self.ARGS.stun
-    ):
-        counter += 1
-        if counter > 5: 
-            print("Connection unstable, triggering turn mode")
-            self.stun_handler.trigger_turn_mode()
-            self.check_connection_thread.join(
-    else:
-        counter = 0
-
-    time.sleep(1)
-
-

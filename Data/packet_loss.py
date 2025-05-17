@@ -1,42 +1,38 @@
 import matplotlib.pyplot as plt
 
-# Load cumulative loss data (%)
-def load_loss_curve(filepath):
-    with open(filepath, 'r') as f:
-        return [float(x) for x in f.read().strip(", ").split(", ")]
+# Data
+labels = ["0%", "1%", "5%", "10%", "20%", "50%"]
+induced = [0, 1, 5, 10, 20, 50]
+measured = [0.09, 1.05, 4.76, 10.37, 19.85, 50.03]
+delta = [4, 7, 3, 1, 0]
 
-# File paths for each test
-files = {
-    "1%": "Data/packet_loss_test/Data2025-05-09_11-18-14seq.txt",  # <-- the anomaly
-    "5%": "Data/packet_loss_test/Data2025-05-09_11-21-54seq.txt",
-    "10%": "Data/packet_loss_test/Data2025-05-09_11-23-51seq.txt",
-    "20%": "Data/packet_loss_test/Data2025-05-09_11-26-55seq.txt",
-    "50%": "Data/packet_loss_test/Data2025-05-09_11-28-47seq.txt",
-}
+x = range(len(labels))
+width = 0.35
 
-# Plot
-plt.figure(figsize=(10, 6))
+fig, ax1 = plt.subplots(figsize=(10, 5))
 
-for label, path in files.items():
-    data = load_loss_curve(path)
-    x = list(range(1, len(data) + 1))
-    if label == "1%":
-        plt.plot(x, data, label=label + " (anomaly)", color="red", linestyle="--", linewidth=2)
-        # Optional annotation of the early spike
-        early_max = max(data[:20])
-        early_idx = data.index(early_max)
-        plt.annotate(f"Early spike: {early_max:.1f}%",
-                     xy=(early_idx, early_max),
-                     xytext=(early_idx + 20, early_max + 5),
-                     arrowprops=dict(arrowstyle="->", color="red"),
-                     fontsize=9, color="red")
-    else:
-        plt.plot(x, data, label=label)
+# Bar plot for induced and measured
+bars1 = ax1.bar([i - width/2 for i in x], induced, width=width, label="Induced", color="#A0C4FF", edgecolor='black', zorder=3)
+bars2 = ax1.bar([i + width/2 for i in x], measured, width=width, label="Measured", color="#BDB2FF", edgecolor='black', zorder=3)
 
-plt.xlabel("Packet Index")
-plt.ylabel("Cumulative Packet Loss (%)")
-plt.title("Cumulative Packet Loss Over Time")
-plt.legend(title="Induced Loss")
-plt.grid(True, linestyle="--", alpha=0.5)
+# Annotate measured values above bars
+for i, val in enumerate(measured):
+    ax1.text(i + width/2, val + 0.6, f"{val:.2f}%", ha='center', va='bottom', fontsize=9)
+
+# Labels and grid for left axis
+ax1.set_ylabel("Packet Loss (%)")
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+ax1.grid(axis='y', linestyle='--', alpha=0.3, zorder=0)
+
+# Twin axis for delta %
+ax2 = ax1.twinx()
+ax2.plot([1,2,3,4,5], delta, color="#FF595E", marker='o', linewidth=2, label="Δ% from baseline", zorder=4)
+ax2.set_ylabel("Δ% from Baseline")
+
+# Titles and legend
+fig.suptitle("Induced vs Measured Packet Loss and Δ% from Baseline", fontsize=14)
+fig.legend(loc="upper left", bbox_to_anchor=(0.07, 0.9))
+
 plt.tight_layout()
 plt.show()
