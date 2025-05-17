@@ -1,9 +1,9 @@
 import socket
-import time
 import threading
+import time
 
 
-class DroneCommunication:
+class LocalDroneCommunication:
     def __init__(self, command_addr, command_returnport) -> None:
         # Addresses and ports for sending commands / Recieving response
         self.COMMAND_ADDR: tuple = command_addr
@@ -64,4 +64,4 @@ class DroneCommunication:
 
 
 if __name__ == "__main__":
-    drone = DroneCommunication()
+    drone = LocalDroneCommunication()

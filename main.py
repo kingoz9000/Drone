@@ -1,8 +1,8 @@
 import argparse
 import math
+import queue
 import threading
 import time
-import queue
 from collections import deque
 
 import customtkinter as ctk
@@ -10,8 +10,8 @@ import cv2
 import matplotlib.pyplot as plt
 from PIL import Image, ImageTk
 
-from GUI.drone_communication import DroneCommunication
-from GUI.drone_video_feed import DroneVideoFeed
+from GUI.drone_communication import LocalDroneCommunication
+from GUI.drone_video_feed import LocalVideoFeed
 from GUI.ui import UserInterface
 from joystick.button_mapping import ButtonMap
 from stun import ControlStunClient
@@ -61,11 +61,13 @@ class Main:
         else:
             self.drone_video_addr = ("0.0.0.0", 11111)
             self.drone_comm_addr = ("192.168.10.1", 8889)
-            self.drone_communication = DroneCommunication(self.drone_comm_addr, 9000)
+            self.drone_communication = LocalDroneCommunicationtion(
+                self.drone_comm_addr, 9000
+            )
             self.send_command = self.drone_communication.send_command
             self.run_in_thread(self.drone_communication.wifi_state_socket_handler)
 
-        self.video_stream = DroneVideoFeed(self.drone_video_addr)
+        self.video_stream = LocalVideoFeed(self.drone_video_addr)
         self.startup_drone()
         self.drone_battery = None
 
@@ -106,9 +108,9 @@ class Main:
             f"Roll: {stats.get('roll', 0)}°\n"
             f"Yaw: {stats.get('yaw', 0)}°\n"
             f"Altitude: {stats.get('h', 0)} m\n"
-            f"Speed: {round(math.sqrt((stats.get('vgx', 0))**2 + (stats.get('vgy', 0))**2 + (stats.get('vgz', 0))**2), 2)} m/s\n"
+            f"Speed: {round(math.sqrt((stats.get('vgx', 0)) ** 2 + (stats.get('vgy', 0)) ** 2 + (stats.get('vgz', 0)) ** 2), 2)} m/s\n"
             f"Board temperature: {stats.get('temph', 0)} °C\n"
-            f"Packet loss: {round(self.packet_loss,2)} %\n"
+            f"Packet loss: {round(self.packet_loss, 2)} %\n"
         )
 
         self.drone_stats_box.configure(state="normal")
