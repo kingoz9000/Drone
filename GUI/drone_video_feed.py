@@ -13,7 +13,7 @@ class LocalVideoFeed:
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout: int = 1
-        self.frames_queue = queue.Queue(maxsize=5)
+        self.frame_queue = queue.Queue(maxsize=5)
 
         self.run_in_thread(self.frame_grab)
 
@@ -43,13 +43,13 @@ class LocalVideoFeed:
                 img = np.array(frame.to_image())
                 if img is not None and img.size > 0:
                     try:
-                        if not self.frames_queue.full():
-                            self.frames_queue.put_nowait(
+                        if not self.frame_queue.full():
+                            self.frame_queue.put_nowait(
                                 img
                             )  # Store only the latest frame
                         else:
-                            self.frames_queue.get_nowait()  # Drop old frame
-                            self.frames_queue.put_nowait(img)
+                            self.frame_queue.get_nowait()  # Drop old frame
+                            self.frame_queue.put_nowait(img)
                     except queue.Full:
                         pass
         except Exception as e:
@@ -62,8 +62,8 @@ class LocalVideoFeed:
 
     def get_frame(self) -> np.ndarray | None:
         """Returns the last frame in the frames queue"""
-        if not self.frames_queue.empty():
-            return self.frames_queue.get_nowait()
+        if not self.frame_queue.empty():
+            return self.frame_queue.get_nowait()
         return None
 
     @staticmethod
