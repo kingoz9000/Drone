@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import time
 
-blink_interval = 1  # seconds
+blink_interval = 0.5  # seconds
 window_name = 'Blinker'
 square_size = 1000  # pixels
 

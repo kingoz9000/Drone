@@ -61,7 +61,7 @@ class Main:
         else:
             self.drone_video_addr = ("0.0.0.0", 11111)
             self.drone_comm_addr = ("192.168.10.1", 8889)
-            self.drone_communication = LocalDroneCommunicationtion(
+            self.drone_communication = LocalDroneCommunication(
                 self.drone_comm_addr, 9000
             )
             self.send_command = self.drone_communication.send_command

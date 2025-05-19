@@ -2,8 +2,8 @@
 import cv2
 import numpy as np
 
-video_path = 'hello.webm'  # Your recorded video file
-frame_rate = 30.0  # Adjust based on your recording fps
+video_path = 'RelayStock.webm'  # Your recorded video file
+frame_rate = 31.0  # Adjust based on your recording fps
 blink_speed = 500
 
 # Helper function to detect color (green/red)
@@ -12,9 +12,9 @@ def dominant_color(frame):
     green_strength = avg_color[1]
     red_strength = avg_color[2]
     
-    if green_strength - red_strength > 40:
+    if green_strength > red_strength:
         return 'green'
-    elif red_strength - green_strength > 40:
+    elif red_strength > green_strength:
         return 'red'
     else:
         return 'unknown'  # No confident signal
@@ -72,27 +72,35 @@ feed_idx = 0
 latencies = []
 feed_idx = 0
 
+max_latency_ms = 1000  # Only match within 1000 ms window
+max_latency_frames = int((max_latency_ms / 1000) * frame_rate)
+
 for frame_src, color_src in events_source:
-    # Find the very next feed event that happens after source event (any color)
-    while feed_idx < len(events_feed):
-        frame_feed, color_feed = events_feed[feed_idx]
-        if frame_feed > frame_src:
-            # Optional: check if colors differ (color flipped)
-            if color_feed != color_src:
-                latency_frames = frame_feed - frame_src
-                latency_ms = (latency_frames / frame_rate) * 1000
-                latencies.append(latency_ms - blink_speed)
-                print(f"→ Matched src color {color_src} at frame {frame_src} with feed color {color_feed} at frame {frame_feed}, latency {latency_ms:.2f} ms")
-                feed_idx += 1
-                break
-            else:
-                # If colors are same, this is probably the next cycle, skip this feed event and keep searching
-                feed_idx += 1
-        else:
-            feed_idx += 1
+    best_match = None
+    for i in range(feed_idx, len(events_feed)):
+        frame_feed, color_feed = events_feed[i]
+        if frame_feed - frame_src > max_latency_frames:
+            break  # too far ahead, give up
+
+        if color_feed != color_src and frame_feed > frame_src:
+            latency_frames = frame_feed - frame_src
+            latency_ms = (latency_frames / frame_rate) * 1000
+            best_match = (latency_ms - blink_speed, frame_feed, color_feed, i)
+            break  # Found first suitable match
+
+    if best_match:
+        latency, frame_feed, color_feed, idx = best_match
+        latencies.append(latency)
+        print(f"→ Matched src color {color_src} at frame {frame_src} with feed color {color_feed} at frame {frame_feed}, latency {latency:.2f} ms")
+        feed_idx = idx + 1  # move past this feed event
+
 
 
 latencies = latencies[1:]
+
+with open("latency_results.txt", "a") as file:
+    for i in latencies:
+        file.write(f"{int(i)} ")
 
 # Output stats
 import statistics
