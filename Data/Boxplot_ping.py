@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import statistics
 
 # Load ping data from files
 def load_ping_data(filepath):
@@ -7,13 +8,26 @@ def load_ping_data(filepath):
         return [int(num) for num in data]
 
 # Load data
-data1 = load_ping_data("Data/latency_test/2025-05-09_11-46-12ping.txt")
-data2 = load_ping_data("Data/latency_test/2025-05-09_11-47-27ping.txt")
-data3 = load_ping_data("Data/latency_test/2025-05-09_11-48-46ping.txt")
-data4 = load_ping_data("Data/latency_test/2025-05-09_11-54-02ping.txt")
+data1 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+data2 = load_ping_data("Data/Testing_sec/Stun/2025-05-07_13-56-38ping.txt")
+data3 = load_ping_data("Data/Testing_sec/Strato/2025-05-07_14-03-08ping.txt")
+data4 = load_ping_data("Data/Testing_sec/Stockholm/2025-05-07_14-00-02ping.txt")
+
+data1 = sorted(data1)[:-1]
+#print(statistics.stdev())
+
+data2 = sorted(data2)[:-1]
+#print(statistics.stdev(sorted(data2)[:-3]))
+
+data3 = sorted(data3)[:-3]
+#print(statistics.stdev(sorted(data3)[:-3]))
+
+data4 = sorted(data4)[:-7]
+#print(statistics.stdev(sorted(data4)[:-3]))
+
 
 datasets = [data1, data2, data3, data4]
-labels = ['+0ms', '+100ms', '+250ms', '+400ms']
+labels = ['Wifi', 'Stun', 'Strato', 'Stockholm']
 induced_latencies = [0, 100, 250, 400]  # In ms
 
 # Calculate average pings
@@ -50,14 +64,10 @@ plt.grid(True, linestyle='--', alpha=0.5)
 
 # Annotate averages and delta %
 for i, (avg, delta) in enumerate(zip(averages, deltas)):
-    if i == 3:
-        # For data4 (index 3), place text below the box
-        y_pos = min(datasets[i]) - 30
-        va = 'top'
-    else:
-        y_pos = max(datasets[i]) + 10
-        va = 'bottom'
-    plt.text(i + 1, y_pos, f"{avg:.0f} ms\n({delta:+}%)",
+    # For data4 (index 3), place text below the box
+    y_pos = min(datasets[i]) - 3
+    va = 'top'
+    plt.text(i + 1, y_pos, f"{avg:.0f} ms",
              ha='center', va=va, fontsize=9, fontweight='bold')
 
 plt.tight_layout()
