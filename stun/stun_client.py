@@ -93,7 +93,7 @@ class StunClient:
             print("Turn mode activated.")
             self.sending_addr = self.STUN_SERVER_ADDR
             self.turn_mode = True
-            self.min_buffer_size = 10
+            self.min_buffer_size = 8
             self.hole_punched = True
 
     def handle_hole_punch_message(self) -> None:
