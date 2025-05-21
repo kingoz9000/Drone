@@ -20,7 +20,7 @@ class ControlStunClient(StunClient):
             f"{time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime())}seq.txt"
         )
         self.reorder_buffer: list[tuple] = []
-        self.min_buffer_size: int = 4
+        self.min_buffer_size: int = 8
         self.last_seq_num: int = -1
 
     def send_command_to_relay(
