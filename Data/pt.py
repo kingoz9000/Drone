@@ -5,7 +5,7 @@ import numpy as np
 labels = [
     "Tello Mobile App",
     "Direct (WiFi)",
-    "UDP Hole Punching",
+    "Peer-To-Peer",
     "Relayed (AAU VM)",
     "Relayed (Stockholm VM)"
 ]

@@ -27,7 +27,7 @@ data4 = sorted(data4)[:-5]
 
 
 datasets = [data1, data2, data3, data4]
-labels = ['Wifi', 'Stun', 'Strato', 'Stockholm']
+labels = ['Direct (Wifi)', 'Peer-To-Peer', 'Relayed (AAU VM)', 'Relayed (Stockholm VM)']
 induced_latencies = [0, 100, 250, 400]  # In ms
 
 # Calculate average pings
@@ -57,6 +57,7 @@ plt.boxplot(datasets, vert=True, patch_artist=True,
             capprops=dict(color='gray'),
             flierprops=dict(marker='o', markerfacecolor='orange', markersize=6, linestyle='none'))
 
+plt.ylim(-10, 200)
 plt.xticks([1, 2, 3, 4], labels)
 plt.ylabel("Ping (ms)")
 plt.title("Ping Distribution Comparison")
