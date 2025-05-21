@@ -13,16 +13,16 @@ data2 = load_ping_data("Data/Testing_sec/Stun/2025-05-07_13-56-38ping.txt")
 data3 = load_ping_data("Data/Testing_sec/Strato/2025-05-07_14-03-08ping.txt")
 data4 = load_ping_data("Data/Testing_sec/Stockholm/2025-05-07_14-00-02ping.txt")
 
-data1 = sorted(data1)[:-1]
+data1 = sorted(data1)
 #print(statistics.stdev())
 
-data2 = sorted(data2)[:-1]
+data2 = sorted(data2)
 #print(statistics.stdev(sorted(data2)[:-3]))
 
 data3 = sorted(data3)[:-3]
 #print(statistics.stdev(sorted(data3)[:-3]))
 
-data4 = sorted(data4)[:-7]
+data4 = sorted(data4)[:-5]
 #print(statistics.stdev(sorted(data4)[:-3]))
 
 

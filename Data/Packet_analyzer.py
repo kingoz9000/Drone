@@ -18,35 +18,39 @@ def analyze_file(filepath):
     displacement_counter = Counter(displacements)
     total_packets = len(received_packets)
     
-    print(f"packet reordering: {reorder_count/total_packets:.2%}")
+    print(f"{filepath} - Packet reordering: {reorder_count/total_packets:.2%}")
 
     return displacement_counter, reorder_count, total_packets
 
-# File path for the first file only
-file1 = "Data/Celleular_packet_reordering"
+# File paths
+file1 = "Data/Holep.txt"
+file2 = "Data/Turn.txt"  # Change this to your second file path
 
-# Analyze the first file
+# Analyze both files
 disp1, reorder1, total1 = analyze_file(file1)
+disp2, reorder2, total2 = analyze_file(file2)
 
-# All unique displacements for consistent x-axis
-all_displacements = sorted(disp1.keys())
+# Union of all displacement values for a consistent x-axis
+all_displacements = sorted(set(disp1.keys()) | set(disp2.keys()))
 
 # Normalize to percentages
 percentages1 = [100 * disp1.get(d, 0) / reorder1 if reorder1 else 0 for d in all_displacements]
+percentages2 = [100 * disp2.get(d, 0) / reorder2 if reorder2 else 0 for d in all_displacements]
 
-# Plot the bar chart
+# Plotting side-by-side
 x = range(len(all_displacements))
-width = 0.5
+width = 0.35
 
-plt.figure(figsize=(10, 5))
-plt.bar(x, percentages1, width=width, color='#6C7EB2', edgecolor='black', zorder=3)  # Use a more scientific color
+plt.figure(figsize=(12, 6))
+plt.bar([i - width/2 for i in x], percentages1, width=width, color='#6C7EB2', label='Hole punch', edgecolor='black', zorder=3)
+plt.bar([i + width/2 for i in x], percentages2, width=width, color='#B26C6C', label='Turn', edgecolor='black', zorder=3)
 
-# Titles and labels
 plt.xlabel('Displacement Amount')
 plt.ylabel('Percentage of Reordered Packets (%)')
-plt.title('Packet Reordering Displacement Test for Cellular Connection')
+plt.title('Packet Reordering Displacement Comparison')
 plt.xticks(x, all_displacements)
-plt.ylim(0, max(percentages1) + 5)  # Give some space at the top for better visibility
+plt.ylim(0, max(percentages1 + percentages2) + 5)
+plt.legend()
 plt.grid(axis='y', linestyle='--', alpha=0.7, zorder=0)
 
 plt.tight_layout()

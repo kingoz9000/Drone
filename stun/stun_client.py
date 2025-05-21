@@ -18,7 +18,7 @@ class StunClient:
         # self.STUN_SERVER_ADDR: tuple[str, int] = ("130.225.74.242", 12345)
 
         # Server in Stockholm
-        self.STUN_SERVER_ADDR: tuple[str, int] = ("34.51.168.81", 12345)
+        self.STUN_SERVER_ADDR: tuple[str, int] = ("34.51.139.212", 12345)
 
         # Server in Tokyo
         # self.STUN_SERVER_ADDR: tuple[str, int] = ("34.85.33.23", 12345)
