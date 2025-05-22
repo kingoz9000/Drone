@@ -4,12 +4,13 @@ import time
 
 import av
 import numpy as np
-
+import socket
 
 class LocalVideoFeed:
     def __init__(self, video_addr) -> None:
         # Video stream recieving
         self.VIDEO_ADDRESS: str = f"udp://@{video_addr[0]}:{str(video_addr[1])}"
+        self.video_addr = video_addr
 
         # Settings for frame grab & frame_queue
         self.frame_grab_timeout: int = 1
@@ -19,6 +20,21 @@ class LocalVideoFeed:
 
     def frame_grab(self) -> None:
         """Grabs frames from the video stream and appends them to the frames queue"""
+        self.drone_video_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.drone_video_socket.bind(self.video_addr)
+
+        start_time = time.time()
+        count = 0
+
+        while True:
+            data = self.drone_video_socket.recv(4096)
+            count += 1
+            if time.time() - start_time > 1:
+                print(count)
+                count = 0
+                start_time = time.time()
+
+
         try:
             self.container = av.open(
                 self.VIDEO_ADDRESS,
