@@ -98,7 +98,7 @@ class StunServer:
             data, addr = self.server_socket.recvfrom(4096)
 
             # TURN-specific behavior
-            if len(data) > 0 and data[0] >= 16 and not self.stun_mode:
+            if len(data) > 0 and 21 > data[0] > 16 and not self.stun_mode:
                 self.handle_turn_data(data, addr)
                 continue
 
