@@ -62,7 +62,8 @@ class StunServer:
                 if v[2] < self.client_timeout:
                     try:
                         self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
-                        self.logger.debug(f"Sent heartbeat to Client {k}")
+                        #self.logger.debug(f"Sent heartbeat to Client {k}")
+                        print(f"Sent heartbeat to Client {k}")
                     except Exception as e:
                         self.logger.error(
                             f"Failed to send heartbeat to Client {k}: {e}"
