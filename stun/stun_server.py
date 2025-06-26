@@ -63,7 +63,6 @@ class StunServer:
                     try:
                         self.server_socket.sendto("SERVER HEARTBEAT".encode(), v[0])
                         #self.logger.debug(f"Sent heartbeat to Client {k}")
-                        print(f"Sent heartbeat to Client {k}")
                     except Exception as e:
                         self.logger.error(
                             f"Failed to send heartbeat to Client {k}: {e}"
@@ -99,7 +98,7 @@ class StunServer:
             data, addr = self.server_socket.recvfrom(4096)
 
             # TURN-specific behavior
-            if len(data) > 0 and 21 > data[0] > 16 and not self.stun_mode:
+            if len(data) > 0 and 21 > data[0] >= 16 and not self.stun_mode:
                 self.handle_turn_data(data, addr)
                 continue
 
